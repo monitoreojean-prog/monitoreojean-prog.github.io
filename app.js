@@ -13,7 +13,7 @@
    Jeferson debe crear un proyecto de Google Cloud NUEVO y separado para el
    producto (ver ESTADO_PRODUCTO.md) y reemplazar este valor antes de dar acceso
    a cualquier cuerpo externo. NO desplegar a un cliente real con este ID. */
-const GOOGLE_CLIENT_ID = '938285517928-cv5s0nogahtmoo8psh1mfptsetqru2p6.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '938285517928-k50ohvdskleg4vt8hkklnc7ul2bi2044.apps.googleusercontent.com';
 
 /* ⚠️ T1 — VACÍO A PROPÓSITO. Antes acá vivían los 4 correos de administrador de
    Inírida, QUEMADOS EN EL FRONTEND, que se publica abierto en GitHub Pages.
