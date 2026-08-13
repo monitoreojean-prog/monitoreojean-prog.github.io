@@ -1221,7 +1221,7 @@ button:active { transform: scale(.96); }
            el nombre cacheado del cuerpo; en una instalación nueva, neutro. -->
       <h2 id="loginTitulo">Reportes</h2>
       <h3 id="loginCuerpo"></h3>
-      <p class="lema" id="loginLema">"ABNEGACIÓN Y DISCIPLINA"</p>
+      <p class="lema" id="loginLema" data-inst="lema"></p>
 
       <div class="info-cuerpo">
         <strong>🚒 Solo bomberos autorizados</strong><br>
@@ -1294,7 +1294,7 @@ button:active { transform: scale(.96); }
 
       <div class="campo">
         <label>Lema institucional (opcional)</label>
-        <input type="text" id="inst_lema" placeholder="Ej: ABNEGACIÓN Y DISCIPLINA" maxlength="60">
+        <input type="text" id="inst_lema" placeholder="El lema de su cuerpo" maxlength="60">
         <div class="ayuda">Aparece al pie de los informes en PDF. Si lo deja vacío, no se muestra ninguno.</div>
       </div>
 
@@ -1440,7 +1440,7 @@ button:active { transform: scale(.96); }
       <div style="font-size:9px;color:#999;margin-top:1px;">Solo admin</div>
     </button>
   </div>
-  <div class="lema-pie">"ABNEGACIÓN Y DISCIPLINA"</div>
+  <div class="lema-pie" data-inst="lema"></div>
   <div class="credito-pie">
     App desarrollada por <strong>Bombero Jeferson Jeancarlos Rangel Gil</strong><br>
     Cuerpo de Bomberos Voluntarios de Inírida
@@ -1454,8 +1454,8 @@ button:active { transform: scale(.96); }
     <div style="background:#fff;border-radius:10px;padding:16px;line-height:1.7;color:#222;font-size:14px;">
 
       <div style="background:#fff3e0;border-left:4px solid #e65100;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:13px;">
-        <b><span data-inst="app">Reportes</span> v6.08</b> — Sistema oficial de gestión operativa de <span data-inst="nombre">su cuerpo de bomberos</span>.<br>
-        <b>"ABNEGACIÓN Y DISCIPLINA"</b>
+        <b><span data-inst="app">Reportes</span> v1.00</b> — Sistema oficial de gestión operativa de <span data-inst="nombre">su cuerpo de bomberos</span>.<br>
+        <b data-inst="lema"></b>
       </div>
 
       <p><b>🚨 1. Nueva Emergencia</b><br>Toque el botón rojo principal. Llene las 14 secciones: datos generales, clasificación, GPS, descripción, recursos desplegados, diagnóstico, víctimas, causas, organizaciones participantes, observaciones y firmas. Los campos con <span style="color:#c00;">*</span> son obligatorios. Si no hay internet, el reporte queda pendiente y se envía solo cuando recupere señal.</p>
@@ -1566,7 +1566,7 @@ button:active { transform: scale(.96); }
         <b data-inst="nombre">Su cuerpo de bomberos</b><br>
         <span data-inst="personeria"></span><br>
         <span data-inst="nit"></span><br>
-        Calle 15 N° 5-07 Zona Indígena · "ABNEGACIÓN Y DISCIPLINA"
+        <span data-inst="direccion"></span> <span data-inst="lema"></span>
       </p>
     </div>
     <button onclick="app.irA('pantallaHome')" style="margin-top:16px;padding:14px;background:var(--rojo);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%;">← Volver al inicio</button>
@@ -1853,7 +1853,7 @@ button:active { transform: scale(.96); }
       <div class="campo">
         <label>Dirección <span class="requerido">*</span></label>
         <input type="text" id="f_direccion" placeholder="Calle, carrera, número de la casa">
-        <div class="ayuda">Dirección exacta del lugar. Ejemplo: "Calle 15 #5-07" o "Carrera 7 con calle 12".</div>
+        <div class="ayuda">Dirección exacta del lugar. Ejemplo: "Calle 8 #12-45" o "Carrera 20 con calle 4".</div>
       </div>
       <div class="campo-fila">
         <div class="campo">
@@ -2385,7 +2385,7 @@ button:active { transform: scale(.96); }
     <p style="margin-bottom: 4px;"><span data-inst="personeria"></span></p>
     <p style="margin-bottom: 4px;"><span data-inst="nit"></span></p>
     <p style="margin-bottom: 8px;">Ley 1575/2012 | Ley 1581/2012</p>
-    <p style="font-style: italic; margin-bottom: 8px;">"ABNEGACIÓN Y DISCIPLINA"</p>
+    <p style="font-style: italic; margin-bottom: 8px;" data-inst="lema"></p>
     <p style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
       App desarrollada por:<br>
       <strong style="color: var(--rojo);">Bombero Jeferson Jeancarlos Rangel Gil</strong><br>
