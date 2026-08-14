@@ -43,8 +43,19 @@ let NOMBRE_ESTACION = '';
 
    Se llena con la URL del despliegue del PRODUCTO cuando exista. Mientras esté
    vacía, `_exigirBackend()` corta con un mensaje claro en vez de fallar raro.
-   El invariante I1 protege la URL de Inírida, que vive en `files 67` y no se toca. */
-const URL_BACKEND = '';
+   El invariante I1 protege la URL de Inírida, que vive en `files 67` y no se toca.
+
+   14/08/2026 — YA EXISTE. Desplegada desde la cuenta monitoreojean@gmail.com,
+   con `executeAs: USER_ACCESSING` (ver appsscript.json): el script corre como
+   QUIEN ENTRA, así que la hoja de cálculo se crea en el Drive de cada cuerpo y
+   no en el de nadie más. Ese ajuste es el que sostiene el modelo entero.
+
+   🔴 DESDE HOY ESTA URL TIENE EL MISMO ESTATUS QUE LA DE INÍRIDA (invariante I1):
+   NO se cambia. Para publicar un backend nuevo: Implementar → Administrar
+   implementaciones → ✏️ Editar → Nueva versión, SOBRE LA MISMA implementación.
+   Crear una implementación nueva genera otra URL y deja ciega a toda app ya
+   instalada — que para entonces será la de otro cuerpo de bomberos, no la tuya. */
+const URL_BACKEND = 'https://script.google.com/macros/s/AKfycbz2jTdG0iDudW1phC8IyEMOyWmzkZs7kgOx3zCMxgqE7IlRn5y1IaGVhx8h_mGufg4/exec';
 
 function _exigirBackend() {
   if (!URL_BACKEND) {
@@ -62,13 +73,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.00';
+const APP_VERSION = '1.01';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de Inírida: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.01: 🔌 La app ya se comunica con su servidor. Con esto se puede crear la base de datos del cuerpo, iniciar sesión y guardar información. Antes la pantalla cargaba pero no podía guardar nada.',
   'v1.00: 🚒 Primera versión. La app arranca vacía: al entrar por primera vez, quien lo haga queda como administrador y se crea la base de datos en su propio Google Drive. Nadie más ve esos datos.',
 ];
 
@@ -248,10 +260,15 @@ const app = {
        "Nada" es aceptable: mejor sin escudo que con el de otra institución. */
     const _escudo = (this._inst().escudoUrl || '')
                  || (typeof LOGO_SMALL !== 'undefined' ? LOGO_SMALL : '');
-    if (_escudo) {
-      document.getElementById('logoHeader').src = _escudo;
-      document.getElementById('logoLogin').src = _escudo;
-    }
+    /* Solo se muestra si de verdad hay escudo. Un <img> sin imagen deja un
+       hueco (y con alt, muestra el texto del alt), que es peor que no ponerlo:
+       parece que algo se rompió. Sin escudo configurado, simplemente no va. */
+    ['logoHeader', 'logoLogin'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (_escudo) { el.src = _escudo; el.style.display = ''; }
+      else { el.style.display = 'none'; }
+    });
 
     // === Detectar nueva versión y mostrar banner por 10 min ===
     this._mostrarBannerSiHayNuevaVersion();
