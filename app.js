@@ -73,7 +73,7 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.09';
+const APP_VERSION = '1.10';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
@@ -3555,6 +3555,52 @@ const app = {
     return d;
   },
 
+  /* ═══ PERMISO SOBRE EL DRIVE DEL COMANDANTE ═══
+
+     Devuelve un token de ACCESO (no el de identidad) con permiso para crear archivos.
+
+     POR QUÉ HACE FALTA. El backend corre como quien publicó la app, así que todo lo que
+     crea nace en el Drive de ESA cuenta. Se intentó arreglarlo transfiriendo la
+     propiedad después, y Google lo rechazó con un 403 explícito:
+     «Consent is required to transfer ownership of a file to another user» — la
+     propiedad no se puede empujar, el destinatario tiene que aceptarla, y eso obliga a
+     salir de la app a leer un correo.
+
+     Con este token la hoja NACE siendo del comandante. No hay traspaso que rechazar.
+
+     El permiso pedido es `drive.file`: la app solo alcanza los archivos que ella misma
+     crea. Es el más angosto que sirve, y es literalmente lo que la pantalla promete.
+
+     Se pide en el momento de instalar y no al iniciar sesión, a propósito: así el
+     comandante ve la ventana de permisos cuando ya entiende para qué es —está creando
+     la base de datos de su cuerpo— y no como un obstáculo antes de haber visto nada. */
+  _pedirPermisoDrive() {
+    return new Promise((resolve) => {
+      try {
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+          return resolve({ ok: false, motivo: 'La librería de Google no cargó. Revise su conexión.' });
+        }
+        const cliente = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (resp) => {
+            if (resp && resp.access_token) resolve({ ok: true, token: resp.access_token });
+            else resolve({ ok: false, motivo: 'No se recibió el permiso.' });
+          },
+          error_callback: (e) => {
+            /* El comandante puede cerrar la ventana. No es un error del sistema: es una
+               decisión suya, y el mensaje tiene que decirle qué pasa si no lo da. */
+            const t = (e && e.type) || '';
+            resolve({ ok: false, motivo: t === 'popup_closed'
+              ? 'Cerró la ventana de permisos.'
+              : 'No se pudo pedir el permiso (' + t + ').' });
+          }
+        });
+        cliente.requestAccessToken();
+      } catch (e) { resolve({ ok: false, motivo: e.message }); }
+    });
+  },
+
   async instalarCuerpo(btn) {
     const err = document.getElementById('instError');
     const mostrarError = (m) => { err.textContent = m; err.style.display = 'block'; };
@@ -3590,6 +3636,17 @@ const app = {
     const _p2 = (document.getElementById('inst_pwd2') || {}).value || '';
     if (_p1.length < 6)  return mostrarError('La contraseña de administrador debe tener al menos 6 caracteres.');
     if (_p1 !== _p2)     return mostrarError('Las dos contraseñas no coinciden. Escríbalas de nuevo.');
+
+    /* ═══ EL PERMISO SE PIDE ACÁ, ANTES DE TOCAR EL SERVIDOR ═══
+       Si se pidiera después, una negativa dejaría el cuerpo a medio crear en el
+       servidor y la hoja en el Drive equivocado. Primero el permiso; si no lo da,
+       no se creó nada y puede volver a intentar. */
+    const permiso = await this._pedirPermisoDrive();
+    if (!permiso.ok) {
+      return mostrarError(permiso.motivo + ' Sin ese permiso la base de datos de su cuerpo ' +
+        'no puede crearse en SU Google Drive. Toque otra vez para reintentar.');
+    }
+    datos.driveToken = permiso.token;
 
     // I4: nada de confirm() nativo. El bloqueo anti-doble-click es obligatorio —
     // dos toques acá intentarían crear dos bases de datos.
