@@ -4,19 +4,19 @@
    ============================================================ */
 
 // ==================== CONFIGURACIÓN ====================
-/* ⚠️⚠️ ACOPLAMIENTO PENDIENTE DE ROMPER — sigue siendo el Client ID de Inírida.
+/* ⚠️⚠️ ACOPLAMIENTO PENDIENTE DE ROMPER — ya es el Client ID del producto.
    Un solo Client ID = un solo proyecto de Google Cloud = una sola cuota y un solo
    estado de verificación. Si el producto genera tráfico sospechoso en pruebas, o
    toca el tope de ~100 usuarios sin verificar (ver T7 en ESTADO_PRODUCTO.md),
-   Google puede limitar el Client ID COMPLETO — y eso apaga el login de Inírida
-   el mismo día, sin que Inírida haya hecho nada.
+   Google puede limitar el Client ID COMPLETO — y eso apagaría el login de la estación de origen
+   el mismo día, sin que ella haya hecho nada.
    Jeferson debe crear un proyecto de Google Cloud NUEVO y separado para el
    producto (ver ESTADO_PRODUCTO.md) y reemplazar este valor antes de dar acceso
    a cualquier cuerpo externo. NO desplegar a un cliente real con este ID. */
 const GOOGLE_CLIENT_ID = '938285517928-k50ohvdskleg4vt8hkklnc7ul2bi2044.apps.googleusercontent.com';
 
 /* ⚠️ T1 — VACÍO A PROPÓSITO. Antes acá vivían los 4 correos de administrador de
-   Inírida, QUEMADOS EN EL FRONTEND, que se publica abierto en GitHub Pages.
+   de una estación, QUEMADOS EN EL FRONTEND, que se publica abierto en GitHub Pages.
    Mandar el producto así le daba privilegio de admin a 4 personas ajenas sobre
    los datos de cualquier cuerpo que lo instalara.
 
@@ -35,15 +35,15 @@ let TELEFONO_ESTACION = '';
 let NOMBRE_ESTACION = '';
 
 /* ⚠️⚠️ URL DEL BACKEND — VACÍA A PROPÓSITO, Y ES LO MÁS IMPORTANTE DE ESTE ARCHIVO.
-   Antes apuntaba al Apps Script de Inírida. Si el producto saliera así, CADA cuerpo
-   que lo instalara estaría escribiendo dentro de la base de datos de Inírida:
+   Antes apuntaba al Apps Script de la estación de origen. Si el producto saliera así, CADA cuerpo
+   que lo instalara estaría escribiendo dentro de la base de datos de otro cuerpo:
    sus emergencias, su personal y sus sanciones mezclados con los de otra institución.
 
    No es una fuga de datos: es corrupción de datos en las dos direcciones.
 
    Se llena con la URL del despliegue del PRODUCTO cuando exista. Mientras esté
    vacía, `_exigirBackend()` corta con un mensaje claro en vez de fallar raro.
-   El invariante I1 protege la URL de Inírida, que vive en `files 67` y no se toca.
+   El invariante I1 protege también la URL de la estación de origen, que vive aparte.
 
    14/08/2026 — YA EXISTE. Desplegada desde la cuenta monitoreojean@gmail.com,
    con `executeAs: USER_ACCESSING` (ver appsscript.json): el script corre como
@@ -73,13 +73,17 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.01';
+const APP_VERSION = '1.06';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
-   Antes heredaba las 133 notas de Inírida: un cuerpo nuevo instalaba la app y
+   Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.05: 🔑 El asistente de instalación ahora le pide su contraseña de administrador. Con eso el fundador queda habilitado para NOMBRAR Y QUITAR administradores, que antes era imposible: la app exigía una contraseña que ninguna pantalla creaba, y quien instalaba quedaba como único admin para siempre.',
+  'v1.04: 🧹 Se retiró del servidor todo lo que quedó del módulo dominical: 54 funciones y 14 rutas. Las rutas importan aunque no se vean: la dirección del servidor es pública, así que una ruta abierta se puede llamar desde afuera aunque ninguna pantalla la use. Nada cambia en el uso diario.',
+  'v1.03: 🧹 Se terminó de sacar todo lo que ataba la app a una sola estación: ícono propio (cruz de Malta, el símbolo del bombero en todo el mundo), nombres internos, comentarios y datos de personas. El Manual, Cómo funciona y Bases legales se reescribieron: ahora describen la app que usted tiene y citan solo norma nacional. Y se retiró el código muerto del módulo dominical: 1.480 líneas menos.',
+  'v1.02: 🧹 La app dejó de hablar como una estación y empezó a hablar como el gremio. Salen la asistencia de domingos y las sanciones por horas: son el régimen interno de UN cuerpo, no una norma nacional, y no tenían por qué venir puestas. El vocabulario pasa a INCIDENTE (Sistema Comando de Incidentes, Res. 358/2014). Y se corrigió el fallo que impedía iniciar sesión: el servidor rechazaba TODAS las credenciales.',
   'v1.01: 🔌 La app ya se comunica con su servidor. Con esto se puede crear la base de datos del cuerpo, iniciar sesión y guardar información. Antes la pantalla cargaba pero no podía guardar nada.',
   'v1.00: 🚒 Primera versión. La app arranca vacía: al entrar por primera vez, quien lo haga queda como administrador y se crea la base de datos en su propio Google Drive. Nadie más ve esos datos.',
 ];
@@ -92,13 +96,13 @@ const APP_VERSION_NOTAS = [
 // Cadena de respaldo: hoja → caché → esta semilla.
 //
 // Antes de v5.98 esta lista era la ÚNICA fuente y estaba congelada: mostraba 10
-// personas que ya no estaban en la hoja y escondía 6 que sí (entre ellas JONNY
+// personas que ya no estaban en la hoja y escondía 6 que sí (entre ellas una con
 // un apellido compuesto). Peor: el autocompletado escribía nombres con una grafía
 // distinta a la de la hoja, y esos registros después no cruzaban en Operatividad.
 // NO hace falta editarla a mano nunca más; se actualiza sola desde la hoja.
 const ROSTER_BOMBEROS = [
   /* T1 — VACÍO A PROPÓSITO.
-     Antes esta lista traía los ~30 nombres reales del personal de Inírida,
+     Antes esta lista traía los ~30 nombres reales del personal de una estación,
      quemados en el frontend, que se publica abierto en GitHub Pages. Mandar el
      producto así sería repartir datos personales de terceros (Ley 1581 de 2012).
 
@@ -107,9 +111,18 @@ const ROSTER_BOMBEROS = [
      todavía no hay hoja, y vacía cumple ese papel sin filtrar a nadie. */
 ];
 
+/* Crédito del AUTOR de la app. Se conserva a propósito: es atribución de autoría.
+
+   14/08/2026 — SE QUITÓ EL CAMPO `cuerpo`. Decía "Cuerpo de Bomberos Voluntarios de
+   Inírida" y se imprimía en el pie de TODOS los PDF oficiales — actas, informes de
+   incidente, anexos fotográficos. O sea que el documento oficial de cualquier otro
+   cuerpo salía firmado al pie con el nombre de OTRA institución.
+
+   La autoría de la persona y el nombre de su estación no son lo mismo, y estaban en el
+   mismo renglón. El membrete del documento ya lleva el cuerpo que corresponde: el del
+   comandante que lo emite, que sale de INSTITUCION. */
 const CREDITO_AUTOR = {
   nombre: 'Bombero Jeferson Jeancarlos Rangel Gil',
-  cuerpo: 'Cuerpo de Bomberos Voluntarios de Inírida',
   correo: 'gilrangeljeancarlosjeferson@gmail.com',
   telefono: '320 960 6428',
   facebook: 'https://www.facebook.com/jeancarlos.rangel.1420'
@@ -332,19 +345,19 @@ const app = {
   // El banner se auto-oculta a los 10 minutos o cuando el usuario pulsa "Cerrar".
   _mostrarBannerSiHayNuevaVersion() {
     let versionGuardada = null;
-    try { versionGuardada = localStorage.getItem('cbvi_app_version'); }
+    try { versionGuardada = localStorage.getItem('app_version'); }
     catch (e) { /* localStorage puede no estar disponible */ }
 
     // Primera vez en este dispositivo: solo guardar la versión, no mostrar banner
     if (!versionGuardada) {
-      try { localStorage.setItem('cbvi_app_version', APP_VERSION); } catch (e) {}
+      try { localStorage.setItem('app_version', APP_VERSION); } catch (e) {}
       return;
     }
     if (versionGuardada === APP_VERSION) return; // ya está al día
 
     // Hay versión nueva → mostrar banner
     const versionAnterior = versionGuardada;
-    try { localStorage.setItem('cbvi_app_version', APP_VERSION); } catch (e) {}
+    try { localStorage.setItem('app_version', APP_VERSION); } catch (e) {}
 
     // v5.64 (BUG 5): solo las notas de ESTA versión — mostrar TODO el
     // historial (v5.59, v5.63...) hacía crecer el banner cada release hasta
@@ -461,8 +474,8 @@ const app = {
   // el idToken de Google si no viene ya. Es DEFENSIVO: si algo falla, deja la
   // petición original intacta (nunca rompe el flujo existente).
   _instalarFetchToken() {
-    if (window.__cbviFetchPatched) return;
-    window.__cbviFetchPatched = true;
+    if (window.__fetchPatched) return;
+    window.__fetchPatched = true;
     const _orig = window.fetch.bind(window);
     const self = this;
     window.fetch = function (url, opts) {
@@ -494,7 +507,7 @@ const app = {
               if (self._tocarFirma) self._tocarFirma();
               obj.operador = oper;
               // v6.02: van también cédula y PIN porque el backend NO se cree el
-              // nombre: valida el PIN y saca el nombre de Personal_CBVI por cédula.
+              // nombre: valida el PIN y saca el nombre de Personal por cédula.
               obj.operadorCedula = self._operadorCedula || '';
               obj.operadorPin = self._operadorPin || '';
               // v6.03: si se firmó con la llave de comandancia, viaja la llave en
@@ -797,15 +810,15 @@ const app = {
         await this.actualizarHome();
       }
 
-      // === Auto-sincronización de bonificaciones ===
+      // === Auto-sincronización del personal que participó ===
       // Para cada reporte LOCAL ya enviado que tenga recursos+personal,
       // mandar los recursos al servidor. El backend es IDEMPOTENTE: solo
-      // llena la hoja Bonificaciones si está vacía para ese reporte
+      // llena la hoja Personal_por_Incidente si está vacía para ese informe
       // (no sobreescribe lo que el admin haya registrado manualmente).
-      // Esto permite que los reportes viejos (sin bonificaciones) se
+      // Esto permite que los informes viejos (sin participación registrada) se
       // completen automáticamente cuando el bombero original abre su app.
-      this._sincronizarBonificacionesLocales(locales).catch(e =>
-        console.warn('Auto-sync bonificaciones falló:', e)
+      this._sincronizarParticipacionLocal(locales).catch(e =>
+        console.warn('Auto-sync de participación falló:', e)
       );
 
     } catch (e) {
@@ -841,8 +854,8 @@ const app = {
   },
 
   // Recorre los reportes locales del usuario y sube sus recursos al servidor.
-  // El backend decide por sí mismo si ese reporte necesita llenar bonificaciones.
-  async _sincronizarBonificacionesLocales(locales) {
+  // El backend decide por sí mismo si ese informe necesita llenar la participación.
+  async _sincronizarParticipacionLocal(locales) {
     if (!this.usuario || !this.usuario.email) return;
     const candidatos = (locales || []).filter(r =>
       r &&
@@ -871,11 +884,11 @@ const app = {
         // Si responde { omitido: true } no contamos (ya estaba sincronizado)
       } catch (e) {
         // Silencioso: si falla, el admin puede registrar manual con los chips
-        console.warn('No se pudo sincronizar bonificaciones del reporte ' + r.id, e);
+        console.warn('No se pudo sincronizar la participación del informe ' + r.id, e);
       }
     }
     if (sincronizados > 0) {
-      this.toast(`✅ ${sincronizados} reporte(s) sincronizaron sus bonificaciones`, 'exito');
+      this.toast(`✅ ${sincronizados} reporte(s) sincronizaron su personal participante`, 'exito');
     }
   },
 
@@ -886,7 +899,7 @@ const app = {
      basura: le preguntaba a ADMIN_EMAILS, la lista quemada en la línea 8. Por eso
      agregar a alguien escribía la fila en la hoja y no le habilitaba NADA en su
      celular: su app seguía consultando el código.
-     ADMIN_EMAILS queda SOLO como respaldo: primer arranque y sin señal (Inírida).
+     ADMIN_EMAILS queda SOLO como respaldo: primer arranque y sin señal.
      Sin red no se puede consultar la hoja, y dejar sin Panel al admin por estar
      offline sería peor que el bug. El servidor valida igual en cada acción
      (_enAdmins), así que esto decide únicamente qué se MUESTRA, nunca qué se
@@ -936,20 +949,20 @@ const app = {
   },
 
   // ==================== TEMA DE DISEÑO (v5.88) ====================
-  // Dos diseños: 'original' (clásico CBVI) y 'apple' (Minimalista). La
+  // Dos diseños: 'original' (clásico) y 'apple' (Minimalista). La
   // elección vive en localStorage del dispositivo (NO se sube al servidor)
   // y también se aplica en el <head> antes de pintar la página (anti-flash).
   // La estética cambia SOLO por CSS ([data-theme] + variables) — ninguna
   // pantalla, flujo ni dato se toca. Riesgo funcional: cero.
   _temaGuardado() {
     try {
-      return localStorage.getItem('cbvi_tema') === 'apple' ? 'apple' : 'original';
+      return localStorage.getItem('app_tema') === 'apple' ? 'apple' : 'original';
     } catch (e) { return 'original'; }
   },
 
   aplicarTema(tema, silencioso = false) {
     const t = (tema === 'apple') ? 'apple' : 'original';
-    try { localStorage.setItem('cbvi_tema', t); } catch (e) {}
+    try { localStorage.setItem('app_tema', t); } catch (e) {}
     document.documentElement.setAttribute('data-theme', t);
     // Color de la barra de estado del teléfono acorde al tema activo
     const metaTema = document.getElementById('metaThemeColor');
@@ -1089,7 +1102,7 @@ const app = {
     document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
     /* El reflow que faltaba. El remove y el add ocurren en la MISMA tarea
        síncrona, así que si el destino es la pantalla que YA estaba activa,
-       cbviFadeIn no se vuelve a reproducir. */
+       appFadeIn no se vuelve a reproducir. */
     const _pantallaDestino = document.getElementById(pantallaId);
     void _pantallaDestino.offsetWidth;
     _pantallaDestino.classList.add('activa');
@@ -1110,9 +1123,7 @@ const app = {
 
     // Llenar configuración con datos del usuario actual
     if (pantallaId === 'pantallaListaActividades') { this.cargarListaActividades(); }
-    if (pantallaId === 'pantallaAsistencia') { this.cargarPantallaAsistencia(); }
     if (pantallaId === 'pantallaOperatividad') { this.cargarOperatividad(); }
-    if (pantallaId === 'pantallaDeudores') { this.cargarPantallaDeudores(); }
     if (pantallaId === 'pantallaMapa') { this.cargarPantallaMapa(); }
     if (pantallaId === 'pantallaConfig' && this.usuario) {
       document.getElementById('cfg_perfil_nombre').value = this.usuario.nombreCompleto || this.usuario.nombre || '';
@@ -1132,16 +1143,14 @@ const app = {
       btnVolver.style.display = 'inline-block';
       btnVolver.onclick = () => this.atras();
       const titulos = {
-        pantallaForm: 'Reporte de Emergencia',
-        pantallaDetalle: 'Detalle del Reporte',
+        pantallaForm: 'Informe de Incidente',
+        pantallaDetalle: 'Detalle del Informe',
         pantallaConfig: 'Configuración',
         pantallaActividades: '🎯 Nueva Actividad',
         pantallaListaActividades: '📋 Actividades',
         pantallaDetalleActividad: '🎯 Detalle Actividad',
-        pantallaAsistencia: '📅 Asistencia',
         pantallaOperatividad: '📊 Operatividad',
-        pantallaDeudores: '⚠️ Ver Deudores',
-        pantallaMapa: '🗺️ Mapa de Emergencias'
+        pantallaMapa: '🗺️ Mapa de Incidentes'
       };
       document.getElementById('headerTitulo').textContent = titulos[pantallaId] || this._rotuloApp();
     }
@@ -1223,8 +1232,6 @@ const app = {
 
   // ==================== HOME ====================
   async actualizarHome() {
-    // v5.63 (BUG 10): widget de sanciones para admins (no bloquea el Home)
-    this._cargarWidgetSanciones().catch(() => {});
     let reportes = await DB.listarReportes();
     // FILTRO POR CORREO: cada bombero solo ve SUS propios reportes
     // Identificamos por operadorEmail (el correo con que se creó el reporte)
@@ -1270,110 +1277,6 @@ const app = {
 
   etiquetaEstado(estado) {
     return { borrador: 'Borrador', pendiente: 'Pendiente', enviado: 'Enviado' }[estado] || estado;
-  },
-
-  // ═══ v5.63 (BUG 10): widget "Sanciones pendientes" en el Home (solo admin) ═══
-  // Recuerda a los admins qué unidades deben horas SIN tener que entrar a
-  // Asistencia. Falla en silencio si no hay conexión (no molesta al bombero).
-  async _cargarWidgetSanciones() {
-    const cont = document.getElementById('homeSanciones');
-    if (!cont) return;
-    if (!navigator.onLine) { cont.style.display = 'none'; return; }
-    // v5.94: la unidad NO admin que tenga deuda ve ÚNICAMENTE su propia sanción
-    // (no la de los demás). El admin sigue viendo el listado completo.
-    if (!this.esAdmin()) { return this._cargarWidgetMiSancion(cont); }
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'listarSanciones', adminEmail: this.usuario ? this.usuario.email : '' })
-      });
-      const data = await resp.json();
-      if (!data.ok) { cont.style.display = 'none'; return; }
-      const sanc = (data.sanciones || []).filter(s => Number(s.horasPendientes) > 0);
-      if (!sanc.length) { cont.style.display = 'none'; return; }
-      sanc.sort((a,b) => Number(b.horasPendientes) - Number(a.horasPendientes));
-      const badge = (s) => {
-        if (s.tipoAlerta === 'DESERCION' || s.tipoAlerta === 'RETIRO')
-          return '<span style="background:#c00;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">🚨 DESERCIÓN</span>';
-        if (s.tipoAlerta === 'LLAMADO_ESCRITO')
-          return '<span style="background:#e65100;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">📄 ESCRITO</span>';
-        if (s.tipoAlerta === 'LLAMADO_VERBAL')
-          return '<span style="background:#ff9800;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">🗣️ VERBAL</span>';
-        return '';
-      };
-      const filas = sanc.slice(0, 5).map(s =>
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #ffe0e0;font-size:13px;">'
-        + '<span style="font-weight:600;">' + app._esc(s.nombre) + badge(s) + '</span>'
-        + '<span style="color:#c00;font-weight:700;white-space:nowrap;margin-left:8px;">' + s.horasPendientes + 'h</span>'
-        + '</div>').join('');
-      const resto = sanc.length > 5
-        ? '<div style="font-size:11px;color:#c00;margin-top:4px;">+ ' + (sanc.length - 5) + ' más — toca para ver todas</div>' : '';
-      cont.innerHTML =
-        '<div onclick="app.abrirDeudores()" style="background:#fff5f5;border:1px solid #ffcdd2;border-left:4px solid #c00;border-radius:12px;padding:12px 14px;margin:12px 0;cursor:pointer;">'
-        + '<div style="font-weight:700;color:#c00;font-size:14px;margin-bottom:6px;">⚠️ Sanciones pendientes (' + sanc.length + ')</div>'
-        + filas + resto
-        + '</div>';
-      cont.style.display = 'block';
-    } catch (e) { cont.style.display = 'none'; }
-  },
-
-  // ═══ v5.94: sanción propia para la unidad (NO admin) ═══
-  // Muestra en el Inicio SOLO la deuda de quien está en sesión — nunca la de
-  // los demás. La identidad se verifica en el backend con el pase firmado
-  // (no con el email declarado), así que nadie puede pedir la de otro.
-  async _cargarWidgetMiSancion(cont) {
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'miSancion', pase: this._pase || '', idToken: this._googleIdToken || '' })
-      });
-      const data = await resp.json();
-      if (!data.ok || !data.sancion || Number(data.sancion.horasPendientes) <= 0) { cont.style.display = 'none'; return; }
-      this._miSancionCache = data;
-      const s = data.sancion;
-      const badge =
-        (s.tipoAlerta === 'DESERCION' || s.tipoAlerta === 'RETIRO') ? '<span style="background:#c00;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">🚨 DESERCIÓN</span>'
-        : (s.tipoAlerta === 'LLAMADO_ESCRITO') ? '<span style="background:#e65100;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">📄 ESCRITO</span>'
-        : (s.tipoAlerta === 'LLAMADO_VERBAL') ? '<span style="background:#ff9800;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">🗣️ VERBAL</span>'
-        : '';
-      cont.innerHTML =
-        '<div onclick="app.abrirMiSancion()" style="background:#fff5f5;border:1px solid #ffcdd2;border-left:4px solid #c00;border-radius:12px;padding:12px 14px;margin:12px 0;cursor:pointer;">'
-        + '<div style="font-weight:700;color:#c00;font-size:14px;margin-bottom:4px;">⚠️ Tienes ' + app._esc(String(s.horasPendientes)) + ' horas de sanción pendientes' + badge + '</div>'
-        + '<div style="font-size:12px;color:#c00;">Toca para ver de qué domingos vienen →</div>'
-        + '</div>';
-      cont.style.display = 'block';
-    } catch (e) { cont.style.display = 'none'; }
-  },
-
-  // v5.94: detalle en solo lectura de la deuda propia (modal, sin diálogos
-  // nativos — I4). Usa lo ya traído por _cargarWidgetMiSancion.
-  abrirMiSancion() {
-    const data = this._miSancionCache;
-    if (!data || !data.sancion) return;
-    const s = data.sancion;
-    const faltas = data.faltas || [];
-    const filas = faltas.length
-      ? faltas.map(f =>
-          '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #ffe0e0;font-size:13px;">'
-          + '<span style="font-weight:600;white-space:nowrap;">' + app._esc(f.fecha || '-') + '</span>'
-          + '<span style="color:#555;text-align:right;">' + app._esc(f.tema || '(sin tema)') + '</span>'
-          + '</div>').join('')
-      : '<div style="color:#777;font-style:italic;padding:8px 0;">No hay domingos sin excusa registrados para ti.</div>';
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
-    modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
-      + '<div style="font-size:16px;font-weight:800;color:#c00;text-align:center;margin-bottom:4px;">⚠️ Mi sanción</div>'
-      + '<div style="text-align:center;font-size:14px;color:#333;margin-bottom:12px;">Debes <b style="color:#c00;">' + app._esc(String(s.horasPendientes)) + ' horas</b></div>'
-      + '<div style="font-size:12px;color:#666;margin-bottom:6px;">Domingos sin excusa que generaron tu deuda:</div>'
-      + filas
-      + '<div style="font-size:11px;color:#888;margin-top:12px;line-height:1.5;">La deuda se duplica cada domingo que pase sin cumplir tus horas (tope 32h). Cumplir las horas a tiempo es lo único que la detiene. Si ves un error, avisa al administrador.</div>'
-      + '<button id="_miSancCerrar" style="margin-top:14px;width:100%;padding:12px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Cerrar</button>'
-      + '</div>';
-    document.body.appendChild(modal);
-    const cerrar = () => { if (modal.parentNode) document.body.removeChild(modal); };
-    document.getElementById('_miSancCerrar').onclick = cerrar;
-    modal.onclick = (ev) => { if (ev.target === modal) cerrar(); };
   },
 
   // ═══ v5.63 (BUG 9): renovación automática del pase de sesión ═══
@@ -1574,7 +1477,7 @@ const app = {
   // v5.92: Convierte UN token de coordenada escrito a mano en un número decimal (o NaN).
   // Causa raíz del bug del mapa: en Colombia el separador decimal es la COMA, y
   // parseFloat("3,8650") devuelve 3 (corta en la coma). Como 3 es una latitud válida
-  // cerca de Inírida, pasaba el chequeo de rango y se guardaba MAL en silencio: el pin
+  // dentro del país, pasaba el chequeo de rango y se guardaba MAL en silencio: el pin
   // caía en (3, -67) en vez de (3.8650, -67.9239) → "desordenado en el mapa".
   // Ahora tolera: coma o punto decimal, separador de miles, letras de hemisferio
   // (N/S/E/W/O), grados-minutos-segundos (3°51'54"N) y espacios/símbolos sobrantes.
@@ -1621,7 +1524,7 @@ const app = {
     const intentos = [];
     if (s.includes(';')) intentos.push(s.split(';'));           // separadas por ';'
     if (/,\s+/.test(s)) intentos.push(s.split(/,\s+/));         // coma+espacio (no parte la coma decimal)
-    const mNeg = s.match(/^(.+?)[,\s]+(-.+)$/);                 // la longitud arranca con '-' (Inírida)
+    const mNeg = s.match(/^(.+?)[,\s]+(-.+)$/);                 // la longitud arranca con '-' (Colombia)
     if (mNeg) intentos.push([mNeg[1], mNeg[2]]);
     if (/\s+/.test(s)) intentos.push(s.split(/\s+/));           // separadas por espacio(s)
     for (const par of intentos) {
@@ -1660,7 +1563,7 @@ const app = {
   // v5.92: Vista previa EN VIVO de las coordenadas manuales (se llama en cada `oninput`).
   // Muestra exactamente cómo se guardará el pin ANTES de enviar, así la unidad detecta
   // al instante si escribió mal. Sin llamadas de red ni mapa: funciona sin señal (rural
-  // Inírida) y no mete texto libre a innerHTML (solo números ya parseados y GMS derivado).
+  // Colombia) y no mete texto libre a innerHTML (solo números ya parseados y GMS derivado).
   _previewCoordsManual() {
     const box = document.getElementById('gpsPreview');
     if (!box) return;
@@ -1818,7 +1721,7 @@ const app = {
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`;
       const resp = await fetch(url, {
-        headers: { 'User-Agent': 'CBVI-Reportes/4.1 (gilrangeljeancarlosjeferson@gmail.com)' }
+        headers: { 'User-Agent': 'Reportes-Bomberos/4.1 (gilrangeljeancarlosjeferson@gmail.com)' }
       });
       if (!resp.ok) return;
       const data = await resp.json();
@@ -2165,7 +2068,7 @@ const app = {
   // v5.98: la hoja Personal manda. Se llama al restaurar sesión y tras
   // iniciar sesión. Primero pinta lo cacheado (instantáneo y funciona SIN
   // señal), luego refresca desde el backend en segundo plano.
-  // Inírida se queda sin cobertura por días: por eso nunca se bloquea ni se
+  // hay cuerpos que se quedan sin cobertura por días: por eso nunca se bloquea ni se
   // borra la caché ante un fallo de red.
   async _cargarRosterDesdeHoja() {
     // 1) Caché primero — sirve offline y evita parpadeo.
@@ -2218,7 +2121,7 @@ const app = {
   },
 
   // v5.63 (BUG duplicados): normalización FUERTE de nombres — mayúsculas,
-  // sin tildes y Ñ→N. Así "GERMÁN ROJAS" == "GERMAN ROJAS" y "MARIÑO" == "MARINO".
+  // sin tildes y Ñ→N. Así "JOSÉ NÚÑEZ" == "JOSE NUNEZ" y "MUÑOZ" == "MUNOZ".
   _normFuerte(s) {
     return (s || '').toString().trim().toUpperCase()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -2230,7 +2133,7 @@ const app = {
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
+      modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
         + '<div style="font-size:14px;color:#333;margin-bottom:16px;line-height:1.5;">'+mensajeHTML+'</div>'
         + '<div style="display:flex;gap:10px;">'
@@ -2277,7 +2180,7 @@ const app = {
       htmlOrig = btn.innerHTML;
       btn.disabled = true;
       btn.style.opacity = '0.65';
-      btn.innerHTML = '<span class="spinner-cbvi"></span> ' + (textoCargando || 'Cargando...');
+      btn.innerHTML = '<span class="spinner-app"></span> ' + (textoCargando || 'Cargando...');
     }
     try {
       await fn();
@@ -2725,7 +2628,7 @@ const app = {
       }
     } catch(eV) { /* validación nunca debe romper el envío */ }
     this._enviandoReporte = true;
-    if (btn) { btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-cbvi"></span> Enviando...'; }
+    if (btn) { btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-app"></span> Enviando...'; }
     try {
       await this._enviarReporteInterno(r);
     } finally {
@@ -2741,7 +2644,7 @@ const app = {
     // Si esta sesión del formulario es una edición de un reporte que ya está
     // en el servidor, preservamos el consecutivo y marcamos _actualizar:true
     // para que el backend actualice la fila + regenere hojas auxiliares
-    // (Recursos, Personal, Victimas, Organizaciones, Bonificaciones).
+    // (Recursos, Personal, Victimas, Organizaciones, Personal_por_Incidente).
     // Si es uno nuevo: consecutivo vacío → el servidor asigna nuevo.
     const esEdicion = this._esEdicionReporteExistente && r.id === this._idReporteEditandoBombero;
     if (esEdicion) {
@@ -2878,53 +2781,6 @@ const app = {
     });
   },
 
-  // ═══ v5.76: alerta de sanciones bajo demanda (botón en Configuración) ═══
-  // El backend recalcula sanciones, manda el correo personal a cada deudor y
-  // el resumen a la estación. El pase firmado viaja solo (interceptor de
-  // fetch); el servidor tiene enfriamiento de 10 min contra doble envío y
-  // _conBloqueo evita el doble toque local.
-  async enviarAlertaSanciones(btn) {
-    if (!this.esAdmin()) {
-      this.toast('Solo el administrador', 'error');
-      return;
-    }
-    if (!this.config.urlBackend) {
-      this.toast('Configure URL del backend primero', 'error');
-      return;
-    }
-    const ok = await this.confirmar(
-      '📨 Enviar alerta de sanciones',
-      'Se enviará AHORA un correo a cada unidad deudora (a su correo personal) y el resumen completo a la estación. ¿Continuar?'
-    );
-    if (!ok) return;
-
-    await this._conBloqueo(btn, 'Enviando...', async () => {
-      try {
-        const resp = await fetch(this.config.urlBackend, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            accion: 'enviarAlertaSanciones',
-            adminEmail: this.usuario.email
-          })
-        });
-        const data = await resp.json();
-        if (data && data.ok) {
-          if (!data.deudores) {
-            this.toast('✅ No hay unidades con horas pendientes — no se envió ningún correo', 'exito');
-          } else {
-            const faltantes = (data.sinCorreo && data.sinCorreo.length) ? ' · ' + data.sinCorreo.length + ' sin correo en la base' : '';
-            this.toast('✅ Alerta enviada: ' + data.enviados + ' de ' + data.deudores + ' deudor(es) con correo' + faltantes, 'exito');
-          }
-        } else {
-          this.toast('Error: ' + ((data && data.error) || 'desconocido'), 'error');
-        }
-      } catch (err) {
-        console.error('Error enviando alerta de sanciones:', err);
-        this.toast('Error de red al enviar la alerta', 'error');
-      }
-    });
-  },
 
   // ========== 🆕 v5.3: CIERRE DE MES POR FECHA DE LLAMADA ==========
   // Renumera SOLO los reportes de un mes específico, ordenándolos
@@ -3174,8 +3030,6 @@ const app = {
        tocara "Actualizar", y un cuerpo con su flota ya cargada creería que se
        le perdió. Sin await por el mismo motivo que la bandeja. */
     this._cargarFlota(true).then(() => this._renderFlotaAdmin()).catch(() => {});
-    // Regla de sanciones: mismo criterio, que se vea sin tener que pedirla.
-    this.cargarReglaSanciones().catch(() => {});
     // v6.02: mostrar quién quedó firmado (la firma se pidió en _obtenerPwdAdmin).
     const _et = document.getElementById('operActualTxt');
     if (_et) _et.textContent = this._operadorSesion || 'sin firmar';
@@ -3222,9 +3076,9 @@ const app = {
   },
 
   /* ═══════════ T1b — IDENTIDAD DEL CUERPO EN LA INTERFAZ ═══════════
-     ANTES: "CBVI Reportes", "Bomberos Inírida" y "Cuerpo de Bomberos Voluntarios
-     de Inírida" estaban escritos a mano en ~40 sitios del HTML. Otro cuerpo abría
-     la app y leía el nombre de Inírida por todos lados: se sentía prestada, no propia.
+     ANTES: el nombre y la sigla de UNA estación
+     estaban escritos a mano en ~40 sitios del HTML. Otro cuerpo abría
+     la app y leía el nombre de otro cuerpo por todos lados: se sentía prestada, no propia.
 
      EL PROBLEMA DE ORDEN: la pantalla de login muestra el nombre ANTES de que el
      usuario entre, así que el servidor todavía no puede decirlo. Se resuelve
@@ -3237,14 +3091,14 @@ const app = {
      ⚠️ Usa `textContent`, NUNCA `innerHTML`: el nombre del cuerpo es texto libre
      que escribe el admin. Con innerHTML sería una vía de inyección (invariante I5). */
   /* T1b — municipio por defecto del formulario de emergencia.
-     ANTES estaba escrito 'Inírida' a mano en DOS sitios del código, así que aunque
+     ANTES estaba escrito el municipio a mano en DOS sitios del código, así que aunque
      el HTML quedara limpio, el JavaScript lo volvía a poner en cada formulario
-     nuevo. Otro cuerpo habría reportado todas sus emergencias en Inírida: no es
+     nuevo. Otro cuerpo habría reportado todos sus incidentes en el municipio equivocado: no es
      cosmético, es dato equivocado en el reporte oficial y en el RUE.
      Vacío si no hay institución: mejor que el bombero lo escriba a que salga mal. */
   /* T1b — MEMBRETE DEL PDF OFICIAL.
      ANTES traía el NIT, la personería jurídica, el teléfono y la dirección de
-     Inírida escritos a mano en los dos generadores de PDF. Otro cuerpo habría
+     de una estación escritos a mano en los dos generadores de PDF. Otro cuerpo habría
      emitido sus actas oficiales con la identidad legal de una institución ajena.
      Eso no es un problema de marca: es un documento que no corresponde a quien lo
      firma, y en una diligencia oficial eso se cae.
@@ -3491,7 +3345,7 @@ const app = {
       this._flota = (d && d.ok && Array.isArray(d.vehiculos)) ? d.vehiculos : [];
     } catch (e) {
       /* Sin señal NO se bloquea el registro de una emergencia: se devuelve vacío
-         y el campo cae a texto libre. En Inírida hay zonas sin cobertura por
+         y el campo cae a texto libre. Hay cuerpos con zonas sin cobertura por
          días; una lista que no carga no puede impedir anotar lo que pasó. */
       this._flota = this._flota || [];
     }
@@ -3535,7 +3389,7 @@ const app = {
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      modal.className = 'cbvi-modal-js';
+      modal.className = 'modal-js';
       const ops = (opciones || []).map(o =>
         '<option value="' + app._esc(o) + '"' + (o === valorActual ? ' selected' : '') + '>' + app._esc(o) + '</option>'
       ).join('');
@@ -3557,148 +3411,10 @@ const app = {
 
   /* ── Regla de sanciones (Panel de Admin) ── */
 
-  async cargarReglaSanciones(btn) {
-    const traer = async () => {
-      const r = await fetch(_exigirBackend(), {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'obtenerReglaSanciones', adminEmail: this.usuario.email })
-      });
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.error || 'No se pudo leer la regla');
-      this._reglaSanciones = d.regla;
-      this._modosSancion = d.modos || ['NINGUNA', 'FIJA', 'ESCALONADA', 'PROGRESIVA'];
-      this._renderReglaSanciones();
-    };
-    if (btn) { await this._conBloqueo(btn, 'Cargando...', traer); }
-    else { try { await traer(); } catch (e) {} }
-  },
 
   /* La regla se explica en palabras, no con los nombres internos de los modos.
      Un comandante tiene que poder leer esto y reconocer (o no) la regla de sus
      estatutos; "PROGRESIVA, base 2, tope 32" no le dice nada. */
-  _textoRegla(R) {
-    if (!R || !R.modo || R.modo === 'NINGUNA') {
-      return 'No se calculan sanciones por inasistencia. La app no genera deudas ni envía avisos.';
-    }
-    const t = ' Tope: no pasa de ' + R.tope + ' horas.';
-    if (R.modo === 'FIJA') {
-      return 'Cada domingo que falte sin excusa suma <strong>' + R.horasBase + ' horas</strong>. '
-           + 'Deber horas no agrava por sí solo: solo suma faltar.' + t;
-    }
-    if (R.modo === 'ESCALONADA') {
-      const esc = (R.escalones && R.escalones.length) ? R.escalones : [R.horasBase];
-      return 'Las faltas cobran distinto según cuántas lleve: <strong>' + esc.join(' → ') + ' horas</strong>. '
-           + 'De la última en adelante se repite (' + esc[esc.length - 1] + ' h cada vez).' + t;
-    }
-    if (R.modo === 'PROGRESIVA') {
-      return 'La deuda se <strong>duplica cada domingo</strong> mientras no se pague. '
-           + 'Faltar sin deber nada arranca en ' + R.horasBase + ' horas. '
-           + '<strong>Asistir o presentar excusa NO detiene la duplicación</strong>: lo que se castiga es no haber cumplido las horas.' + t;
-    }
-    return 'Modo no reconocido: ' + app._esc(R.modo);
-  },
-
-  _renderReglaSanciones() {
-    const cont = document.getElementById('reglaSancionesActual');
-    if (!cont) return;
-    const R = this._reglaSanciones;
-    if (!R) { cont.innerHTML = '<div style="font-size:12px;color:#92400e;opacity:.8;">Toque Actualizar para ver la regla vigente.</div>'; return; }
-    const apagada = !R.modo || R.modo === 'NINGUNA';
-    // El texto sale de _textoRegla, que arma HTML con <strong> a partir de
-    // números y de nombres de modo validados por el backend — nunca texto de
-    // usuario. Los valores que sí podrían venir raros pasan por _esc allá dentro.
-    cont.innerHTML = '<div style="background:#fff;border-radius:8px;padding:10px;">'
-      + '<div style="font-weight:700;font-size:12px;color:' + (apagada ? '#78716c' : '#92400e') + ';margin-bottom:4px;">'
-      +   (apagada ? '⚪ Apagada' : '🟠 Activa') + '</div>'
-      + '<div style="font-size:12px;color:#444;line-height:1.5;">' + this._textoRegla(R) + '</div>'
-      + (apagada ? '' :
-          '<div style="font-size:11px;color:#666;margin-top:6px;border-top:1px solid #eee;padding-top:6px;">'
-          + 'Avisos por faltas seguidas: ' + R.alertaVerbal + ' = llamado verbal · '
-          + R.alertaEscrito + ' = llamado escrito · ' + R.alertaDesercion + ' = deserción.</div>')
-      + '</div>';
-  },
-
-  async cambiarReglaSanciones() {
-    if (!this._modosSancion) await this.cargarReglaSanciones();
-    const R = this._reglaSanciones || {};
-    const modos = this._modosSancion || ['NINGUNA', 'FIJA', 'ESCALONADA', 'PROGRESIVA'];
-
-    /* Se eligen por su explicación, no por el nombre interno: "ESCALONADA" no
-       le dice nada a nadie, "cobra distinto según cuántas faltas lleve" sí. */
-    const ETIQUETAS = {
-      'NINGUNA':    'No llevar sanciones por horas',
-      'FIJA':       'Horas fijas por cada falta',
-      'ESCALONADA': 'Horas que suben con cada falta',
-      'PROGRESIVA': 'La deuda se duplica cada domingo sin pagar'
-    };
-    const etiquetas = modos.map(m => ETIQUETAS[m] || m);
-    const elegida = await this._pedirOpcion('¿Cómo se cobran las inasistencias?',
-      'Debe coincidir con los estatutos de su cuerpo.', etiquetas, ETIQUETAS[R.modo] || '');
-    if (elegida === null) return;
-    const modo = modos[etiquetas.indexOf(elegida)];
-
-    const datos = { accion: 'guardarReglaSanciones', modo: modo };
-
-    if (modo !== 'NINGUNA') {
-      const horas = await this._pedirTexto(
-        '<div style="text-align:left;font-weight:400;font-size:13px;">'
-        + (modo === 'PROGRESIVA' ? 'Horas de la PRIMERA falta' : 'Horas por falta')
-        + '<div style="font-size:11px;color:#666;margin-top:3px;">'
-        + (modo === 'PROGRESIVA' ? 'Desde ahí se duplica cada domingo sin pagar.' : 'Número entero.')
-        + '</div></div>',
-        { placeholder: '2', inputmode: 'numeric', maxlength: 3, boton: 'Siguiente',
-          valor: String(R.horasBase || 2) });
-      if (horas === null) return;
-      datos.horasBase = Number(horas);
-
-      if (modo === 'ESCALONADA') {
-        const esc = await this._pedirTexto(
-          '<div style="text-align:left;font-weight:400;font-size:13px;">Escalones<div style="font-size:11px;color:#666;margin-top:3px;">Horas de la 1ª, 2ª, 3ª… falta, separadas por coma. Ej: 2,4,8,16. De la última en adelante se repite.</div></div>',
-          { placeholder: '2,4,8,16', maxlength: 60, boton: 'Siguiente',
-            valor: (R.escalones || []).join(',') });
-        if (esc === null) return;
-        datos.escalones = esc;
-      }
-
-      const tope = await this._pedirTexto(
-        '<div style="text-align:left;font-weight:400;font-size:13px;">Tope de horas<div style="font-size:11px;color:#666;margin-top:3px;">La deuda no pasa de aquí. Una deuda que no se puede cumplir se abandona.</div></div>',
-        { placeholder: '32', inputmode: 'numeric', maxlength: 3, boton: 'Guardar',
-          valor: String(R.tope || 32) });
-      if (tope === null) return;
-      datos.tope = Number(tope);
-      // Los umbrales de alerta se conservan; cambiarlos es raro y alargaría el
-      // asistente. Se editan aparte si algún cuerpo lo pide.
-      datos.alertaVerbal = R.alertaVerbal || 3;
-      datos.alertaEscrito = R.alertaEscrito || 4;
-      datos.alertaDesercion = R.alertaDesercion || 5;
-    }
-
-    /* El aviso va ANTES de pedir la contraseña, no después: cambiar la regla
-       recalcula la deuda de TODO el personal, y eso hay que saberlo mientras
-       todavía se puede cancelar. */
-    const vistaPrevia = this._textoRegla(Object.assign({}, R, datos, { modo: modo }))
-      .replace(/<[^>]+>/g, '');
-    this._confirmarAccion(
-      '¿Aplicar esta regla?'
-      + '<div style="font-weight:400;font-size:12px;color:#444;margin-top:10px;text-align:left;">' + app._esc(vistaPrevia) + '</div>'
-      + '<div style="font-weight:700;font-size:12px;color:#c0392b;margin-top:10px;">⚠️ Se recalcula la deuda de TODO el personal.</div>',
-      async () => {
-        const pw = await this._obtenerPwdAdmin('🔐 Contraseña de administrador');
-        if (!pw) return;
-        try {
-          datos.adminEmail = this.usuario.email;
-          datos.adminPassword = this._adminPwdSession || '';
-          const r = await fetch(_exigirBackend(), {
-            method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(datos)
-          });
-          const d = await r.json();
-          if (!d.ok) throw new Error(d.error || 'No se pudo guardar');
-          this.toast('⚖️ ' + d.mensaje, 'exito');
-          await this.cargarReglaSanciones();
-        } catch (e) { this.toast('Error: ' + e.message, 'error'); }
-      });
-  },
 
   /* ── Administración de la flota (Panel de Admin) ── */
 
@@ -3853,7 +3569,10 @@ const app = {
       sigla: document.getElementById('inst_sigla').value.trim(),
       // Opcional: si queda vacío, los PDF simplemente no llevan lema — mejor eso
       // que llevar el de otra estación.
-      lema: (document.getElementById('inst_lema') || {}).value ? document.getElementById('inst_lema').value.trim() : ''
+      lema: (document.getElementById('inst_lema') || {}).value ? document.getElementById('inst_lema').value.trim() : '',
+      // Se manda la contraseña de administrador que el comandante acaba de definir.
+      // El backend la escribe UNA sola vez, en la instalación inicial (ver configurarInstitucion).
+      adminPassword: (document.getElementById('inst_pwd') || {}).value || ''
     };
 
     // Se valida acá para dar respuesta inmediata, pero el backend vuelve a validar:
@@ -3861,6 +3580,16 @@ const app = {
     if (datos.nombre.length < 5)   return mostrarError('Escriba el nombre completo del cuerpo de bomberos.');
     if (!datos.departamento)       return mostrarError('Falta el departamento.');
     if (!datos.municipio)          return mostrarError('Falta el municipio.');
+
+    /* Contraseña de administrador. Se valida acá para dar respuesta inmediata; el
+       backend la vuelve a exigir, que es donde manda. Se comprueba ANTES de tocar el
+       servidor: hacer que el comandante espere una llamada de red para que le digan
+       que escribió mal la confirmación es maltratarlo en el peor momento —
+       el primer arranque. */
+    const _p1 = (document.getElementById('inst_pwd') || {}).value || '';
+    const _p2 = (document.getElementById('inst_pwd2') || {}).value || '';
+    if (_p1.length < 6)  return mostrarError('La contraseña de administrador debe tener al menos 6 caracteres.');
+    if (_p1 !== _p2)     return mostrarError('Las dos contraseñas no coinciden. Escríbalas de nuevo.');
 
     // I4: nada de confirm() nativo. El bloqueo anti-doble-click es obligatorio —
     // dos toques acá intentarían crear dos bases de datos.
@@ -4087,7 +3816,7 @@ const app = {
         if (!d.ok) { this._pinsData = null; cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">'+app._esc(d.error||'Error')+'</div>'; return; }
         if (!d.personal || !d.personal.length) { this._pinsData = null; cont.innerHTML = '<div style="font-size:12px;color:#999;padding:8px;">Sin personal activo.</div>'; return; }
         // Se guarda en memoria para poder filtrar SIN volver a pedirle al servidor:
-        // en Inírida cada consulta de más se paga en segundos de espera.
+        // con enlaces lentos cada consulta de más se paga en segundos de espera.
         this._pinsData = d;
         this._pintarEstadoPins();
       } catch (e) {
@@ -4271,7 +4000,7 @@ const app = {
         this.toast('✅ ' + (data.mensaje || nombre + ' quedó en el roster'), 'exito');
         await this.cargarPersonalPendiente();
       } catch (e) {
-        /* v6.01: la orden PUDO haber llegado igual. Con la red de Inírida pasa:
+        /* v6.01: la orden PUDO haber llegado igual. Con una red intermitente pasa:
            el backend ejecuta y la respuesta se corta en el camino, así que el
            teléfono muestra "Failed to fetch" sobre algo que sí funcionó. Antes
            eso te empujaba a apretar de nuevo. Ahora se recarga la bandeja y ves
@@ -4462,7 +4191,7 @@ const app = {
     cont.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Cargando reporte completo desde el servidor...</div>';
 
     // Descargar reporte completo. v5.94: si la descarga falla (auth intermitente
-    // o red caída en Inírida) NO mostramos el stub pobre del mapa como si fuera
+    // o red caída) NO mostramos el stub pobre del mapa como si fuera
     // el reporte real — eso era el "reporte vacío" que confundía. Mostramos un
     // aviso claro con botón de reintento, sin dejar el detalle a medias.
     const rCompleto = await this._descargarReporteCompletoAdmin(idReporte);
@@ -4489,7 +4218,7 @@ const app = {
     // Renderizar contenido
     cont.innerHTML = this._renderDetalleReporteAdmin(r);
 
-    // Cargar chips de bomberos para bonificaciones (asíncrono, no bloquea render)
+    // Cargar chips del personal que participó (asíncrono, no bloquea render)
     this._cargarBomberosBonifAdmin(r.id);
   },
 
@@ -4648,9 +4377,9 @@ const app = {
         </div>
       `)}
 
-      ${card('💰 Bonificaciones — bomberos que participaron', `
+      ${card('🧑‍🚒 Personal que participó en el incidente', `
         <div style="font-size:12px;color:#555;background:#f0f7ff;padding:8px;border-radius:4px;margin-bottom:10px;border:1px solid #b0cfe0;">
-          Lista de bomberos registrados en la hoja <em>Bonificaciones</em>
+          Lista del personal registrado en la hoja <em>Personal_por_Incidente</em>
           para este reporte. Para agregar o quitar bomberos usa <strong>✏️ Editar</strong>.
         </div>
         <div id="adminBonifChips_${r.id}" style="min-height:36px;display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#f8f8f8;border:1px solid #e5e5e5;border-radius:6px;">
@@ -4660,7 +4389,7 @@ const app = {
     `;
   },
 
-  // Carga la lista de bomberos registrados en Bonificaciones para un reporte
+  // Carga la lista del personal registrado para un informe
   // y la pinta como chips dentro del contenedor adminBonifChips_<id>.
   async _cargarBomberosBonifAdmin(idReporte) {
     const cont = document.getElementById('adminBonifChips_' + idReporte);
@@ -4670,7 +4399,7 @@ const app = {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          accion: 'listarBomberosBonificacion',
+          accion: 'listarPersonalIncidente',
           adminEmail: this.usuario.email,
           adminPassword: this._adminPwdSession || '',
           pase: this._pase || '',            // v5.94: identidad firmada (ver obtenerReporteCompleto)
@@ -4715,8 +4444,8 @@ const app = {
     }
   },
 
-  // Agrega UN bombero a Bonificaciones del reporte
-  async agregarBomberoBonifAdmin(btn, idReporte) {
+  // Agrega UN bombero a la participación del informe
+  async agregarPersonalIncidenteAdmin(btn, idReporte) {
     const inp = document.getElementById('adminBonifInput_' + idReporte);
     if (!inp) return;
     const nombre = (inp.value || '').trim();
@@ -4727,7 +4456,7 @@ const app = {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          accion: 'agregarBomberoBonificacion',
+          accion: 'agregarPersonalIncidente',
           adminEmail: this.usuario.email,
           adminPassword: this._adminPwdSession || '',
           idReporte: idReporte,
@@ -4759,9 +4488,9 @@ const app = {
     });
   },
 
-  // Quita UN bombero específico de Bonificaciones del reporte
+  // Quita UN bombero específico de la participación del informe
   async quitarBomberoBonifAdmin(btn, idReporte, nombre) {
-    const ok = await this.confirmar('Quitar bombero', `¿Quitar a "${nombre}" de las bonificaciones de este reporte?`);
+    const ok = await this.confirmar('Quitar bombero', `¿Quitar a "${nombre}" de la participación en este incidente?`);
     if (!ok) return;
     await this._conBloqueo(btn, 'Quitando...', async () => {
     try {
@@ -4769,7 +4498,7 @@ const app = {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          accion: 'quitarBomberoBonificacion',
+          accion: 'quitarPersonalIncidente',
           adminEmail: this.usuario.email,
           adminPassword: this._adminPwdSession || '',
           idReporte: idReporte,
@@ -5205,7 +4934,7 @@ const app = {
   },
 
   // Espera a que TODAS las imágenes de la ventana de impresión carguen
-  // (máximo 10 s, pensado para el internet de Inírida) antes de imprimir.
+  // (máximo 10 s, pensado para enlaces lentos) antes de imprimir.
   _imprimirCuandoCarguenImagenes(ventana, maxMs) {
     const imgs = Array.from(ventana.document.images || []);
     const esperas = imgs.map(img => new Promise(res => {
@@ -5900,7 +5629,7 @@ const app = {
   <div class="pie-pagina">
     Documento bajo Ley 1575 de 2012 (Ley General de Bomberos de Colombia) | Ley 1581 de 2012 (Habeas Data)<br>
     ${app._esc(app._inst().nombre || "")}${app._membrete() ? " | " + app._membrete() : ""}
-    <span class="credito">— App desarrollada por ${CREDITO_AUTOR.nombre} · ${CREDITO_AUTOR.cuerpo} · 📧 ${CREDITO_AUTOR.correo} · 📱 ${CREDITO_AUTOR.telefono} —</span>
+    <span class="credito">— App desarrollada por ${CREDITO_AUTOR.nombre} · 📧 ${CREDITO_AUTOR.correo} · 📱 ${CREDITO_AUTOR.telefono} —</span>
   </div>
 </div>
 
@@ -5942,6 +5671,32 @@ ${paginaFotos}
     return String(v == null ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  },
+
+  /* 14/08/2026 — _normNombre y _cedKey SE MUDARON ACÁ, junto a _esc.
+
+     Vivían dentro del bloque de "Asistencia de domingos", que es exclusivo de
+     de la estación de origen y salió del producto. Pero las usan poblarRosterBomberos y el buscador
+     de personal: borrar el bloque con ellas adentro rompía el autocompletado de
+     personal en toda la app.
+
+     Son el par del backend (_normFuerteBackend / _cedKey) y definen cómo se decide
+     que dos registros son LA MISMA PERSONA. Es el invariante que más ha reincidido
+     en este proyecto — comparar cédulas en crudo. Viven en zona de utilidades para
+     que ningún borrado futuro se las lleve. */
+
+  // Normaliza un nombre igual que el backend (_normFuerteBackend): mayúsculas,
+  // espacios colapsados y sin tildes/Ñ → para comparar personas de forma fiable.
+  _normNombre(s) {
+    return String(s || '').trim().toUpperCase().replace(/\s+/g, ' ')
+      .replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I')
+      .replace(/[ÓÒÖÔ]/g, 'O').replace(/[ÚÙÜÛ]/g, 'U').replace(/Ñ/g, 'N');
+  },
+
+  // Equivalente front de _cedKey del backend: cédula a SOLO dígitos, para que
+  // "1.234.567", "1 234 567" y "1234567" crucen como la misma persona.
+  _cedKey(x) {
+    return String(x == null ? '' : x).replace(/\D/g, '');
   },
 
   // ── Decodificar el payload de un JWT de Google (APK-safe) ──────────────────
@@ -6010,14 +5765,14 @@ ${paginaFotos}
   /* Anima la entrada de CUALQUIER contenedor, sin depender de .pantalla. Es lo
      que faltaba para que el Panel de Admin animara: sus sub-vistas se conmutan
      con style.display dentro de una pantalla que YA está activa, así que
-     cbviFadeIn (atada a .pantalla.activa) no se re-disparaba jamás.
+     appFadeIn (atada a .pantalla.activa) no se re-disparaba jamás.
      El void offsetWidth NO es adorno: fuerza el reflow que reinicia la
      animación. Mismo patrón que _veloCierre acá arriba. */
   _animarEntrada(el) {
     if (!el) return;
-    el.classList.remove('cbvi-entra');
+    el.classList.remove('entra');
     void el.offsetWidth;
-    el.classList.add('cbvi-entra');
+    el.classList.add('entra');
   },
 
   _flashAccion(texto) {
@@ -6159,7 +5914,7 @@ ${paginaFotos}
     try {
       const resp = await fetch(URL_BACKEND, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'buscarPersonalCBVI', q })
+        body: JSON.stringify({ accion: 'buscarPersonal', q })
       });
       const data = await resp.json();
       if (!data.ok || !data.resultados.length) {
@@ -6328,7 +6083,7 @@ ${paginaFotos}
     if (!this._actPersonal.length) { this.toast('Agrega al menos una persona', 'error'); return; }
     this._guardandoActividad = true;
     let htmlBtn = '';
-    if (btn) { htmlBtn = btn.innerHTML; btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-cbvi"></span> Guardando actividad...'; }
+    if (btn) { htmlBtn = btn.innerHTML; btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-app"></span> Guardando actividad...'; }
     this.toast('⏳ Guardando actividad...', 'info');
     // v5.63: idCliente estable por intento — el backend lo usa para ignorar
     // envíos repetidos del mismo formulario (anti-duplicado de red).
@@ -6397,7 +6152,7 @@ ${paginaFotos}
     if (!cont) return;
     cont.innerHTML = this._skeleton(3);
     const esAdm = this.esAdmin();
-    let htmlAct = '', htmlDom = '';
+    let htmlAct = '';
 
     // 1) Actividades
     try {
@@ -6424,32 +6179,13 @@ ${paginaFotos}
       }
     } catch(e) { htmlAct = '<div style="color:#c00;padding:14px;">Error cargando actividades</div>'; }
 
-    // 2) Asistencia de domingos (con presentes / excusa / sin excusa)
-    try {
-      const rD = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'listarDomingos' })
-      });
-      const dD = await rD.json();
-      if (dD.ok && dD.domingos && dD.domingos.length) {
-        htmlDom = dD.domingos.map(d =>
-          '<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #1e8449;cursor:pointer;" data-f="'+d.fecha+'" onclick="app.verAsistenciaDomingo(this.dataset.f)">'
-          +'<div style="font-weight:700;color:#1e8449;">📅 '+d.fecha+(d.tipo?' — '+d.tipo:'')+'</div>'
-          +(d.tema?'<div style="font-size:12px;color:#666;margin:2px 0;">'+app._esc(d.tema)+'</div>':'')
-          +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">'
-          +'<span style="background:#e8f5e9;color:#1e8449;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;">✅ Presentes: '+(d.presentes||0)+'</span>'
-          +'<span style="background:#fff8e1;color:#e65100;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;">📝 Con excusa: '+(d.excusados||0)+'</span>'
-          +'<span style="background:#ffebee;color:#c00;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;">❌ Sin excusa: '+(d.sinExcusa||0)+'</span>'
-          +'</div></div>'
-        ).join('');
-      } else {
-        htmlDom = '<div style="text-align:center;padding:20px;color:#999;">No hay domingos registrados</div>';
-      }
-    } catch(e) { htmlDom = '<div style="color:#c00;padding:14px;">Error cargando domingos</div>'; }
+    /* 14/08/2026: acá iba un segundo bloque que listaba la ASISTENCIA DE DOMINGOS.
+       La formación dominical y el régimen de sanciones por inasistencia son de
+       de la estación de origen, no del gremio: un cuerpo que no los usa no tiene por qué encontrar
+       esa sección en su app. Salió con el módulo completo. */
 
     cont.innerHTML =
-      '<div style="font-size:13px;font-weight:700;color:#1a5276;margin:4px 0 8px;letter-spacing:.5px;">📋 ACTIVIDADES</div>' + htmlAct
-      + '<div style="font-size:13px;font-weight:700;color:#1e8449;margin:18px 0 8px;letter-spacing:.5px;">📅 ASISTENCIA DE DOMINGOS</div>' + htmlDom;
+      '<div style="font-size:13px;font-weight:700;color:#1a5276;margin:4px 0 8px;letter-spacing:.5px;">📋 ACTIVIDADES</div>' + htmlAct;
   },
 
   async verDetalleActividad(id) {
@@ -6565,749 +6301,8 @@ ${paginaFotos}
   // MÓDULO ASISTENCIA
   // ═══════════════════════════════════════════════════════════════════════════
 
-  _asistRegistros: {},
-
-  async cargarPantallaAsistencia() {
-    const esAdmin = this.esAdmin();
-    const adminPanel = document.getElementById('asistenciaAdminPanel');
-    if (adminPanel) adminPanel.style.display = esAdmin ? 'block' : 'none';
-    const sanPanel = document.getElementById('asistSancionesPanel');
-
-    // Cargar historial de domingos
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'listarDomingos' })
-      });
-      const data = await resp.json();
-      const hist = document.getElementById('asistHistorial');
-      if (!data.ok || !data.domingos.length) {
-        hist.innerHTML = '<div style="color:#999;text-align:center;padding:10px;">Sin registros aún</div>'; return;
-      }
-      hist.innerHTML = data.domingos.slice(0,10).map(d => {
-        const f = typeof d === 'string' ? d : d.fecha;
-        const tipo = typeof d === 'object' ? (d.tipo||'') : '';
-        const tema = typeof d === 'object' ? (d.tema||'') : '';
-        const esAdmH = this.esAdmin();
-        return '<div style="padding:10px;border-bottom:1px solid #f0f0f0;">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">'
-          + '<span data-f="'+f+'" onclick="app.verAsistenciaDomingo(this.dataset.f)" style="font-weight:600;cursor:pointer;flex:1;">📅 '+f+(tipo?' — '+app._esc(tipo):'')+'</span>'
-          + (esAdmH
-            ? '<button data-f="'+f+'" onclick="app.editarDomingo(this.dataset.f)" style="background:#1a5276;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;">✏️</button>'
-              + '<button data-f="'+f+'" onclick="app.eliminarDomingo(this.dataset.f)" style="background:#c00;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;">🗑️</button>'
-            : '')
-          + '<span data-f="'+f+'" onclick="app.verAsistenciaDomingo(this.dataset.f)" style="color:#1a5276;font-size:13px;cursor:pointer;">Ver →</span>'
-          + '</div>'
-          + (tema ? '<div style="font-size:12px;color:#666;margin-top:2px;">'+app._esc(tema)+'</div>' : '')
-          + '</div>';
-      }).join('');
-    } catch(e) {}
-
-    // v5.64 (BUG 1): la lista editable de deudores se movió a su propia
-    // pantalla (Ver Deudores). Aquí solo queda un aviso compacto con enlace.
-    if (esAdmin) {
-      try {
-        const resp2 = await fetch(URL_BACKEND, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ accion: 'listarSanciones', adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '' })
-        });
-        const d2 = await resp2.json();
-        if (d2.ok && d2.sanciones.length) {
-          sanPanel.style.display = 'block';
-          document.getElementById('asistSanciones').innerHTML =
-            '<div onclick="app.abrirDeudores()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">'
-            + '<span>' + d2.sanciones.length + ' unidad(es) con horas de sanción pendientes</span>'
-            + '<span style="color:#c00;font-weight:700;">Ver Deudores →</span></div>';
-        } else {
-          sanPanel.style.display = 'none';
-        }
-      } catch(e) {}
-    }
-  },
-
-  async cargarListaAsistencia() {
-    const fecha = document.getElementById('asistFecha').value;
-    if (!fecha) return;
-    const cont = document.getElementById('asistListaPersonal');
-    cont.innerHTML = '<div style="text-align:center;padding:16px;color:#999;">Cargando personal...</div>';
-    document.getElementById('btnGuardarAsistencia').style.display = 'block';
-    const _nb=document.getElementById('btnMostrarNuevoBombero');if(_nb)_nb.style.display='block';
-    this._asistRegistros = {};
-    try {
-      const [r1,r2]=await Promise.all([
-        fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'listarTodoPersonal'})}),
-        fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'listarAsistenciaDomingo',fecha})})
-      ]);
-      const [d1,d2]=await Promise.all([r1.json(),r2.json()]);
-      // v5.81: se restaura también la observación previa (no solo el estado)
-      const prev={}; if(d2.ok) d2.registros.forEach(r=>{prev[r.cedula||r.nombre]={estado:r.estado,observacion:String(r.observacion||'')};});
-      /* v6.00 FIX (pérdida de datos) — precargar la CABECERA del domingo.
-         Estos 5 campos se LEÍAN en guardarAsistencia pero no se rellenaban nunca
-         desde lo ya guardado. Como guardarAsistencia manda replaceAll:true, al
-         abrir un domingo existente y pulsar Guardar el backend escribía los 5
-         VACÍOS en todas las filas: se borraban tipo de reunión, tema, lugar,
-         encargado y guardia. listarAsistenciaDomingo ya devolvía estos datos
-         (es lo que consume el modal de ✏️), solo faltaba usarlos acá.
-         Se asignan SIEMPRE, también en blanco cuando el domingo es nuevo: así
-         cambiar de fecha no arrastra el tema del domingo anterior al siguiente. */
-      const _cab = (d2.ok && d2.registros.length) ? d2.registros[0] : {};
-      const _setCab = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-      _setCab('asistTipoReunion', _cab.tipoReunion);
-      _setCab('asistTema', _cab.tema);
-      _setCab('asistLugar', _cab.lugarReunion);
-      _setCab('asistEncargado', _cab.encargado);
-      _setCab('asistComandanteGuardia', _cab.comandanteGuardia);
-      // v5.81: se guarda rango + orden (fila en Personal) para llamar a
-      // lista por rangos y en el orden de la hoja (antes el objeto ordenaba
-      // por cédula numérica y el orden quedaba "raro").
-      if(d1.ok) d1.personal.forEach((p,ix)=>{
-        const k=p.cedula||p.nombre; const pv=prev[k]||{};
-        this._asistRegistros[k]={nombre:p.nombre,cedula:p.cedula,rango:p.rango||'BOMBERO',
-          orden:(p.orden!==undefined&&p.orden!==null)?Number(p.orden):(ix+1),
-          estado:pv.estado||'PRESENTE',observacion:pv.observacion||''};
-      });
-    }catch(e){cont.innerHTML='<div style="color:#c00;padding:10px;">Error: '+app._esc(e.message)+'</div>';return;}
-    this._renderAsistencia(fecha);
-  },
-
-  // v5.81: categoría jerárquica para el llamado a lista.
-  // 0=OFICIALES, 1=SUBOFICIALES, 2=BOMBEROS (y desconocidos), 3=ASPIRANTES.
-  // SUBTENIENTE contiene "TENIENTE" → cae en Oficiales igual (correcto).
-  _catRango(rango) {
-    const r = this._normNombre(rango || '');
-    if (r.indexOf('COMANDANTE') !== -1 || r.indexOf('CAPITAN') !== -1 || r.indexOf('TENIENTE') !== -1) return 0;
-    if (r.indexOf('SARGENTO') !== -1 || r.indexOf('CABO') !== -1) return 1;
-    if (r.indexOf('ASPIRANTE') !== -1) return 3;
-    return 2;
-  },
-
-  _ROTULOS_CAT: ['🎖️ OFICIALES', '🪖 SUBOFICIALES', '🚒 BOMBEROS', '🎓 ASPIRANTES'],
-
-  _renderAsistencia(fecha) {
-    const cont = document.getElementById('asistListaPersonal');
-    if (!cont) return;
-    // v5.81: llamado a lista por rangos (Oficiales → Suboficiales → Bomberos →
-    // Aspirantes) y, dentro de cada rango, por el orden de fila de la hoja
-    // Personal_CBVI. Antes Object.values() ordenaba por cédula numérica.
-    const lista = Object.values(this._asistRegistros).sort((a, b) => {
-      const ca = this._catRango(a.rango), cb = this._catRango(b.rango);
-      if (ca !== cb) return ca - cb;
-      return (a.orden || 999999) - (b.orden || 999999);
-    });
-    const filaHTML = (p) => {
-      const key = String(p.cedula || p.nombre || '').replace(/"/g, '&quot;');
-      const conExcusa = p.estado === 'AUSENTE_EXCUSA';
-      return '<div data-row="'+key+'" style="padding:8px;border-bottom:1px solid #f0f0f0;">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;">'
-        + '<div style="flex:1;"><div style="font-size:14px;font-weight:600;">'+app._esc(p.nombre||'(sin nombre)')+'</div>'
-        + '<div style="font-size:11px;color:#999;">CC: '+app._esc(p.cedula||'-')+'</div></div>'
-        + '<select data-k="'+key+'" data-n="'+app._esc(p.nombre||'')+'" onchange="app._setAsistencia(this.dataset.k,this.dataset.n,this.value)" '
-        + 'style="padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:'+(p.estado==='PRESENTE'?'#e8f5e9':p.estado==='AUSENTE_EXCUSA'?'#fff8e1':'#ffebee')+'">'
-        + '<option value="PRESENTE" '+(p.estado==='PRESENTE'?'selected':'')+'>Presente</option>'
-        + '<option value="AUSENTE_EXCUSA" '+(p.estado==='AUSENTE_EXCUSA'?'selected':'')+'>C/excusa</option>'
-        + '<option value="AUSENTE_SIN_EXCUSA" '+(p.estado==='AUSENTE_SIN_EXCUSA'?'selected':'')+'>Sin excusa</option>'
-        + '</select>'
-        + '<button data-k="'+key+'" onclick="app._quitarAsistencia(this.dataset.k)" style="background:none;border:none;color:#c00;font-size:16px;cursor:pointer;padding:4px;margin-left:4px;">X</button>'
-        + '</div>'
-        // v5.81: observación de la excusa visible y editable con un toque
-        + (conExcusa
-          ? '<div data-k="'+key+'" onclick="app._editarObsExcusa(this.dataset.k)" style="margin-top:5px;background:#fff8e1;border:1px dashed #e6a23c;border-radius:6px;padding:5px 8px;font-size:12px;color:#8a5a00;cursor:pointer;">'
-            + (p.observacion ? '📝 ' + app._esc(p.observacion) : '📝 <em>Toca aquí para escribir la observación de la excusa…</em>')
-            + '</div>'
-          : '')
-        + '</div>';
-    };
-    let cuerpo = '';
-    if (lista.length === 0) {
-      cuerpo = '<div style="color:#999;font-size:13px;text-align:center;padding:10px;">Sin personal cargado aun</div>';
-    } else {
-      const conteo = [0,0,0,0];
-      lista.forEach(p => { conteo[this._catRango(p.rango)]++; });
-      let catPrev = -1;
-      for (const p of lista) {
-        const c = this._catRango(p.rango);
-        if (c !== catPrev) {
-          cuerpo += '<div style="margin:12px 0 4px;padding:6px 10px;background:#1e8449;color:#fff;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.5px;">'
-            + this._ROTULOS_CAT[c] + ' (' + conteo[c] + ')</div>';
-          catPrev = c;
-        }
-        cuerpo += filaHTML(p);
-      }
-    }
-    cont.innerHTML = '<div style="font-size:12px;color:#555;margin-bottom:10px;">Registrando asistencia para el <strong>'+fecha+'</strong></div>'
-      + cuerpo
-      + '<div style="position:relative;margin-top:10px;">'
-      + '<input type="text" id="asistBuscar" placeholder="Buscar y agregar bombero..." autocomplete="off" '
-      + 'style="width:100%;padding:10px;border:1px solid #1e8449;border-radius:8px;font-size:14px;box-sizing:border-box;" '
-      + 'oninput="app.buscarPersonalAsistencia(this.value)">'
-      + '<div id="asistSugerencias" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.15);max-height:180px;overflow-y:auto;"></div>'
-      + '</div>';
-  },
-
-  _quitarAsistencia(key) {
-    delete this._asistRegistros[key];
-    const fecha = document.getElementById('asistFecha').value;
-    this._renderAsistencia(fecha);
-  },
-
-  _buscarAsistTimer: null,
-  buscarPersonalAsistencia(q) {
-    clearTimeout(this._buscarAsistTimer);
-    const sug = document.getElementById('asistSugerencias');
-    if (!q || q.trim().length < 1) { sug.style.display = 'none'; return; }
-    sug.innerHTML = '<div style="padding:8px 12px;color:#999;font-size:13px;">Buscando...</div>'; sug.style.display = 'block';
-    this._buscarAsistTimer = setTimeout(async () => {
-      try {
-        const resp = await fetch(URL_BACKEND, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ accion: 'buscarPersonalCBVI', q: q.trim() })
-        });
-        const data = await resp.json();
-        if (!data.ok || !data.resultados.length) { sug.style.display = 'none'; return; }
-        sug.innerHTML = data.resultados.map(per =>
-          `<div onclick='app.agregarAsistente(${JSON.stringify(per).replace(/'/g,"&#39;")})'
-            style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;">
-            <strong>${app._esc(per.nombre)}</strong> <span style="color:#666;font-size:12px;">CC: ${app._esc(per.cedula)}</span>
-          </div>`
-        ).join('');
-        sug.style.display = 'block';
-      } catch(e) { sug.style.display = 'none'; }
-    }, 400);
-  },
-
-  agregarAsistente(p) {
-    const _sug = document.getElementById('asistSugerencias'); if (_sug) _sug.style.display = 'none';
-    const _bus = document.getElementById('asistBuscar'); if (_bus) _bus.value = '';
-    const fecha = document.getElementById('asistFecha').value;
-    const ced = String(p.cedula || '').trim();
-    // v5.72/v5.73: dedup ROBUSTO por cédula O nombre normalizado + aviso claro si
-    // la cédula ya pertenece a OTRA persona (cédula duplicada en la base).
-    const exist = this._buscarAsistExistente(ced, p.nombre);
-    if (exist) {
-      this._renderAsistencia(fecha);
-      this._avisarAsistExistente(exist, ced, p.nombre);
-      this._flashAsistItem(exist.key);
-      return;
-    }
-    const key = ced || p.nombre;
-    // v5.81: conserva el rango (para el grupo correcto) y lo pone al final de
-    // su categoría (orden alto = después de los que vienen de la hoja).
-    this._asistRegistros[key] = { nombre: p.nombre, cedula: ced, rango: p.rango || 'BOMBERO', orden: this._sigOrdenAsist(), estado: 'PRESENTE' };
-    this._renderAsistencia(fecha);
-    this._flashAsistItem(key);
-  },
-
-  // v5.81: orden incremental para los agregados a mano — quedan al final de su
-  // categoría de rango, después del personal que viene de la hoja.
-  _sigOrdenAsist() {
-    this._asistSeqAdd = (this._asistSeqAdd || 0) + 1;
-    return 100000 + this._asistSeqAdd;
-  },
-
-  // Busca en la lista actual a alguien que coincida por cédula O por nombre
-  // normalizado. Devuelve {key, entry} o null.
-  _buscarAsistExistente(cedula, nombre) {
-    const ced = this._cedKey(cedula); // v5.95: solo dígitos — "1.234.567" == "1234567"
-    const nn = this._normNombre(nombre);
-    for (const k in this._asistRegistros) {
-      const e = this._asistRegistros[k];
-      if ((ced && this._cedKey(e.cedula) === ced) || (nn && this._normNombre(e.nombre) === nn)) {
-        return { key: k, entry: e };
-      }
-    }
-    return null;
-  },
-
-  // Mensaje al usuario cuando la persona "ya está". Si la CÉDULA coincide pero el
-  // NOMBRE es distinto → es una cédula duplicada (dos personas, misma cédula):
-  // se avisa con claridad para que corrija el dato.
-  _avisarAsistExistente(exist, cedula, nombre) {
-    const ced = this._cedKey(cedula); // v5.95: solo dígitos, igual que _buscarAsistExistente
-    const mismoNombre = this._normNombre(exist.entry.nombre) === this._normNombre(nombre);
-    if (ced && !mismoNombre) {
-      this.toast('⚠️ La cédula ' + ced + ' ya está en la lista como "' + exist.entry.nombre
-        + '". Dos personas NO pueden tener la misma cédula: corrige el dato en la base.', 'error');
-    } else {
-      this.toast(nombre + ' ya está en la lista (resaltado)', 'info');
-    }
-  },
-
-  // Normaliza un nombre igual que el backend (_normFuerteBackend): mayúsculas,
-  // espacios colapsados y sin tildes/Ñ → para comparar personas de forma fiable.
-  _normNombre(s) {
-    return String(s || '').trim().toUpperCase().replace(/\s+/g, ' ')
-      .replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I')
-      .replace(/[ÓÒÖÔ]/g, 'O').replace(/[ÚÙÜÛ]/g, 'U').replace(/Ñ/g, 'N');
-  },
-
-  // Equivalente front de _cedKey del backend: cédula a SOLO dígitos, para que
-  // "1.234.567", "1 234 567" y "1234567" crucen como la misma persona.
-  _cedKey(x) {
-    return String(x == null ? '' : x).replace(/\D/g, '');
-  },
-
-  // Lleva la vista a una fila de asistencia y la resalta un momento.
-  _flashAsistItem(key) {
-    requestAnimationFrame(() => {
-      const cont = document.getElementById('asistListaPersonal');
-      if (!cont) return;
-      let sel;
-      try { sel = '[data-row="' + (window.CSS && CSS.escape ? CSS.escape(String(key)) : String(key)) + '"]'; } catch (e) { return; }
-      let row; try { row = cont.querySelector(sel); } catch (e) { row = null; }
-      if (!row) return;
-      try { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { row.scrollIntoView(); } catch (e2) {} }
-      const bgPrev = row.style.background;
-      row.style.transition = 'background 0.3s';
-      row.style.background = '#fff3cd';
-      setTimeout(() => { row.style.background = bgPrev || ''; }, 1600);
-    });
-  },
-
-  // v5.54 FIX: faltaba esta función (el botón "Agregar y registrar" no hacía nada).
-  // Registra el bombero en la base de datos del personal Y lo suma a la lista del domingo.
-  async agregarNuevoBomberoAsistencia(btn) {
-    const nombre = (document.getElementById('asistNuevoNombre').value || '').toUpperCase().trim();
-    const cedula = (document.getElementById('asistNuevoCedula').value || '').trim();
-    const tel    = (document.getElementById('asistNuevoTel').value || '').trim();
-    const correo = (document.getElementById('asistNuevoCorreo').value || '').trim();
-    const rango  = (document.getElementById('asistNuevoRango').value || 'BOMBERO');
-    if (!nombre || !cedula) { this.toast('Nombre y cédula son obligatorios', 'error'); return; }
-    const key = cedula || nombre;
-    // v5.73: dedup robusto + aviso claro si la cédula ya es de otra persona.
-    const _yaAsist = this._buscarAsistExistente(cedula, nombre);
-    if (_yaAsist) {
-      const fechaR = document.getElementById('asistFecha').value;
-      this._renderAsistencia(fechaR);
-      this._avisarAsistExistente(_yaAsist, cedula, nombre);
-      this._flashAsistItem(_yaAsist.key);
-      return;
-    }
-
-    await this._conBloqueo(btn, 'Registrando...', async () => {
-    try {
-      const r = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          accion: 'agregarPersonalCBVI',
-          nombre, cedula, telefono: tel, email: correo, rango,
-          adminEmail: this.usuario?.email || ''
-        })
-      });
-      const d = await r.json();
-      if (!d.ok) { this.toast('Error: ' + (d.error || 'no se pudo registrar'), 'error'); return; }
-
-      // Sumarlo a la lista del domingo actual (Presente)
-      // v5.81: con rango y orden para que caiga en su grupo del llamado a lista
-      this._asistRegistros[key] = { nombre, cedula, rango, orden: this._sigOrdenAsist(), estado: 'PRESENTE' };
-      // Disponible en autocompletar de inmediato
-      // v5.98: se agrega a la lista VIGENTE (la que viene de la hoja), no a la
-      // semilla del código. En el próximo arranque llega ya desde Personal.
-      if (!this._rosterVigente().includes(nombre)) {
-        if (!Array.isArray(this._rosterVivo)) this._rosterVivo = this._rosterVigente().slice();
-        this._rosterVivo.push(nombre);
-        this.poblarRosterBomberos();
-      }
-      // Limpiar y ocultar el formulario
-      ['asistNuevoNombre','asistNuevoCedula','asistNuevoTel','asistNuevoCorreo'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
-      });
-      const form = document.getElementById('asistFormNuevoBombero');
-      if (form) form.style.display = 'none';
-
-      const fecha = document.getElementById('asistFecha').value;
-      this._renderAsistencia(fecha);
-      this.toast('✅ ' + nombre + (d.yaExiste ? ' (ya existía)' : ' registrado'), 'exito');
-    } catch (e) {
-      this.toast('Sin conexión. Intenta de nuevo con internet.', 'error');
-      console.error(e);
-    }
-    });
-  },
-
-  _setAsistencia(key, nombre, estado) {
-    // v5.81: se conserva la entrada existente (rango, orden, observación) —
-    // antes se reemplazaba el objeto entero y se perdían esos campos.
-    const e = this._asistRegistros[key] || { nombre, cedula: key };
-    e.estado = estado;
-    this._asistRegistros[key] = e;
-    // cambiar color del select
-    const fecha = document.getElementById('asistFecha') ? document.getElementById('asistFecha').value : '';
-    const cont = document.getElementById('asistListaPersonal');
-    let sel = null;
-    try { sel = cont ? cont.querySelector('select[data-k="' + (window.CSS && CSS.escape ? CSS.escape(String(key)) : String(key)) + '"]') : null; } catch (er) {}
-    if (sel) sel.style.background = estado==='PRESENTE'?'#e8f5e9':estado==='AUSENTE_EXCUSA'?'#fff8e1':'#ffebee';
-    // v5.81 (punto 4): al marcar C/excusa se pide la observación AL INSTANTE
-    if (estado === 'AUSENTE_EXCUSA') {
-      this._editarObsExcusa(key);
-    } else if (e.observacion) {
-      // Si se corrige el estado (ya no es excusa), la observación de la excusa
-      // se limpia para no guardar un motivo que ya no aplica.
-      e.observacion = '';
-      this._renderAsistencia(fecha);
-    }
-  },
-
-  // v5.81 (punto 4): cuadro propio (I4: nada de prompt() nativo) para escribir
-  // o corregir la observación de una excusa ANTES de subir la asistencia.
-  _editarObsExcusa(key) {
-    const e = this._asistRegistros[key];
-    if (!e) return;
-    const viejo = document.getElementById('_obsExcModal');
-    if (viejo) viejo.remove();
-    const modal = document.createElement('div');
-    modal.id = '_obsExcModal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
-    modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
-      + '<div style="font-size:15px;font-weight:700;color:#e65100;margin-bottom:4px;">📝 Excusa de ' + app._esc(e.nombre || '') + '</div>'
-      + '<div style="font-size:12px;color:#777;margin-bottom:10px;">Escribe el motivo de la excusa (queda guardado con la asistencia).</div>'
-      + '<textarea id="_obsExcTxt" rows="3" placeholder="Ej: incapacidad médica, viaje, trabajo..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>'
-      + '<div style="display:flex;gap:10px;margin-top:12px;">'
-      + '<button id="_obsExcOmitir" style="flex:1;padding:12px;background:#f5f5f5;color:#333;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Sin observación</button>'
-      + '<button id="_obsExcGuardar" style="flex:1;padding:12px;background:#1e8449;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">💾 Guardar</button>'
-      + '</div></div>';
-    document.body.appendChild(modal);
-    const txt = modal.querySelector('#_obsExcTxt');
-    txt.value = e.observacion || '';
-    setTimeout(() => { try { txt.focus(); } catch (er) {} }, 50);
-    const cerrar = () => { try { document.body.removeChild(modal); } catch (er) {} };
-    const fecha = document.getElementById('asistFecha') ? document.getElementById('asistFecha').value : '';
-    modal.querySelector('#_obsExcOmitir').onclick = () => { cerrar(); this._renderAsistencia(fecha); this._flashAsistItem(key); };
-    modal.querySelector('#_obsExcGuardar').onclick = () => {
-      e.observacion = (txt.value || '').trim();
-      cerrar();
-      this._renderAsistencia(fecha);
-      this._flashAsistItem(key);
-    };
-  },
-
-  async guardarAsistencia(btn) {
-    // v5.63 (BUG doble click): bloqueo mientras se guarda
-    if (this._guardandoAsistencia) return;
-    const fecha = document.getElementById('asistFecha').value;
-    if (!fecha) { this.toast('Selecciona la fecha', 'error'); return; }
-    const registros = Object.values(this._asistRegistros);
-    if (!registros.length) { this.toast('Agrega personal primero', 'error'); return; }
-    // Verificar sesión admin — pedir contraseña si no hay (modal APK-safe)
-    /* SOLO USUARIO + PIN, sin la contraseña de administrador. El celular de la
-       estación lo comparten los turnos y la contraseña es de la comandancia:
-       pedirla para anotar la asistencia obligaba a repartirla. Ahora firma quien
-       está de turno con su PIN personal, que además deja constancia de QUIÉN
-       anotó. El backend lo exige de verdad (_esGuardiaConPin). */
-    const _firmaOk = await this._exigirFirma();
-    if (!_firmaOk) return;
-    const tipoReunion = document.getElementById('asistTipoReunion') ? document.getElementById('asistTipoReunion').value : '';
-    const tema = document.getElementById('asistTema') ? document.getElementById('asistTema').value : '';
-    const lugarReunion = document.getElementById('asistLugar') ? document.getElementById('asistLugar').value : '';
-    this._guardandoAsistencia = true;
-    let _htmlBtnAsist = '';
-    if (btn) { _htmlBtnAsist = btn.innerHTML; btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-cbvi"></span> Guardando asistencia...'; }
-    this.toast('⏳ Guardando asistencia...', 'info');
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          accion: 'registrarAsistencia', fecha, registros, replaceAll: true,
-          tipoReunion, tema, lugarReunion,
-          encargado: document.getElementById('asistEncargado') ? document.getElementById('asistEncargado').value : '',
-          comandanteGuardia: document.getElementById('asistComandanteGuardia') ? document.getElementById('asistComandanteGuardia').value : '',
-          fotos: this._asistFotos || {},
-          adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || ''
-        })
-      });
-      const data = await resp.json();
-      if (!data.ok) {
-        if (data.error === 'No autorizado') {
-          this._adminPwdSession = null; // limpiar para reintentar
-          throw new Error('Contraseña incorrecta. Intenta de nuevo.');
-        }
-        throw new Error(data.error);
-      }
-      const ausentes = registros.filter(r => r.estado === 'AUSENTE_SIN_EXCUSA').length;
-      this._asistFotos = { inicio:null, medio:null, fin:null };
-      this.toast('✅ Asistencia guardada — ' + ausentes + ' ausentes sin excusa', 'exito');
-      setTimeout(() => this.cargarPantallaAsistencia(), 1000);
-    } catch(e) { this.toast('Error: ' + e.message, 'error'); }
-    finally {
-      this._guardandoAsistencia = false;
-      if (btn) { btn.disabled = false; btn.style.opacity=''; btn.innerHTML = _htmlBtnAsist; }
-    }
-  },
-
-  async verAsistenciaDomingo(fecha) {
-    // v5.57: modal que funciona desde CUALQUIER pantalla (antes escribía en
-    // #asistHistorial, que solo existe en la pantalla de Asistencia → fallaba
-    // silenciosamente desde "Mis Actividades").
-    // v5.81 (punto 1): el modal aparece AL INSTANTE con "Abriendo asistencia..."
-    // y animación — antes el toque no mostraba nada mientras respondía el
-    // servidor (en Inírida eso pueden ser varios segundos).
-    const _prevM = document.getElementById('_domModal');
-    if (_prevM) _prevM.remove();
-    const m = document.createElement('div');
-    m.id = '_domModal';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;overflow-y:auto;padding:14px;';
-    m.innerHTML =
-      '<div style="background:#fff;border-radius:16px;padding:26px 18px;max-width:460px;margin:auto;text-align:center;">'
-      + '<span style="display:inline-block;width:26px;height:26px;border:3px solid #cde7d8;border-top-color:#1e8449;border-radius:50%;animation:girocbvi .7s linear infinite;"></span>'
-      + '<div style="margin-top:10px;font-weight:700;color:#1e8449;font-size:14px;">⏳ Abriendo asistencia del ' + app._esc(fecha) + '...</div>'
-      + '<div style="font-size:12px;color:#999;margin-top:4px;">Espera un momento</div>'
-      + '</div>';
-    document.body.appendChild(m);
-    m.onclick = (e) => { if (e.target === m) m.remove(); };
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'listarAsistenciaDomingo', fecha })
-      });
-      const data = await resp.json();
-      if (!data.ok) { m.remove(); this.toast('No se pudo cargar el domingo', 'error'); return; }
-      const regs = data.registros || [];
-      const fotos = data.fotos || [];
-      const pres = regs.filter(r => r.estado === 'PRESENTE');
-      const exc  = regs.filter(r => r.estado === 'AUSENTE_EXCUSA');
-      const sin  = regs.filter(r => r.estado === 'AUSENTE_SIN_EXCUSA');
-      const _enc = regs[0] && regs[0].encargado || '';
-      const _grd = regs[0] && regs[0].comandanteGuardia || '';
-      const esAdm = this.esAdmin();
-
-      const grupo = (titulo, arr, color, bg) =>
-        '<div style="margin-top:10px;"><div style="font-weight:700;font-size:13px;color:'+color+';">'+titulo+' ('+arr.length+')</div>'
-        + (arr.length ? arr.map(r => '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:'+bg+';border-radius:6px;margin-top:4px;font-size:13px;"><span>'+app._esc(r.nombre)+'</span>'+(r.observacion?'<span style="color:#666;font-size:11px;">'+app._esc(r.observacion)+'</span>':'')+'</div>').join('')
-                      : '<div style="color:#999;font-size:12px;padding:4px;">Ninguno</div>')
-        + '</div>';
-
-      const fotosHTML = fotos.length
-        ? '<div style="margin-top:12px;"><div style="font-weight:700;font-size:13px;color:#1a5276;">📸 Fotos del domingo</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px;">'
-          + fotos.map(f => '<img src="'+f+'" style="width:100%;border-radius:6px;border:1px solid #eee;">').join('') + '</div></div>'
-        : '';
-
-      // v5.58: notificación de sanciones de los inasistentes sin excusa
-      const sanc = data.sanciones || [];
-      const msgAlerta = (s) => {
-        if (s.alerta === 'DESERCION' || s.alerta === 'RETIRO') return '🚨 ALERTA EXTREMA: DESERCIÓN — gestionar retiro de la institución';
-        if (s.alerta === 'LLAMADO_ESCRITO') return '📄 Llamado de atención ESCRITO';
-        if (s.alerta === 'LLAMADO_VERBAL')  return '🗣️ Llamado de atención VERBAL';
-        return '';
-      };
-      const sancHTML = sanc.length
-        ? '<div style="margin-top:14px;border-top:2px solid #ffcdd2;padding-top:10px;">'
-          + '<div style="font-weight:700;font-size:13px;color:#c00;">⚠️ Estado de sanciones (inasistencias sin excusa)</div>'
-          + sanc.map(s => {
-              const al = msgAlerta(s);
-              return '<div style="background:#fff5f5;border:1px solid #ffcdd2;border-radius:8px;padding:8px;margin-top:6px;font-size:13px;">'
-                + '<strong>'+app._esc(s.nombre||'')+'</strong>'
-                + '<div style="font-size:12px;color:#c00;margin-top:2px;">Debe <strong>'+s.horas+'h</strong> de sanción · '+s.inasist+' inasistencia(s)</div>'
-                + (al ? '<div style="font-size:12px;font-weight:700;color:var(--rojo);margin-top:2px;">'+al+'</div>' : '')
-                + '</div>';
-            }).join('')
-          + '</div>'
-        : '';
-
-      // v5.81: el modal ya está en pantalla (con la animación de carga) —
-      // aquí solo se reemplaza su contenido por el detalle del domingo.
-      m.innerHTML =
-        '<div style="background:#fff;border-radius:16px;padding:18px;max-width:460px;margin:auto;">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
-        +   '<div style="font-weight:700;font-size:16px;color:#1e8449;">📅 '+fecha+'</div>'
-        +   '<button onclick="document.getElementById(\'_domModal\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999;">×</button>'
-        + '</div>'
-        + (regs[0] && regs[0].tipoReunion ? '<div style="font-size:13px;color:#555;">'+app._esc(regs[0].tipoReunion)+(regs[0].tema?' — '+app._esc(regs[0].tema):'')+'</div>' : '')
-        + (_enc ? '<div style="font-size:12px;color:#555;margin-top:4px;">Encargado: <strong>'+app._esc(_enc)+'</strong></div>' : '')
-        + (_grd ? '<div style="font-size:12px;color:#555;">Guardia: <strong>'+app._esc(_grd)+'</strong></div>' : '')
-        + '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">'
-        +   '<span style="background:#e8f5e9;color:#1e8449;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;">✅ Presentes: '+pres.length+'</span>'
-        +   '<span style="background:#fff8e1;color:#e65100;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;">📝 Con excusa: '+exc.length+'</span>'
-        +   '<span style="background:#ffebee;color:#c00;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;">❌ Sin excusa: '+sin.length+'</span>'
-        + '</div>'
-        + grupo('🔴 SIN EXCUSA (acumulan sanción)', sin, '#c00', '#ffebee')
-        + grupo('🟡 CON EXCUSA', exc, '#e65100', '#fff8e1')
-        + grupo('✅ PRESENTES', pres, '#1e8449', '#e8f5e9')
-        + fotosHTML
-        + sancHTML
-        + (esAdm
-            ? '<div style="display:flex;gap:8px;margin-top:14px;">'
-              + '<button data-f="'+fecha+'" onclick="document.getElementById(\'_domModal\').remove();app.editarDomingo(this.dataset.f)" style="flex:1;background:#1a5276;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer;">✏️ Editar</button>'
-              + '<button data-f="'+fecha+'" onclick="app.eliminarDomingo(this.dataset.f)" style="flex:1;background:#c00;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer;">🗑️ Eliminar</button>'
-              + '</div>'
-            : '')
-        + '</div>';
-    } catch(e) { m.remove(); this.toast('Error: ' + e.message, 'error'); }
-  },
-
-  // v5.90: modal propio (invariante I4 — nada de prompt() nativo, falla en el
-  // APK) para registrar el cumplimiento de horas. Además de las horas pide la
-  // ACTIVIDAD QUE REALIZÓ la unidad, que queda como constancia escrita en la
-  // hoja Sanciones_Cumplidas. Devuelve Promise<{horas, actividad} | null>.
-  _pedirCumplimientoSancion(nombre, horasPendientes) {
-    return new Promise((resolve) => {
-      const modal = document.createElement('div');
-      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
-      modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
-      const pend = Number(horasPendientes) || 0;
-      modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
-        + '<div style="font-size:16px;font-weight:700;color:#333;margin-bottom:4px;">✅ Registrar horas cumplidas</div>'
-        + '<div style="font-size:13px;color:#666;margin-bottom:16px;">' + this._esc(nombre || 'Unidad')
-        + (pend > 0 ? ' — <strong style="color:#c00;">' + pend + 'h pendientes</strong>' : '') + '</div>'
-        + '<label style="display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px;">Horas a descontar</label>'
-        + '<input id="_csHoras" type="number" min="1" ' + (pend > 0 ? 'max="' + pend + '"' : '')
-        + ' inputmode="numeric" placeholder="Ej: 4" style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #ddd;border-radius:8px;font-size:16px;margin-bottom:14px;">'
-        + '<label style="display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px;">Actividad que realizó <span style="color:#c00;">*</span></label>'
-        + '<textarea id="_csAct" rows="3" maxlength="300" placeholder="Ej: Aseo y mantenimiento de la máquina 01, apoyo logístico en simulacro..." style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #ddd;border-radius:8px;font-size:15px;resize:vertical;margin-bottom:4px;"></textarea>'
-        + '<div style="font-size:11px;color:#999;margin-bottom:14px;">Queda como constancia permanente de en qué cumplió la sanción.</div>'
-        + '<div style="display:flex;gap:10px;">'
-        + '<button id="_csCancel" style="flex:1;padding:12px;background:#f5f5f5;color:#333;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Cancelar</button>'
-        + '<button id="_csOk" style="flex:1;padding:12px;background:#1e8449;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Registrar</button>'
-        + '</div></div>';
-      document.body.appendChild(modal);
-      const inpH = modal.querySelector('#_csHoras');
-      const inpA = modal.querySelector('#_csAct');
-      setTimeout(() => { try { inpH.focus(); } catch (e) {} }, 50);
-      const fin = (val) => { try { document.body.removeChild(modal); } catch (e) {} resolve(val); };
-      modal.querySelector('#_csCancel').onclick = () => fin(null);
-      modal.querySelector('#_csOk').onclick = () => {
-        const horas = Number(inpH.value);
-        const actividad = (inpA.value || '').trim();
-        if (!horas || horas <= 0) { this.toast('Ingresa las horas cumplidas', 'error'); inpH.focus(); return; }
-        if (pend > 0 && horas > pend) { this.toast('No puede descontar más de ' + pend + 'h pendientes', 'error'); inpH.focus(); return; }
-        if (!actividad) { this.toast('Escribe qué actividad realizó', 'error'); inpA.focus(); return; }
-        fin({ horas: horas, actividad: actividad });
-      };
-    });
-  },
-
-  async cumplirSancion(btn, cedula, nombre, horasPendientes) {
-    // v5.70 FIX + v5.71 IDEMPOTENCIA + v5.90 CONSTANCIA:
-    //  (1) Descontar horas exige contraseña admin; se pide DENTRO de _conBloqueo
-    //      (un doble-toque no abre dos modales ni descuenta dos veces).
-    //  (2) idCliente = "recibo" único. Si la red falla tras descontar y reintentas
-    //      el MISMO descuento, va el mismo recibo → el servidor NO resta de nuevo.
-    //      Se genera recibo nuevo solo si cambian los datos o tras un éxito.
-    //  (3) v5.90: se pide la actividad realizada ANTES de la contraseña (si el
-    //      admin cancela el formulario, ni siquiera se le molesta con la clave).
-    await this._conBloqueo(btn, 'Guardando...', async () => {
-      const datos = await this._pedirCumplimientoSancion(nombre, horasPendientes);
-      if (!datos) return; // canceló → no se hace nada
-      const horas = datos.horas, actividad = datos.actividad;
-      // Solo usuario + PIN. Queda registrado quién descontó, y si se descuenta
-      // horas a sí mismo el log lo marca aparte.
-      const _firmaOk = await this._exigirFirma();
-      if (!_firmaOk) return; // canceló o sin PIN → no se hace nada
-      this._idCumplir = this._idCumplir || {};
-      let reg = this._idCumplir[cedula];
-      // El recibo se reusa SOLO si se reintenta exactamente lo mismo (horas Y
-      // actividad). Si el admin corrige cualquiera de los dos, es otro registro.
-      if (!reg || reg.horas !== horas || reg.actividad !== actividad) {
-        reg = { id: 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), horas: horas, actividad: actividad };
-        this._idCumplir[cedula] = reg;
-      }
-      try {
-        const resp = await fetch(URL_BACKEND, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ accion: 'cumplirSancion', cedula, horas, actividad,
-            idCliente: reg.id, adminEmail: this.usuario.email, adminPassword: _pwd })
-        });
-        const data = await resp.json();
-        if (!data.ok) throw new Error(data.error);
-        delete this._idCumplir[cedula]; // éxito → el próximo descuento usa recibo nuevo
-        this.toast('✅ ' + data.mensaje, 'exito');
-        setTimeout(() => this.cargarPantallaDeudores(), 1000);
-      } catch(e) { this.toast('Error: ' + e.message, 'error'); } // error → conserva el recibo para reintento seguro
-    });
-  },
-
-  // ═══ v5.64 (BUG 1+2): pantalla dedicada "Ver Deudores" ═══
-  // Antes vivía embebida (con edición) dentro de Asistencia. Ahora es su
-  // propia pantalla con accordion: toca un nombre para ver EXACTAMENTE
-  // qué domingos (fecha + tema) le generaron la deuda.
-  abrirDeudores() {
-    if (!this.esAdmin()) { this.toast('Solo administradores pueden ver esto', 'error'); return; }
-    this.irA('pantallaDeudores');
-  },
-
-  async cargarPantallaDeudores() {
-    const cont = document.getElementById('deudoresContenido');
-    if (!cont) return;
-    if (!this.esAdmin()) {
-      cont.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:40px;">🔒</div><div style="color:#999;margin-top:10px;">Solo administradores pueden ver esto</div></div>';
-      return;
-    }
-    cont.innerHTML = this._skeleton(3);
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'listarSanciones', adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '' })
-      });
-      const data = await resp.json();
-      if (!data.ok) { cont.innerHTML = '<div style="color:#c00;padding:20px;">Error: ' + app._esc(data.error||'desconocido') + '</div>'; return; }
-      const sanc = (data.sanciones || []).filter(s => Number(s.horasPendientes) > 0);
-      if (!sanc.length) {
-        cont.innerHTML = '<div style="text-align:center;padding:30px;color:#1e8449;background:#fff;border-radius:12px;"><div style="font-size:40px;">✅</div><div style="margin-top:10px;font-weight:700;">Sin deudores pendientes</div></div>';
-        return;
-      }
-      sanc.sort((a,b) => Number(b.horasPendientes) - Number(a.horasPendientes));
-      // v5.91: la regla a la vista, para no tener que explicarla cada vez que
-      // alguien pregunta por qué le subieron las horas si sí asistió.
-      const reglaHTML = '<div style="background:#fff8e1;border:1px solid #ffe082;border-left:4px solid #f4c430;border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:12px;line-height:1.55;color:#5d4037;">'
-        + '<strong>⚠️ Cómo crecen estas horas</strong><br>'
-        + 'Cada domingo que pasa sin cumplirlas, la deuda se <strong>duplica</strong> (2h → 4h → 8h → 16h…), con tope de <strong>32h</strong>.<br>'
-        + 'Asistir <strong>no</strong> detiene la duplicación, y la excusa <strong>tampoco</strong>: justifica no haber venido, no haber dejado de cumplir. Solo cumplir las horas la detiene.'
-        + '</div>';
-      const badge = (s) => {
-        if (s.tipoAlerta === 'DESERCION' || s.tipoAlerta === 'RETIRO')
-          return '<span style="background:#c00;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">🚨 DESERCIÓN</span>';
-        if (s.tipoAlerta === 'LLAMADO_ESCRITO')
-          return '<span style="background:#e65100;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">📄 ESCRITO</span>';
-        if (s.tipoAlerta === 'LLAMADO_VERBAL')
-          return '<span style="background:#ff9800;color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:6px;">🗣️ VERBAL</span>';
-        return '';
-      };
-      cont.innerHTML = reglaHTML + sanc.map((s,i) => {
-        const uid = 'deu_' + i;
-        return '<div style="background:#fff;border-radius:12px;margin-bottom:10px;overflow:hidden;border-left:4px solid #c00;">'
-          + '<div data-uid="'+uid+'" data-ced="'+app._esc(s.cedula||'')+'" data-nom="'+app._esc(s.nombre||'')+'" data-hp="'+app._esc(String(s.horasPendientes||''))+'" onclick="app._toggleDeudorAccordion(this.dataset.uid,this.dataset.ced,this.dataset.nom,this.dataset.hp)" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">'
-          + '<div><strong>'+app._esc(s.nombre||'')+'</strong>'+badge(s)+'<div style="font-size:12px;color:#666;margin-top:2px;">CC: '+app._esc(s.cedula||'-')+'</div></div>'
-          + '<div style="text-align:right;"><div style="color:#c00;font-weight:700;">'+s.horasPendientes+'h</div><div style="font-size:11px;color:#999;">▼ ver domingos</div></div>'
-          + '</div>'
-          + '<div id="'+uid+'_det" style="display:none;padding:0 14px 14px;border-top:1px solid #f5f5f5;"></div>'
-          + '</div>';
-      }).join('');
-    } catch(e) { cont.innerHTML = '<div style="color:#c00;padding:20px;">Error: ' + e.message + '</div>'; }
-  },
-
-  // v5.90: recibe también nombre (nom) y horas pendientes (hp) para poder
-  // mostrarlos en el modal de registro de cumplimiento sin volver a consultar.
-  async _toggleDeudorAccordion(uid, cedula, nom, hp) {
-    const det = document.getElementById(uid + '_det');
-    if (!det) return;
-    const abierto = det.style.display !== 'none';
-    if (abierto) { det.style.display = 'none'; return; }
-    det.style.display = 'block';
-    if (det.dataset.cargado === '1') return;
-    det.innerHTML = '<div style="padding:10px 0;color:#999;font-size:13px;">Cargando domingos...</div>';
-    try {
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'obtenerFaltasDomingoPersona', cedula, adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '' })
-      });
-      const data = await resp.json();
-      if (!data.ok) { det.innerHTML = '<div style="color:#c00;padding:10px 0;font-size:13px;">Error: '+app._esc(data.error)+'</div>'; return; }
-      det.dataset.cargado = '1';
-      const faltas = data.faltas || [];
-      det.innerHTML = '<div style="padding-top:10px;">'
-        + (faltas.length
-          ? faltas.map(f => '<div style="padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px;"><strong>📅 '+app._esc(f.fecha)+'</strong><div style="color:#666;margin-top:2px;">'+app._esc(f.tema)+'</div></div>').join('')
-          : '<div style="padding:8px 0;color:#999;font-size:13px;">Sin domingos sin excusa registrados</div>')
-        // v5.90: el input suelto de horas se reemplazó por un modal que además
-        // pide la ACTIVIDAD REALIZADA. El botón pasa los datos por data-* en vez
-        // de interpolar la cédula dentro del string del onclick (invariante I10:
-        // una cédula con comilla o carácter raro rompía el handler entero).
-        + '<div style="margin-top:12px;">'
-        + '<button data-ced="'+app._esc(cedula||'')+'" data-nom="'+app._esc(nom||'')+'" data-hp="'+app._esc(String(hp||''))+'"'
-        + ' onclick="app.cumplirSancion(this,this.dataset.ced,this.dataset.nom,this.dataset.hp)"'
-        + ' style="background:#1e8449;color:#fff;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:700;width:100%;">✅ Registrar horas cumplidas</button>'
-        + '</div></div>';
-    } catch(e) { det.innerHTML = '<div style="color:#c00;padding:10px 0;font-size:13px;">Error: '+app._esc(e.message)+'</div>'; }
-  },
+  // _normNombre y _cedKey se movieron junto a _esc el 14/08/2026, para que la
+  // eliminación de este bloque no se las llevara.
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MÓDULO OPERATIVIDAD
@@ -7378,7 +6373,7 @@ ${paginaFotos}
         + '<div style="font-size:12px;opacity:.7;margin-top:2px;">' + app._esc(app._inst().nombre || '') + '</div></div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">'
         + card0(0,'Unidades con registros','#1a5276') + card0(0,'Emergencias únicas','#c0392b')
-        + card0('0h','Horas en actividades','#1e8449') + card0(0,'Domingos realizados','#e67e22')
+        + card0('0h','Horas en actividades','#1e8449')
         + '</div>'
         + '<div style="text-align:center;padding:20px;color:#999;background:#fff;border-radius:12px;">Sin registros en este período</div>';
       return;
@@ -7400,18 +6395,15 @@ ${paginaFotos}
     const totalPersonas = d.length;
     const totalEmerg = d.reduce((s,p) => s + (p.emergencias||0), 0);
     const totalHoras = d.reduce((s,p) => s + (p.horasActividades||0), 0);
-    const totalDomingos = (this._operStats && this._operStats.totalDomingos !== undefined) ? this._operStats.totalDomingos : d.reduce((s,p) => s + (p.domingosPresente||0), 0);
-    const totalSancion = d.filter(p => p.horasSancion > 0).length;
     const top = [...d].sort((a,b) => {
-      const pa = a.emergencias*2 + a.horasActividades + a.domingosPresente;
-      const pb = b.emergencias*2 + b.horasActividades + b.domingosPresente;
+      const pa = a.emergencias*2 + a.horasActividades;
+      const pb = b.emergencias*2 + b.horasActividades;
       return pb - pa;
     });
     const mesNombre = this._operMes ? ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][parseInt(this._operMes)-1] : 'Todo el año';
 
     const topEmerg = [...d].sort((a,b)=>b.emergencias-a.emergencias).filter(p=>p.emergencias>0);
     const topActiv = [...d].sort((a,b)=>b.horasActividades-a.horasActividades).filter(p=>p.horasActividades>0);
-    const topDomin = [...d].sort((a,b)=>b.domingosPresente-a.domingosPresente).filter(p=>p.domingosPresente>0);
     const medallas = ['🥇','🥈','🥉'];
     const rankRow = (p,i,val,lbl) => '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;">'
       + '<div><span style="font-size:15px;">'+(medallas[i]||('<span style="font-size:11px;color:#999;">#'+(i+1)+'</span>'))+'</span>'
@@ -7450,21 +6442,8 @@ ${paginaFotos}
           <div style="font-size:28px;font-weight:700;color:#1e8449;">${this._r1((this._operStats && this._operStats.totalHorasActividades !== undefined) ? this._operStats.totalHorasActividades : totalHoras)}h</div>
           <div style="font-size:12px;color:#666;">Horas en actividades</div>
         </div>
-        <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:28px;font-weight:700;color:#e67e22;">${totalDomingos}</div>
-          <div style="font-size:12px;color:#666;">Domingos realizados</div>
-        </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;">
-        <div style="background:#fff;border-radius:10px;padding:12px;text-align:center;">
-          <div style="font-size:22px;font-weight:700;color:#8e44ad;">${this._operStats && this._operStats.asistenciasTotales !== undefined ? this._operStats.asistenciasTotales : d.reduce((s,p)=>s+(p.domingosPresente||0),0)}</div>
-          <div style="font-size:12px;color:#666;">Asistencias totales (suma individual)</div>
-        </div>
-      </div>
-
       ${this._operStats && this._operStats.sinCruce > 0 ? '<div style="background:#fff8e1;border-radius:10px;padding:12px;margin-bottom:10px;border-left:4px solid #f9a825;"><div style="font-weight:700;color:#8d6e00;font-size:13px;">⚠️ '+this._operStats.sinCruce+' registro(s) no cruzan con la base de personal</div><div style="font-size:12px;color:#8d6e00;margin-top:2px;">Son nombres o cédulas escritos distinto en los registros (por eso hay más tarjetas que unidades reales). Búscalos en "Por Unidad": están marcados en ámbar — corrige la escritura en la hoja para que se fusionen.</div></div>' : ''}
-
-      ${totalSancion > 0 ? '<div style="background:#ffebee;border-radius:10px;padding:12px;margin-bottom:10px;border-left:4px solid #c00;"><div style="font-weight:700;color:#c00;">⚠️ '+totalSancion+' unidad(es) con sanciones pendientes</div></div>' : ''}
 
       <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
         <div style="font-weight:700;color:#c0392b;margin-bottom:8px;">🚨 Ranking Emergencias</div>
@@ -7473,10 +6452,6 @@ ${paginaFotos}
       <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
         <div style="font-weight:700;color:#1e8449;margin-bottom:8px;">🎯 Ranking Actividades</div>
         ${rankList(topActiv,'rk_activ',p=>this._r1(p.horasActividades)+'h','activ.','#1e8449')}
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
-        <div style="font-weight:700;color:#e67e22;margin-bottom:8px;">📅 Ranking Asistencia Domingos</div>
-        ${rankList(topDomin,'rk_domin',p=>p.domingosPresente,'dom.','#e67e22')}
       </div>
       <button onclick="app._imprimirReporteGeneral()" style="background:#6e2fa0;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;">🖨️ Imprimir Informe General</button>`;
   },
@@ -7510,10 +6485,7 @@ ${paginaFotos}
   },
 
   _cardUnidad(p, mesNombre) {
-    const pts = this._r1(p.emergencias*2 + p.horasActividades + p.domingosPresente);
-    const pctDom = p.domingosPresente + p.domingosAusente > 0
-      ? Math.round(p.domingosPresente/(p.domingosPresente+p.domingosAusente)*100) : 0;
-    const colorAlerta = (p.tipoAlerta==='RETIRO'||p.tipoAlerta==='DESERCION')?'#c00':p.tipoAlerta==='LLAMADO_ESCRITO'?'#e65100':p.tipoAlerta==='LLAMADO_VERBAL'?'#ff9800':null;
+    const pts = this._r1(p.emergencias*2 + p.horasActividades);
     const nom = String(p.nombre||'');
     const uid = 'u_'+nom.replace(/[^a-zA-Z]/g,'').substring(0,12);
     return '<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #6e2fa0;">'
@@ -7523,24 +6495,17 @@ ${paginaFotos}
       +(p.enBase===false?'<div style="font-size:11px;background:#fff8e1;color:#8d6e00;border:1px solid #f9a825;border-radius:6px;padding:2px 6px;margin-top:3px;display:inline-block;">⚠️ No cruza con la base (revisar escritura)</div>':'')
       +'</div>'
       +'<div style="text-align:right;"><div style="font-weight:700;color:#6e2fa0;font-size:16px;">'+pts+' pts</div>'
-      +(colorAlerta?'<div style="font-size:11px;background:'+colorAlerta+';color:#fff;padding:2px 6px;border-radius:4px;margin-top:2px;">'+(p.tipoAlerta||'').replace('_',' ')+'</div>':'')
       +'</div></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">'
       +'<div style="background:#fff5f5;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="emerg" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
       +'<div style="font-size:18px;font-weight:700;color:#c0392b;">'+p.emergencias+'</div>'
       +'<div style="font-size:10px;color:#c0392b;text-decoration:underline;">Ver emerg.</div></div>'
       +'<div style="background:#f0f8f4;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="activ" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
       +'<div style="font-size:18px;font-weight:700;color:#1e8449;">'+this._r1(p.horasActividades)+'h</div>'
       +'<div style="font-size:10px;color:#1e8449;text-decoration:underline;">Ver activ.</div></div>'
-      +'<div style="background:#fef9f0;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="domin" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
-      +'<div style="font-size:18px;font-weight:700;color:#e67e22;">'+p.domingosPresente+'</div>'
-      +'<div style="font-size:10px;color:#e67e22;text-decoration:underline;">Ver dom.</div></div>'
       +'</div>'
       +'<div id="'+uid+'_det" style="display:none;margin-bottom:8px;"></div>'
-      +'<div style="display:flex;justify-content:space-between;font-size:12px;color:#666;">'
-      +'<span>Asistencia domingos: <strong>'+pctDom+'%</strong></span>'
-      +(p.horasSancion>0?'<span style="color:#c00;font-weight:700;">⚠️ '+p.horasSancion+'h sanción</span>':'<span style="color:#1e8449;">✅ Sin sanciones</span>')
-      +'</div></div>';
+      +'</div>';
   },
 
   async _expandirDetalle(tipo, uid, nombre, cedula) {
@@ -7549,7 +6514,7 @@ ${paginaFotos}
     if (cont.style.display!=='none' && cont.dataset.tipo===tipo) { cont.style.display='none'; return; }
     cont.style.display='block'; cont.dataset.tipo=tipo;
     cont.innerHTML='<div style="font-size:12px;color:#999;padding:6px;">Cargando...</div>';
-    const accion = tipo==='emerg'?'obtenerEmergenciasPersona':tipo==='activ'?'obtenerActividadesPersona':'obtenerDomingosPersona';
+    const accion = tipo==='emerg'?'obtenerEmergenciasPersona':'obtenerActividadesPersona';
     try {
       const resp=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
         body:JSON.stringify({accion,nombre,cedula:cedula||'',mes:this._operMes,anio:this._operAnio})});
@@ -7581,7 +6546,7 @@ ${paginaFotos}
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
+      modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div id="_pwdAdmCaja" style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
         + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:12px;text-align:center;">'+(mensaje||'🔐 Contraseña de administrador')+'</div>'
         + '<input id="_pwdAdmInput" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;margin-bottom:8px;" placeholder="Contraseña">'
@@ -7614,9 +6579,9 @@ ${paginaFotos}
         err.textContent = txt;                 // textContent, no innerHTML (I5)
         err.style.display = 'block';
         inp.style.borderColor = '#c0392b';
-        caja.classList.remove('cbvi-sacudir');
+        caja.classList.remove('sacudir');
         void caja.offsetWidth;                 // reflow: sin esto, dos errores
-        caja.classList.add('cbvi-sacudir');    // seguidos no re-disparan la animación
+        caja.classList.add('sacudir');    // seguidos no re-disparan la animación
         try { inp.focus(); inp.select(); } catch(e) {}
       };
       const intentar = async () => {
@@ -7626,7 +6591,7 @@ ${paginaFotos}
         ocupado = true;
         const htmlPrev = btnOk.innerHTML;
         btnOk.disabled = true; btnOk.style.opacity = '0.65';
-        btnOk.innerHTML = '<span class="spinner-cbvi"></span> Verificando...';
+        btnOk.innerHTML = '<span class="spinner-app"></span> Verificando...';
         err.style.display = 'none';
         try {
           const r = await fetch(URL_BACKEND, { method: 'POST',
@@ -7668,7 +6633,7 @@ ${paginaFotos}
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
+      modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       const attrs = (o.maxlength ? ' maxlength="' + o.maxlength + '"' : '')
                   + (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '');
       // El título va como HTML a propósito (los llamadores le pasan un <div> con
@@ -7704,11 +6669,11 @@ ${paginaFotos}
        `if (!pwd) return;`.
        Reportar emergencias NO pasa por acá, así que eso sigue funcionando sin PIN. */
     if (this._adminPwdSession) return (await this._exigirFirma()) ? this._adminPwdSession : null;
-    try { const s = sessionStorage.getItem('cbvi_admin_pwd'); if (s) { this._adminPwdSession = s; return (await this._exigirFirma()) ? s : null; } } catch(e) {}
+    try { const s = sessionStorage.getItem('adm_pwd'); if (s) { this._adminPwdSession = s; return (await this._exigirFirma()) ? s : null; } } catch(e) {}
     const pwd = await this._pedirPwdAdmin(mensaje);
     if (!pwd || !pwd.trim()) return null;
     this._adminPwdSession = pwd.trim();
-    try { sessionStorage.setItem('cbvi_admin_pwd', this._adminPwdSession); } catch(e) {}
+    try { sessionStorage.setItem('adm_pwd', this._adminPwdSession); } catch(e) {}
     return (await this._exigirFirma()) ? this._adminPwdSession : null;
   },
 
@@ -7720,7 +6685,7 @@ ${paginaFotos}
      la app. */
   _olvidarPwdAdmin() {
     this._adminPwdSession = null;
-    try { sessionStorage.removeItem('cbvi_admin_pwd'); } catch(e) {}
+    try { sessionStorage.removeItem('adm_pwd'); } catch(e) {}
   },
 
   // Devuelve true solo si hay una firma verificada en esta sesión.
@@ -7786,7 +6751,7 @@ ${paginaFotos}
   _borrarFirma() {
     this._operadorSesion = null; this._operadorCedula = null;
     this._operadorPin = null; this._operadorLlave = null; this._firmaTs = 0;
-    try { sessionStorage.removeItem('cbvi_oper'); } catch(e) {}
+    try { sessionStorage.removeItem('app_oper'); } catch(e) {}
   },
 
   async _obtenerOperador() {
@@ -7798,7 +6763,7 @@ ${paginaFotos}
     // Ya NO se lee de sessionStorage. Se limpia lo que hubiera quedado de una
     // versión anterior, para que un PIN viejo guardado en texto plano no siga
     // dando firma después de actualizar.
-    try { sessionStorage.removeItem('cbvi_oper'); } catch(e) {}
+    try { sessionStorage.removeItem('app_oper'); } catch(e) {}
     /* v6.03 ANTI-BLOQUEO — comprobar que el backend sepa de PINes ANTES de exigirlos.
        Si el backend desplegado es anterior a v5.96 no conoce la acción
        `verificarOperador`, así que nadie podría firmar nunca... y como la firma es
@@ -7861,7 +6826,7 @@ ${paginaFotos}
           // operadores administrativos, que viven en otra hoja y no salían acá.
           // Solo lo pide ESTE modal: en el autocompletado de reportes y
           // actividades no deben aparecer (no son unidades bomberiles).
-          body: JSON.stringify({ accion:'buscarPersonalCBVI', q: q.trim(), incluirAdministrativos: true }) });
+          body: JSON.stringify({ accion:'buscarPersonal', q: q.trim(), incluirAdministrativos: true }) });
         const data = await resp.json();
         if (!data.ok || !data.resultados.length) {
           // v6.06: antes se ocultaba la lista y quedaba una pantalla muda: la
@@ -7889,7 +6854,7 @@ ${paginaFotos}
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
+      modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
         + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:6px;text-align:center;">🪪 ¿Quién está de guardia?</div>'
         + '<div style="font-size:11px;color:#666;margin-bottom:12px;text-align:center;line-height:1.45;">Este celular lo usa la guardia y el turno cambia. Tu nombre queda registrado junto a lo que hagas: sanciones, asistencias y ediciones. Por eso hace falta <b>tu PIN</b> — así nadie puede firmar en tu nombre.</div>'
@@ -7962,7 +6927,7 @@ ${paginaFotos}
   _confirmarAccion(mensaje, onConfirmar) {
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
+    modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
     modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
       + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:16px;text-align:center;">'+mensaje+'</div>'
       + '<div style="display:flex;gap:10px;">'
@@ -7994,40 +6959,11 @@ ${paginaFotos}
     });
   },
 
-  async eliminarDomingo(fecha) {
-    this._confirmarAccion('\u00BFEliminar asistencia del '+fecha+'?', async () => {
-      if (!this._eliminandoFechas) this._eliminandoFechas = new Set();
-      if (this._eliminandoFechas.has(fecha)) return; // v5.64 (BUG 2): anti doble-click
-      this._eliminandoFechas.add(fecha);
-      try {
-        const _pwd = await this._obtenerPwdAdmin('🔐 Contraseña de administrador');
-        if (!_pwd) return;
-        /* v6.01: CANDADO DE COMANDANCIA. Borrar un domingo completo arrasa la
-           asistencia de ~34 unidades y, al recalcular, altera las sanciones de
-           todos. Es lo más destructivo de la app y casi nunca es lo que hace
-           falta: para corregir un domingo se EDITA, y eso sigue libre.
-           La contraseña de comandancia NO se guarda en la sesión a propósito: se
-           pide cada vez. Si se cacheara, quedaría viva en el celular de la
-           guardia y el candado no serviría para nada. */
-        const _pwdCom = await this._pedirTexto('🎖️ Contraseña de COMANDANCIA<div style="font-size:11px;font-weight:400;color:#666;margin-top:6px;">Borrar un domingo completo borra la asistencia de todas las unidades de ese día y recalcula las sanciones. Para corregirlo sin borrarlo, usa Editar (✏️).</div>',
-          { tipo:'password', placeholder:'Contraseña de comandancia', boton:'Borrar domingo' });
-        if (!_pwdCom || !_pwdCom.trim()) { this.toast('Cancelado — borrar un domingo lo autoriza solo la comandancia','info'); return; }
-        this.toast('Eliminando...','info');
-        const r=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-          body:JSON.stringify({accion:'eliminarDomingo',fecha,adminEmail:this.usuario.email,adminPassword:this._adminPwdSession,pwdComandancia:_pwdCom.trim()})});
-        const d=await r.json();
-        if(!d.ok)throw new Error(d.error);
-        this.toast('\u2705 Domingo eliminado','exito');
-        setTimeout(()=>this.cargarPantallaAsistencia(),800);
-      }catch(e){this.toast('Error: '+e.message,'error');}
-      finally { this._eliminandoFechas.delete(fecha); }
-    });
-  },
 
   _imprimirReporteGeneral() {
     const d = this._operData;
     const mesNombre = this._operMes ? ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][parseInt(this._operMes)-1] : 'Todo el año';
-    const top = [...d].sort((a,b)=>(b.emergencias*2+b.horasActividades+b.domingosPresente)-(a.emergencias*2+a.horasActividades+a.domingosPresente));
+    const top = [...d].sort((a,b)=>(b.emergencias*2+b.horasActividades)-(a.emergencias*2+a.horasActividades));
     const w = window.open('','_blank','noopener');
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Informe General Operatividad — ${mesNombre} ${this._operAnio}</title>
@@ -8053,14 +6989,12 @@ ${paginaFotos}
         <div class="stat"><div class="num">${d.length}</div><div class="lbl">Unidades con registros</div></div>
         <div class="stat"><div class="num">${this._operStats ? this._operStats.totalEmergenciasUnicas : d.reduce((s,p)=>s+p.emergencias,0)}</div><div class="lbl">Emergencias únicas</div></div>
         <div class="stat"><div class="num">${this._r1(this._operStats && this._operStats.totalHorasActividades !== undefined ? this._operStats.totalHorasActividades : d.reduce((s,p)=>s+p.horasActividades,0))}h</div><div class="lbl">Horas en actividades</div></div>
-        <div class="stat"><div class="num">${this._operStats && this._operStats.totalDomingos !== undefined ? this._operStats.totalDomingos : '-'}</div><div class="lbl">Domingos realizados</div></div>
-        <div class="stat"><div class="num">${this._operStats && this._operStats.asistenciasTotales !== undefined ? this._operStats.asistenciasTotales : d.reduce((s,p)=>s+p.domingosPresente,0)}</div><div class="lbl">Asistencias totales</div></div>
       </div>
       <h2>🏆 Ranking General</h2>
-      <table><tr><th>#</th><th>Nombre</th><th>Emergencias</th><th>Horas Act.</th><th>Domingos</th><th>Puntos</th><th>Sanciones</th></tr>
+      <table><tr><th>#</th><th>Nombre</th><th>Incidentes</th><th>Horas Act.</th><th>Puntos</th></tr>
       ${top.map((p,i)=>{
-        const pts=this._r1(p.emergencias*2+p.horasActividades+p.domingosPresente);
-        return `<tr><td>${i+1}</td><td><strong>${app._esc(p.nombre)}</strong></td><td style="text-align:center;">${p.emergencias}</td><td style="text-align:center;">${this._r1(p.horasActividades)}h</td><td style="text-align:center;">${p.domingosPresente}</td><td style="text-align:center;font-weight:700;color:#6e2fa0;">${pts}</td><td style="text-align:center;">${p.horasSancion>0?`<span class="alerta">${p.horasSancion}h</span>`:'-'}</td></tr>`;
+        const pts=this._r1(p.emergencias*2+p.horasActividades);
+        return `<tr><td>${i+1}</td><td><strong>${app._esc(p.nombre)}</strong></td><td style="text-align:center;">${p.emergencias}</td><td style="text-align:center;">${this._r1(p.horasActividades)}h</td><td style="text-align:center;font-weight:700;color:#6e2fa0;">${pts}</td></tr>`;
       }).join('')}
       </table>
       <footer>${app._esc(app._rotuloApp())} | Generado: ${new Date().toLocaleDateString('es-CO')}</footer>
@@ -8093,23 +7027,15 @@ ${paginaFotos}
       <h1>👤 Informe de Operatividad por Unidad</h1>
       <p style="color:#666;">Período: <strong>${mesNombre} ${this._operAnio}</strong> | ${app._esc(app._inst().nombre || '')}</p>
       ${d.map(p=>{
-        const pts=this._r1(p.emergencias*2+p.horasActividades+p.domingosPresente);
-        const pct=p.domingosPresente+p.domingosAusente>0?Math.round(p.domingosPresente/(p.domingosPresente+p.domingosAusente)*100):0;
-        const colorAlerta=(p.tipoAlerta==='RETIRO'||p.tipoAlerta==='DESERCION')?'#c00':p.tipoAlerta==='LLAMADO_ESCRITO'?'#e65100':p.tipoAlerta==='LLAMADO_VERBAL'?'#e67e22':null;
+        const pts=this._r1(p.emergencias*2+p.horasActividades);
         return `<div class="ficha">
           <div class="ficha-header">
             <div><div class="nombre">${app._esc(p.nombre)}</div><div style="font-size:10pt;color:#666;">CC: ${app._esc(p.cedula||'-')} ${p.rango?'| '+app._esc(p.rango):''}</div></div>
-            <div style="text-align:right;"><div class="pts">${pts} pts</div>${colorAlerta?`<div class="alerta" style="background:${colorAlerta};color:#fff;">${(p.tipoAlerta||'').replace('_',' ')}</div>`:''}</div>
+            <div style="text-align:right;"><div class="pts">${pts} pts</div></div>
           </div>
           <div class="grid">
             <div class="item"><div class="num" style="color:#c0392b;">${p.emergencias}</div><div class="lbl">Emergencias</div></div>
             <div class="item"><div class="num" style="color:#1e8449;">${this._r1(p.horasActividades)}h</div><div class="lbl">En actividades</div></div>
-            <div class="item"><div class="num" style="color:#e67e22;">${p.domingosPresente}</div><div class="lbl">Domingos pres.</div></div>
-          </div>
-          <div style="font-size:10pt;color:#555;">
-            Asistencia domingos: <strong>${pct}%</strong> (${p.domingosPresente} de ${p.domingosPresente+p.domingosAusente}) |
-            Ausencias sin excusa: <strong>${p.domingosAusente}</strong> |
-            Sanciones: <strong style="color:${p.horasSancion>0?'#c00':'#1e8449'}">${p.horasSancion>0?p.horasSancion+'h pendientes':'Sin sanciones'}</strong>
           </div>
         </div>`;
       }).join('')}
@@ -8191,7 +7117,7 @@ ${paginaFotos}
     }
     if (typeof L === 'undefined') {
       estado.style.display = 'block';
-      // v5.87: antes era texto muerto — en Inírida la señal va y viene, así
+      // v5.87: antes era texto muerto — la señal va y viene, así
       // que el error ahora trae botón de reintento (recarga solo esta pantalla).
       estado.innerHTML = '⚠️ No se pudo cargar el mapa (revisa tu conexión a internet).'
         + '<br><button onclick="app.cargarPantallaMapa()" style="margin-top:10px;padding:10px 18px;background:#1a7a5e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🔄 Reintentar</button>';
@@ -8274,7 +7200,7 @@ ${paginaFotos}
       this._aplicarFiltroMapa(true);
     } catch(e) {
       estado.style.display = 'block'; cont.style.display = 'none';
-      // v5.87: error con reintento (red intermitente en Inírida) — e.message
+      // v5.87: error con reintento (red intermitente) — e.message
       // pasa por _esc porque va a innerHTML.
       estado.innerHTML = 'Error: ' + app._esc(e.message)
         + '<br><button onclick="app.cargarPantallaMapa()" style="margin-top:10px;padding:10px 18px;background:#1a7a5e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🔄 Reintentar</button>';
@@ -8392,7 +7318,7 @@ ${paginaFotos}
       try {
         const resp = await fetch(URL_BACKEND, { method:'POST',
           headers:{'Content-Type':'text/plain;charset=utf-8'},
-          body: JSON.stringify({ accion:'buscarPersonalCBVI', q:q.trim() }) });
+          body: JSON.stringify({ accion:'buscarPersonal', q:q.trim() }) });
         const data = await resp.json();
         if (!data.ok || !data.resultados.length) { sug.style.display='none'; return; }
         sug.innerHTML = data.resultados.map(per =>
@@ -8440,7 +7366,7 @@ ${paginaFotos}
       const modal = document.createElement('div');
       modal.id = '_editActModal';
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;overflow-y:auto;padding:16px;';
-      modal.className = 'cbvi-modal-js';   // sin esto ninguna regla CSS lo alcanza
+      modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:440px;margin:auto;">'
         +'<div style="font-weight:700;font-size:16px;color:#1a5276;margin-bottom:14px;">✏️ Editar Actividad</div>'
         +'<label style="font-size:12px;font-weight:700;">Tipo</label>'
@@ -8578,7 +7504,7 @@ ${paginaFotos}
     sug.innerHTML = '<div style="padding:8px 12px;color:#999;font-size:13px;">Buscando...</div>'; sug.style.display='block';
     this._eaBuscarTimer = setTimeout(async () => {
       try {
-        const resp = await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'buscarPersonalCBVI',q:q.trim()})});
+        const resp = await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'buscarPersonal',q:q.trim()})});
         const data = await resp.json();
         if (!data.ok || !data.resultados.length) { sug.innerHTML='<div style="padding:8px 12px;color:#999;font-size:12px;">Sin resultados</div>'; return; }
         sug.innerHTML = data.resultados.map(per =>
@@ -8630,124 +7556,6 @@ ${paginaFotos}
 
   _eaQuitarRecurso(i) { this._eaRecursos.splice(i,1); this._eaRenderRecursos(); },
 
-  // ── Editar domingo (admin) ────────────────────────────────────────────────
-  async editarDomingo(fecha) {
-    this.toast('Cargando...','info');
-    try {
-      const resp=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({accion:'listarAsistenciaDomingo',fecha})});
-      const data=await resp.json();
-      if(!data.ok)throw new Error(data.error||'Error');
-      const regs=data.registros; if(!regs.length){this.toast('Sin registros','error');return;}
-      /* v6.00: la lista pasa a ser MUTABLE para poder agregar personas. Antes
-         era un regs.map() fijo: solo se editaban los que ya estaban guardados,
-         así que para sumar a alguien había que borrar el domingo entero y
-         recrearlo a mano (34 estados reescritos). Se copia cada registro para
-         no mutar la respuesta del servidor. */
-      this._ednRegs = regs.map(r => Object.assign({}, r));
-      this._ednNuevos = {};   // cédulas agregadas en esta edición (se pueden quitar)
-      const enc=regs[0].encargado||''; const grd=regs[0].comandanteGuardia||'';
-      const tipoActual=regs[0].tipoReunion||''; const temaActual=regs[0].tema||''; const lugarActual=regs[0].lugarReunion||'';
-      const sts={'PRESENTE':'Presente','AUSENTE_EXCUSA':'C/excusa','AUSENTE_SIN_EXCUSA':'Sin excusa'};
-      const tiposReunion=['Capacitación','Entrenamiento','Reunión ordinaria','Simulacro','Jornada comunitaria','Otra'];
-      const esc=(s)=>app._esc(s);
-
-      // v5.65 (BUG: fotos de domingo no editables): mismo patrón que Actividades
-      this._ednFotosNuevas = { inicio:null, medio:null, fin:null };
-      const fl = data.fotosLabeled || {};
-      const fotoSlot = (k, lbl, src) =>
-        '<div style="text-align:center;">'
-        + '<div style="font-size:10px;color:#666;">'+lbl+'</div>'
-        + '<div id="_ednFotoPrev'+k+'" style="width:80px;height:80px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5 center/cover no-repeat;display:flex;align-items:center;justify-content:center;overflow:hidden;">'
-        + (src ? '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;">' : '<span style="font-size:20px;">📷</span>')
-        + '</div>'
-        + '<label style="display:block;margin-top:4px;font-size:11px;color:#1e8449;cursor:pointer;text-decoration:underline;">Cambiar'
-        +   '<input type="file" accept="image/*" style="display:none;" onchange="app._ednCargarFoto(\''+k+'\',this)"></label>'
-        + '</div>';
-
-      const modal=document.createElement('div');
-      modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;overflow-y:auto;padding:16px;';
-      // v6.00: las filas se pintan en _ednRenderFilas() para poder re-render al
-      // agregar a alguien. El bloque de búsqueda va justo encima de la lista.
-      const buscador='<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:8px;">'
-        +'<div style="font-size:12px;font-weight:700;color:#1e8449;margin-bottom:5px;">➕ Agregar persona a este domingo</div>'
-        +'<div style="position:relative;">'
-        +'<input type="text" id="_ednBuscar" autocomplete="off" placeholder="Escribe el nombre..." oninput="app._ednBuscarPersona(this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">'
-        +'<div id="_ednBuscarSug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.1);max-height:150px;overflow-y:auto;"></div>'
-        +'</div>'
-        +'<div style="font-size:10px;color:#888;margin-top:4px;">Entra como <b>Presente</b>; cámbialo abajo si corresponde. Si no aparece, primero hay que darlo de alta en el personal.</div>'
-        +'</div>';
-      modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;max-width:420px;margin:auto;">'
-        +'<div style="font-weight:700;font-size:16px;color:#1e8449;margin-bottom:14px;">✏️ Domingo '+fecha+'</div>'
-        +'<label style="font-size:12px;font-weight:700;">Tipo de reunión</label>'
-        +'<select id="_ednTipo" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">'
-        +'<option value="">Seleccionar...</option>'
-        +tiposReunion.map(t=>'<option value="'+t+'"'+(tipoActual===t?' selected':'')+'>'+t+'</option>').join('')
-        +'</select>'
-        +'<label style="font-size:12px;font-weight:700;">Tema tratado</label>'
-        +'<input type="text" id="_ednTema" value="'+esc(temaActual)+'" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">'
-        +'<label style="font-size:12px;font-weight:700;">Lugar</label>'
-        +'<input type="text" id="_ednLugar" value="'+esc(lugarActual)+'" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">'
-        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">'
-        +'<div><label style="font-size:12px;font-weight:700;">👤 Encargado</label><div style="position:relative;">'
-        +'<input type="text" id="_ednE" value="'+esc(enc)+'" autocomplete="off" oninput="app._buscarAsistCampo(\'_ednE\',\'_ednESug\',this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">'
-        +'<div id="_ednESug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.1);max-height:150px;overflow-y:auto;"></div>'
-        +'</div></div>'
-        +'<div><label style="font-size:12px;font-weight:700;">🛡️ Guardia</label><div style="position:relative;">'
-        +'<input type="text" id="_ednG" value="'+esc(grd)+'" autocomplete="off" oninput="app._buscarAsistCampo(\'_ednG\',\'_ednGSug\',this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">'
-        +'<div id="_ednGSug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.1);max-height:150px;overflow-y:auto;"></div>'
-        +'</div></div>'
-        +'</div>'
-        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1e8449;">📸 Fotos de la reunión</div>'
-        +'<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:space-around;">'
-        + fotoSlot('inicio','Inicio',fl.inicio||'')
-        + fotoSlot('medio','Intermedio',fl.medio||'')
-        + fotoSlot('fin','Final',fl.fin||'')
-        +'</div>'
-        +buscador
-        +'<div style="font-size:12px;font-weight:700;margin-bottom:8px;color:#555;">Estado individual:</div>'
-        +'<div id="_ednFilas"></div>'
-        +'<div style="display:flex;gap:10px;margin-top:14px;">'
-        +'<button id="_ednCancel" style="flex:1;padding:12px;background:#f5f5f5;color:#333;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Cancelar</button>'
-        +'<button id="_ednGuard" style="flex:1;padding:12px;background:#1e8449;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">💾 Guardar</button>'
-        +'</div></div>';
-      document.body.appendChild(modal);
-      this._ednRenderFilas();
-      modal.querySelector('#_ednCancel').onclick=()=>document.body.removeChild(modal);
-      modal.querySelector('#_ednGuard').onclick=async()=>{
-        await this._conBloqueo(modal.querySelector('#_ednGuard'), 'Guardando...', async () => {
-        /* Corregir un dato mal anotado es trabajo de la guardia, así que va con
-           usuario + PIN. Esto manda registrarAsistencia con replaceAll:true, la
-           MISMA acción que usa el registro, así que ambas quedan cubiertas por
-           _esGuardiaConPin. Borrar el registro entero SÍ sigue pidiendo contraseña. */
-        const _firmaDN = await this._exigirFirma();
-        if(!_firmaDN) return;
-        // v6.00: volcar a memoria lo que está en pantalla (incluye las filas
-        // agregadas en esta edición) y mandar eso.
-        this._ednSync();
-        const newRegs=this._ednRegs;
-        const fotosPayload={};
-        ['inicio','medio','fin'].forEach(k=>{ if(this._ednFotosNuevas[k]) fotosPayload[k]=this._ednFotosNuevas[k]; });
-        try{
-          const r2=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-            body:JSON.stringify({accion:'registrarAsistencia',fecha,registros:newRegs,replaceAll:true,
-              tipoReunion:document.getElementById('_ednTipo').value,
-              tema:document.getElementById('_ednTema').value,
-              lugarReunion:document.getElementById('_ednLugar').value,
-              encargado:document.getElementById('_ednE').value,
-              comandanteGuardia:document.getElementById('_ednG').value,
-              fotos: fotosPayload,
-              adminEmail:this.usuario.email,adminPassword:this._adminPwdSession})});
-          const d2=await r2.json();
-          if(!d2.ok)throw new Error(d2.error);
-          document.body.removeChild(modal);
-          this.toast('✅ Domingo actualizado','exito');
-          setTimeout(()=>this.cargarPantallaAsistencia(),800);
-        }catch(e){this.toast('Error: '+e.message,'error');}
-        });
-      };
-    }catch(e){this.toast('Error: '+e.message,'error');}
-  },
 
   /* ═══════ v6.00: AGREGAR PERSONAS A UN DOMINGO YA GUARDADO ═══════
      Antes, el modal de ✏️ solo mostraba a los que ya estaban guardados, así que
@@ -8760,162 +7568,6 @@ ${paginaFotos}
   // Cédula normalizada a solo dígitos — equivalente en el front de _cedKey del
   // backend. "1.234.567.890" y "1234567890" son la misma persona.
   _cedDigitos(x) { return String(x == null ? '' : x).replace(/\D/g, ''); },
-
-  // Vuelca a this._ednRegs lo que el usuario tiene en pantalla. Hay que llamarlo
-  // ANTES de re-renderizar o de guardar; si no, se pierde lo tocado a mano.
-  _ednSync() {
-    (this._ednRegs || []).forEach((r, i) => {
-      const sel = document.getElementById('_edn_' + i);
-      const obs = document.getElementById('_edno_' + i);
-      if (sel) r.estado = sel.value;
-      if (obs) r.observacion = obs.value;
-    });
-  },
-
-  _ednRenderFilas() {
-    const cont = document.getElementById('_ednFilas');
-    if (!cont) return;
-    const sts = { 'PRESENTE':'Presente', 'AUSENTE_EXCUSA':'C/excusa', 'AUSENTE_SIN_EXCUSA':'Sin excusa' };
-    cont.innerHTML = (this._ednRegs || []).map((r, i) => {
-      const ced = this._cedDigitos(r.cedula);
-      const esNuevo = !!(this._ednNuevos && this._ednNuevos[ced]);
-      // Solo se puede quitar lo agregado en ESTA edición. Sacar a alguien que ya
-      // estaba guardado afecta su historial y sus sanciones: es otra decisión,
-      // no se resuelve de contrabando en un botón ×.
-      const btnQuitar = esNuevo
-        ? '<button data-ced="' + app._esc(ced) + '" onclick="app._ednQuitarPersona(this.dataset.ced)" title="Quitar" style="background:#991b1b;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1;padding:0;margin-left:6px;">×</button>'
-        : '';
-      return '<div id="_ednfila_' + i + '" style="padding:7px 0;border-bottom:1px solid #f0f0f0;' + (esNuevo ? 'background:#f0fdf4;border-left:3px solid #16a34a;padding-left:6px;' : '') + '">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;">'
-        + '<div style="flex:1;font-size:13px;font-weight:600;">' + app._esc(r.nombre || '(sin nombre)')
-        + (esNuevo ? '<span style="font-size:10px;color:#16a34a;font-weight:700;margin-left:5px;">NUEVO</span>' : '')
-        + '<div style="font-size:11px;color:#999;">CC: ' + app._esc(r.cedula || '-') + '</div></div>'
-        + '<select id="_edn_' + i + '" style="padding:5px;border:1px solid #ddd;border-radius:6px;font-size:12px;">'
-        + Object.keys(sts).map(v => '<option value="' + v + '"' + (r.estado === v ? ' selected' : '') + '>' + sts[v] + '</option>').join('')
-        + '</select>' + btnQuitar + '</div>'
-        + '<input type="text" id="_edno_' + i + '" value="' + app._esc(r.observacion || '') + '" placeholder="Observación (opcional)" style="width:100%;margin-top:5px;padding:6px 8px;border:1px solid #eee;border-radius:6px;font-size:12px;box-sizing:border-box;">'
-        + '</div>';
-    }).join('');
-  },
-
-  _ednBuscarPersona(q) {
-    const sug = document.getElementById('_ednBuscarSug');
-    if (!sug) return;
-    if (!q || q.trim().length < 1) { sug.style.display = 'none'; return; }
-    clearTimeout(this._t_ednBuscar);
-    this._t_ednBuscar = setTimeout(async () => {
-      try {
-        const resp = await fetch(URL_BACKEND, { method:'POST',
-          headers:{'Content-Type':'text/plain;charset=utf-8'},
-          body: JSON.stringify({ accion:'buscarPersonalCBVI', q: q.trim() }) });
-        const data = await resp.json();
-        if (!data.ok || !data.resultados.length) {
-          sug.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:#999;">Sin coincidencias en el personal.</div>';
-          sug.style.display = 'block'; return;
-        }
-        // I10: los datos van en data-*, nunca dentro del string del onclick.
-        sug.innerHTML = data.resultados.map(per =>
-          '<div data-n="' + app._esc(per.nombre||'') + '" data-c="' + app._esc(per.cedula||'') + '" data-r="' + app._esc(per.rango||'') + '" '
-          + 'onclick="app._ednAgregarPersona(this.dataset.n, this.dataset.c, this.dataset.r)" '
-          + 'style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px;">' + app._esc(per.nombre||'')
-          + '<span style="color:#999;font-size:11px;margin-left:6px;">CC:' + app._esc(per.cedula||'-') + '</span></div>'
-        ).join('');
-        sug.style.display = 'block';
-      } catch(e) { sug.style.display = 'none'; }
-    }, 350);
-  },
-
-  _ednAgregarPersona(nombre, cedula, rango) {
-    const sug = document.getElementById('_ednBuscarSug');
-    const inp = document.getElementById('_ednBuscar');
-    if (sug) sug.style.display = 'none';
-    if (inp) inp.value = '';
-    const ced = this._cedDigitos(cedula);
-    const nom = this._normNombre(nombre || '');
-    // Anti-duplicado por cédula (dígitos) O nombre normalizado — CLAUDE.md §4.3.
-    const yaIdx = (this._ednRegs || []).findIndex(r =>
-      (ced && this._cedDigitos(r.cedula) === ced) || (!ced && this._normNombre(r.nombre || '') === nom));
-    if (yaIdx >= 0) {
-      // Ya está en la lista: en vez de decir "ya está" sobre algo que no se ve,
-      // llevarlo a la fila y resaltarla (mismo criterio que _flashAsistItem).
-      this.toast('Ya está en este domingo', 'info');
-      const caja = document.getElementById('_ednfila_' + yaIdx);
-      if (caja) {
-        caja.scrollIntoView({ behavior:'smooth', block:'center' });
-        const antes = caja.style.background;
-        caja.style.background = '#fef9c3';
-        setTimeout(() => { caja.style.background = antes; }, 1600);
-      }
-      return;
-    }
-    this._ednSync();   // no perder lo que ya tocó a mano antes de re-render
-    this._ednRegs.push({ nombre: nombre || '', cedula: cedula || '', rango: rango || 'BOMBERO',
-      estado: 'PRESENTE', observacion: '' });
-    if (ced) this._ednNuevos[ced] = true;
-    this._ednRenderFilas();
-    this.toast('➕ ' + (nombre || 'Persona') + ' agregado. Falta Guardar.', 'exito');
-  },
-
-  _ednQuitarPersona(ced) {
-    this._ednSync();
-    const i = (this._ednRegs || []).findIndex(r => this._cedDigitos(r.cedula) === String(ced));
-    if (i < 0) return;
-    const nom = this._ednRegs[i].nombre || 'Persona';
-    this._ednRegs.splice(i, 1);
-    if (this._ednNuevos) delete this._ednNuevos[String(ced)];
-    this._ednRenderFilas();
-    this.toast('Quitado: ' + nom, 'info');
-  },
-
-  async _ednCargarFoto(tipo, input) {
-    const file = input.files && input.files[0];
-    if (!file) return;
-    const prev = document.getElementById('_ednFotoPrev'+tipo);
-    if (prev) prev.innerHTML = '<span style="font-size:11px;color:#999;">...</span>';
-    try {
-      const dataUrl = await this.comprimirImagen(file, 1280, 0.7);
-      this._ednFotosNuevas[tipo] = dataUrl;
-      if (prev) prev.innerHTML = '<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;">';
-    } catch(e) {
-      if (prev) prev.innerHTML = '<span style="font-size:11px;color:#c00;">Error</span>';
-    }
-  },
-  // ── Asistencia solo admin ─────────────────────────────────────────────────
-  abrirAsistencia() {
-    if (!this.esAdmin()) {
-      this.toast('Solo los administradores pueden registrar asistencia','error');
-      return;
-    }
-    this._asistFotos = { inicio:null, medio:null, fin:null };
-    this.irA('pantallaAsistencia');
-  },
-
-  _asistFotos: { inicio:null, medio:null, fin:null },
-
-  _fotoAsistencia(tipo, input) {
-    const file = input.files && input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        // Redimensionar a max 1200px para no exceder límites
-        const canvas = document.createElement('canvas');
-        const maxW = 1200;
-        const scale = Math.min(1, maxW / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        this._asistFotos[tipo] = canvas.toDataURL('image/jpeg', 0.75);
-        const okId = 'asistFoto' + (tipo==='inicio'?'Inicio':tipo==='medio'?'Medio':'Fin') + 'Ok';
-        const ok = document.getElementById(okId);
-        if (ok) ok.style.display = 'block';
-        this.toast('Foto ' + tipo + ' cargada','exito');
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
 
 };
 

@@ -1,7 +1,7 @@
 {
   "name": "Reportes de Bomberos",
   "short_name": "Reportes",
-  "description": "Gestión operativa para cuerpos de bomberos: emergencias, asistencia, actividades y estadística. Cada cuerpo es dueño de sus datos.",
+  "description": "Gestión operativa para cuerpos de bomberos: incidentes, actividades, personal, vehículos y estadística. Cada cuerpo es dueño de sus datos.",
   "scope": "./",
   "start_url": "./index.html",
   "display": "standalone",

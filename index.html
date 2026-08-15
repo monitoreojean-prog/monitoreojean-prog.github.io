@@ -18,8 +18,8 @@
      evitando el "flash" del diseño equivocado al abrir la app. -->
 <script>
 try {
-  var _temaCbvi = localStorage.getItem('cbvi_tema');
-  document.documentElement.setAttribute('data-theme', _temaCbvi === 'apple' ? 'apple' : 'original');
+  var _tema = localStorage.getItem('app_tema');
+  document.documentElement.setAttribute('data-theme', _tema === 'apple' ? 'apple' : 'original');
 } catch (e) { document.documentElement.setAttribute('data-theme', 'original'); }
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,15 +40,15 @@ try {
      comprometía, corría JS arbitrario en la sesión del admin. Ahora unpkg salió
      de la CSP por completo — es más fuerte que poner SRI, que igual depende de
      que la CDN responda.
-     Motivo 2 (Inírida): el Service Worker ya puede cachearlo, así que el mapa
+     Motivo 2: el Service Worker ya puede cachearlo, así que el mapa
      deja de depender de una CDN externa para siquiera abrir. -->
-<link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.01">
-<script src="vendor/leaflet/leaflet.js?v=1.01"></script>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.06">
+<script src="vendor/leaflet/leaflet.js?v=1.06"></script>
 
 <style>
   :root {
     /* v5.90 — Refinamiento visual. El rojo institucional (#7A1010) NO cambia:
-       es el color oficial del CBVI y el del escudo/PDF. Lo que se afinó son
+       es el color institucional por defecto y el del escudo/PDF. Lo que se afinó son
        los grises, las sombras y los radios, que antes eran planos y duros. */
     --rojo: #7A1010;
     --rojo-claro: #c41e3a;
@@ -597,8 +597,8 @@ try {
     margin-left: 6px;
   }
 /* v5.63 (BUG doble click): spinner universal de "Cargando" para botones */
-.spinner-cbvi{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:girocbvi .7s linear infinite;}
-@keyframes girocbvi{to{transform:rotate(360deg);}}
+.spinner-app{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:giroApp .7s linear infinite;}
+@keyframes giroApp{to{transform:rotate(360deg);}}
 
 /* v5.86 (feature: Mapa de Emergencias en pantalla completa).
    z-index 150: por debajo de .toast (1000), .nav-feedback (1001) y del
@@ -703,8 +703,8 @@ try {
    .pantalla la convertiría en ancestro con transform y rompería el
    posicionamiento de todo lo fixed que vive dentro (mapa, botones flotantes).
    Ver la advertencia del bloque de micro-animación de botones más abajo. */
-.pantalla.activa { animation: cbviFadeIn .30s ease-out; }
-@keyframes cbviFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.pantalla.activa { animation: appFadeIn .30s ease-out; }
+@keyframes appFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* Encabezado: vidrio esmerilado claro con texto oscuro */
 [data-theme="apple"] header.app-header {
@@ -759,7 +759,7 @@ try {
   border-radius: 12px; color: #0b4f9e;
 }
 
-/* Botón principal del Home (NUEVA EMERGENCIA): rojo plano, sombra suave */
+/* Botón principal del Home (NUEVO INCIDENTE): rojo plano, sombra suave */
 [data-theme="apple"] .home-cta {
   background: var(--rojo); border-radius: 20px; padding: 28px 20px;
   box-shadow: 0 12px 30px rgba(215,0,21,.28), 0 2px 6px rgba(215,0,21,.16);
@@ -1066,11 +1066,11 @@ button:active { transform: scale(.96); }
 .skeleton-linea, .skeleton-tarjeta {
   background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
   background-size: 200% 100%;
-  animation: cbviShimmer 1.2s infinite linear;
+  animation: appShimmer 1.2s infinite linear;
 }
 .skeleton-linea { height: 14px; border-radius: 7px; margin: 10px 0; }
 .skeleton-tarjeta { height: 72px; border-radius: var(--radio, 12px); margin-bottom: 10px; }
-@keyframes cbviShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes appShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 /* v6.08: VELO DE CIERRE — la "animación de cerrando" que faltaba.
    Solo al ir HACIA ATRÁS. Un oscurecido leve que cruza por encima y se va.
@@ -1091,8 +1091,8 @@ button:active { transform: scale(.96); }
   position: fixed; inset: 0; z-index: 999;
   background: #000; opacity: 0; pointer-events: none;
 }
-.velo-cierre.activo { animation: cbviVelo .28s ease-out; }
-@keyframes cbviVelo {
+.velo-cierre.activo { animation: appVelo .28s ease-out; }
+@keyframes appVelo {
   0%   { opacity: 0; }
   45%  { opacity: .18; }
   100% { opacity: 0; }
@@ -1100,7 +1100,7 @@ button:active { transform: scale(.96); }
 
 /* ANIMACIONES QUE FALTABAN. Lo reportó Jeferson: "hay animaciones que no
    cargan dentro del panel de admin". Era cierto y la causa es que hasta v6.10
-   cbviFadeIn tenía UN SOLO consumidor: `.pantalla.activa`. O sea que solo corría
+   appFadeIn tenía UN SOLO consumidor: `.pantalla.activa`. O sea que solo corría
    cuando irA() cambiaba de pantalla completa. El Panel de Admin nunca cambia de
    pantalla —sus sub-vistas se prenden y apagan con style.display sobre divs
    hermanos DENTRO de la misma pantalla, que ya tiene la clase 'activa'— así que
@@ -1109,16 +1109,16 @@ button:active { transform: scale(.96); }
    alcanzarlos: aparecían de golpe.
 
    ⚠️ NADA DE ESTO USA transform SOBRE `.pantalla`. El veto escrito tres veces
-   más arriba en este mismo CSS queda intacto: `.cbvi-entra` es solo opacidad, y
-   el transform de `cbviPop` va sobre el CUADRO del modal, que no es `.pantalla`
+   más arriba en este mismo CSS queda intacto: `.entra` es solo opacidad, y
+   el transform de `appPop` va sobre el CUADRO del modal, que no es `.pantalla`
    ni ancestro de ningún position:fixed. */
-.cbvi-entra { animation: cbviFadeIn .22s ease-out; }
+.entra { animation: appFadeIn .22s ease-out; }
 
 /* Modales creados por JavaScript. El fondo entra con opacidad y el cuadro sube
    apenas — mismo lenguaje que ya usa el resto de la app, sin estridencias. */
-.cbvi-modal-js { animation: cbviFadeIn .16s ease-out; }
-.cbvi-modal-js > div { animation: cbviPop .18s cubic-bezier(.2,.8,.3,1); }
-@keyframes cbviPop {
+.modal-js { animation: appFadeIn .16s ease-out; }
+.modal-js > div { animation: appPop .18s cubic-bezier(.2,.8,.3,1); }
+@keyframes appPop {
   from { opacity: 0; transform: translateY(8px) scale(.98); }
   to   { opacity: 1; transform: none; }
 }
@@ -1126,26 +1126,26 @@ button:active { transform: scale(.96); }
 /* Los modales que SÍ están escritos en este HTML tampoco animaban: usan el
    patrón display:none → .visible{display:flex}, y `display` no es animable.
    Se resuelve sin tocar una línea de JavaScript. */
-.modal-fondo.visible { animation: cbviFadeIn .16s ease-out; }
-.modal-fondo.visible .modal { animation: cbviPop .18s cubic-bezier(.2,.8,.3,1); }
-.user-menu.visible { animation: cbviPop .16s ease-out; }
-.modal-foto-opciones.visible { animation: cbviFadeIn .16s ease-out; }
+.modal-fondo.visible { animation: appFadeIn .16s ease-out; }
+.modal-fondo.visible .modal { animation: appPop .18s cubic-bezier(.2,.8,.3,1); }
+.user-menu.visible { animation: appPop .16s ease-out; }
+.modal-foto-opciones.visible { animation: appFadeIn .16s ease-out; }
 
 /* SACUDIDA DE ERROR. Lo reportó Jeferson: al poner una contraseña
    equivocada "no aparece ninguna animación de contraseña incorrecta ni nada por
    el estilo". Y era literal — hasta v6.08 la app tenía CUATRO animaciones en
-   total (girocbvi, cbviFadeIn, cbviShimmer, cbviVelo) y NINGUNA era de error.
+   total (giroApp, appFadeIn, appShimmer, appVelo) y NINGUNA era de error.
    El transform va sobre el cuadro del modal, que NO es `.pantalla` ni ancestro
    de ningún position:fixed, así que no toca el veto documentado más arriba. */
 /* ⚠️ La segunda mitad del selector NO es redundante. Al agregar en v6.11 la regla
-   `.cbvi-modal-js > div { animation: cbviPop }`, ese selector (0-1-1) le gana por
-   especificidad a `.cbvi-sacudir` a secas (0-1-0) sobre el MISMO elemento: el
+   `.modal-js > div { animation: appPop }`, ese selector (0-1-1) le gana por
+   especificidad a `.sacudir` a secas (0-1-0) sobre el MISMO elemento: el
    cuadro del modal de contraseña. Sin esta línea, la sacudida de "contraseña
    incorrecta" dejaría de verse — o sea que la animación nueva habría roto la
    que se acababa de arreglar. */
-.cbvi-sacudir,
-.cbvi-modal-js > div.cbvi-sacudir { animation: cbviSacudir .4s; }
-@keyframes cbviSacudir {
+.sacudir,
+.modal-js > div.sacudir { animation: appSacudir .4s; }
+@keyframes appSacudir {
   0%, 100% { transform: translateX(0); }
   15%, 45%, 75% { transform: translateX(-8px); }
   30%, 60%, 90% { transform: translateX(8px); }
@@ -1159,8 +1159,8 @@ button:active { transform: scale(.96); }
   .skeleton-linea, .skeleton-tarjeta { animation: none; }
   .velo-cierre.activo { animation: none; }
   /* el mensaje de error en rojo se sigue viendo: solo se quita el movimiento */
-  .cbvi-sacudir { animation: none; }
-  .cbvi-entra, .cbvi-modal-js, .cbvi-modal-js > div,
+  .sacudir { animation: none; }
+  .entra, .modal-js, .modal-js > div,
   .modal-fondo.visible, .modal-fondo.visible .modal,
   .user-menu.visible, .modal-foto-opciones.visible { animation: none; }
 }
@@ -1232,10 +1232,13 @@ button:active { transform: scale(.96); }
 
       <div id="loginErrorBox" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:6px; font-size:12px; margin-top:12px;"></div>
 
+      <!-- Queda el crédito del AUTOR y se va el nombre de su estación. No es lo mismo:
+           una instalación nueva todavía no tiene nombre de cuerpo, así que ese renglón
+           era el ÚNICO nombre de institución en la primera pantalla — y era el de otro
+           cuerpo. Un comandante entrando por primera vez leía que la app es de Inírida. -->
       <div class="pie-credito">
         <p>App desarrollada por:</p>
         <p><strong>Bombero Jeferson Jeancarlos Rangel Gil</strong></p>
-        <p>Cuerpo de Bomberos Voluntarios de Inírida</p>
         <p style="margin-top:6px;">📧 gilrangeljeancarlosjeferson@gmail.com<br>📱 320 960 6428</p>
       </div>
     </div>
@@ -1296,6 +1299,28 @@ button:active { transform: scale(.96); }
         <label>Lema institucional (opcional)</label>
         <input type="text" id="inst_lema" placeholder="El lema de su cuerpo" maxlength="60">
         <div class="ayuda">Aparece al pie de los informes en PDF. Si lo deja vacío, no se muestra ninguno.</div>
+      </div>
+
+      <!-- Se pide ACÁ, en la instalación, y no en una pantalla posterior, por una razón
+           concreta: sin esta contraseña el fundador queda sin poder nombrar a nadie más
+           administrador, y la única salida era abrir Apps Script y escribirla a mano. -->
+      <div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:13px;color:#92400e;margin-bottom:6px;">🔑 Contraseña de administrador</div>
+        <div style="font-size:11px;color:#92400e;line-height:1.45;margin-bottom:10px;">
+          La va a pedir la app antes de las acciones delicadas: <strong>nombrar o quitar
+          administradores</strong>, borrar informes, cambiar los datos del cuerpo.
+          <br><br>
+          <strong>No es la contraseña de su correo</strong> y no se puede recuperar desde acá:
+          anótela donde la tenga a mano.
+        </div>
+        <div class="campo">
+          <label>Contraseña (mínimo 6 caracteres)</label>
+          <input type="password" id="inst_pwd" autocomplete="new-password" maxlength="60">
+        </div>
+        <div class="campo" style="margin-bottom:0;">
+          <label>Repítala</label>
+          <input type="password" id="inst_pwd2" autocomplete="new-password" maxlength="60">
+        </div>
       </div>
 
       <div id="instError" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:6px; font-size:13px; margin:10px 0;"></div>
@@ -1366,7 +1391,7 @@ button:active { transform: scale(.96); }
 <div class="pantalla" id="pantallaHome">
   <button class="home-cta" onclick="app.nuevoReporte()">
     <span class="icono-grande">🚨</span>
-    <div class="titulo">NUEVA EMERGENCIA</div>
+    <div class="titulo">NUEVO INCIDENTE</div>
     <div class="subtitulo">Iniciar reporte oficial</div>
   </button>
 
@@ -1385,10 +1410,7 @@ button:active { transform: scale(.96); }
     </div>
   </div>
 
-  <!-- v5.63 (BUG 10): recordatorio de sanciones pendientes — solo admins -->
-  <div id="homeSanciones" style="display:none;"></div>
-
-  <div class="seccion-titulo">Reportes recientes</div>
+  <div class="seccion-titulo">Informes recientes</div>
   <div id="listaReportes"></div>
 
   <!-- Accesos rápidos a información -->
@@ -1413,37 +1435,25 @@ button:active { transform: scale(.96); }
     <button onclick="app.iniciarNuevaActividad()" style="background:#1a5276;color:#fff;border:none;border-radius:14px;padding:24px 10px;cursor:pointer;text-align:center;font-weight:700;box-shadow:0 3px 8px rgba(26,82,118,0.3);">
       <div style="font-size:34px;">🎯</div><div style="font-size:13px;margin-top:6px;">NUEVA ACTIVIDAD</div>
     </button>
-    <button id="btnHomeAsistencia" onclick="app.abrirAsistencia()" style="background:#1e8449;color:#fff;border:none;border-radius:14px;padding:24px 10px;cursor:pointer;text-align:center;font-weight:700;box-shadow:0 3px 8px rgba(30,132,73,0.3);">
-      <div style="font-size:34px;">📅</div><div style="font-size:13px;margin-top:6px;">ASISTENCIA</div>
-      <div style="font-size:10px;opacity:.8;margin-top:2px;">Solo admin</div>
+    <button onclick="app.irA('pantallaListaActividades')" style="background:#1e8449;color:#fff;border:none;border-radius:14px;padding:24px 10px;cursor:pointer;text-align:center;font-weight:700;box-shadow:0 3px 8px rgba(30,132,73,0.3);">
+      <div style="font-size:34px;">📋</div><div style="font-size:13px;margin-top:6px;">MIS ACTIVIDADES</div>
     </button>
   </div>
   <!-- CONSULTAR (botones normales) -->
   <div style="margin:14px 0 6px 0;font-size:11px;font-weight:700;color:#999;letter-spacing:1px;">👁️ CONSULTAR</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-    <button onclick="app.irA('pantallaListaActividades')" style="background:#fff;color:#1a5276;border:2px solid #1a5276;border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;font-weight:700;">
-      <div style="font-size:22px;">📋</div><div style="font-size:11px;margin-top:3px;">MIS ACTIVIDADES Y DOMINGOS</div>
-    </button>
     <button onclick="app.irA('pantallaOperatividad')" style="background:#fff;color:#6e2fa0;border:2px solid #6e2fa0;border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;font-weight:700;">
       <div style="font-size:22px;">📊</div><div style="font-size:11px;margin-top:3px;">OPERATIVIDAD</div>
       <div style="font-size:9px;color:#999;margin-top:1px;">Solo admin</div>
     </button>
-  </div>
-  <!-- v5.64 (BUG 1+4): Ver Deudores. -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-    <button onclick="app.abrirDeudores()" style="background:#fff;color:#c00;border:2px solid #c00;border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;font-weight:700;">
-      <div style="font-size:22px;">⚠️</div><div style="font-size:11px;margin-top:3px;">VER DEUDORES</div>
-      <div style="font-size:9px;color:#999;margin-top:1px;">Solo admin</div>
-    </button>
     <button onclick="app.abrirMapa()" style="background:#fff;color:#1a7a5e;border:2px solid #1a7a5e;border-radius:12px;padding:12px 8px;cursor:pointer;text-align:center;font-weight:700;">
-      <div style="font-size:22px;">🗺️</div><div style="font-size:11px;margin-top:3px;">MAPA EMERGENCIAS</div>
+      <div style="font-size:22px;">🗺️</div><div style="font-size:11px;margin-top:3px;">MAPA DE INCIDENTES</div>
       <div style="font-size:9px;color:#999;margin-top:1px;">Solo admin</div>
     </button>
   </div>
   <div class="lema-pie" data-inst="lema"></div>
   <div class="credito-pie">
-    App desarrollada por <strong>Bombero Jeferson Jeancarlos Rangel Gil</strong><br>
-    Cuerpo de Bomberos Voluntarios de Inírida
+    App desarrollada por <strong>Bombero Jeferson Jeancarlos Rangel Gil</strong>
   </div>
 </div>
 
@@ -1454,37 +1464,63 @@ button:active { transform: scale(.96); }
     <div style="background:#fff;border-radius:10px;padding:16px;line-height:1.7;color:#222;font-size:14px;">
 
       <div style="background:#fff3e0;border-left:4px solid #e65100;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:13px;">
-        <b><span data-inst="app">Reportes</span> v1.01</b> — Sistema oficial de gestión operativa de <span data-inst="nombre">su cuerpo de bomberos</span>.<br>
+        <b><span data-inst="app">Reportes</span> v1.06</b> — Sistema de gestión operativa de <span data-inst="nombre">su cuerpo de bomberos</span>.<br>
+        Registra <b>incidentes</b> (el informe oficial), <b>actividades</b> y la <b>operatividad</b> del personal. Todo queda en el Google Drive del cuerpo: los datos son suyos y nadie más los ve.<br>
         <b data-inst="lema"></b>
       </div>
 
-      <p><b>🚨 1. Nueva Emergencia</b><br>Toque el botón rojo principal. Llene las 14 secciones: datos generales, clasificación, GPS, descripción, recursos desplegados, diagnóstico, víctimas, causas, organizaciones participantes, observaciones y firmas. Los campos con <span style="color:#c00;">*</span> son obligatorios. Si no hay internet, el reporte queda pendiente y se envía solo cuando recupere señal.</p>
+      <p style="margin-top:0;font-size:13px;color:#666;">La primera vez léalo en orden: los puntos 1 a 3 se hacen una sola vez y dejan la app lista para operar.</p>
 
-      <p><b>🎯 2. Nueva Actividad</b><br>Registre acompañamientos, capacitaciones, entrenamientos, simulacros, jornadas comunitarias, <b>Bomberitos Junior</b> y <b>arreglos/reparaciones dentro de la institución</b>. Incluya tipo, descripción, fecha, hora inicio/fin, lugar y novedades. Puede agregar el personal asistente con autocompletado — marque con ⭐ al encargado o comandante de incidente. También registre los vehículos/recursos usados con su maquinista (sin duplicar si ya está en personal). Puede adjuntar hasta 3 fotos (inicio, intermedio, fin).</p>
+      <p><b>🚒 1. Instalar su cuerpo de bomberos</b><br>La primera persona que entra con su cuenta de Google ve esta pantalla, y solo se ve una vez en la vida de la instalación. Escriba el <b>nombre del cuerpo</b> como aparece en sus documentos oficiales, el <b>departamento</b>, el <b>municipio</b> y el <b>tipo</b> (voluntario, oficial o aeronáutico — define el régimen disciplinario que le aplica). La sigla y el lema son opcionales. Al tocar "Crear la base de datos de mi cuerpo", la app crea la hoja de cálculo y la carpeta de archivos <b>dentro del Google Drive de esa cuenta</b>, y esa persona queda como administrador.</p>
 
-      <p><b>📋 3. Mis Actividades</b><br>Lista de actividades registradas. El administrador puede <b>editar ✏️</b> o <b>eliminar 🗑️</b> cualquier actividad. Al editar, se abre un formulario con los datos actuales para modificarlos.</p>
+      <p><b>👤 2. Sus datos como unidad</b><br>Cada persona que entra por primera vez completa nombre completo, grado, cédula y teléfono. Con eso la app sabe quién firma cada informe. Se piden una sola vez; después se corrigen en ⚙️ Configuración.</p>
 
-      <p><b>📅 4. Asistencia Domingos</b><br>Registre la asistencia a las reuniones dominicales. Al seleccionar la fecha, el sistema carga automáticamente <b>todo el personal activo</b> con estado "Presente" por defecto, <b>agrupado por rangos</b> (Oficiales → Suboficiales → Bomberos → Aspirantes) y, dentro de cada rango, en el <b>orden de las filas de la hoja Personal</b> — ordene la hoja y la app llama a lista en ese orden. Al marcar a alguien <b>"C/excusa"</b> se abre de inmediato el cuadro para escribir la observación (el motivo); puede corregirla tocándola bajo el nombre. Registre el <b>Encargado/Instructor</b> y el <b>Comandante de Guardia</b> con autocompletado. Si hay un bombero nuevo que no está en la base de datos, use el botón <b>"➕ Agregar bombero que no está en la lista"</b>. El administrador puede editar o eliminar domingos ya registrados desde el historial.</p>
+      <p><b>🛠️ 3. Prepare la estación antes del primer incidente</b><br>Entre por el avatar de arriba a la derecha → "Mis datos / Configuración" → ★ Zona Administrador → "🛡️ Abrir Panel Admin" (pide la contraseña de administrador). Allí deje listo:<br>
+      — <b>🚒 Vehículos del cuerpo:</b> registre cada máquina con <b>el indicativo que usan en la radio</b> (Móvil 1, M-3, como le digan) y su clase. Sin esto, los formularios no tienen vehículos que ofrecer.<br>
+      — <b>📥 Importar personal:</b> copie las filas de su Excel y péguelas con Ctrl+V. Reconoce las columnas por el título, no por el orden, y solo agrega a quien falte: no borra ni pisa nada.<br>
+      — <b>🔑 PIN de las unidades:</b> cada persona necesita un PIN de 4 dígitos para firmar lo que hace. Se guardan cifrados: acá nunca se muestran, solo se reemplazan.<br>
+      — <b>🛡️ Administradores:</b> quién más puede entrar a este panel. Solo lo ve el administrador principal, y su propio correo no se puede quitar.</p>
 
-      <p><b>📊 5. Operatividad</b><br>Panel exclusivo de administrador. Muestra el desempeño del personal por período:<br>
-      — <b>General:</b> métricas globales + 3 rankings separados (Emergencias · Actividades · Domingos). Cada ranking muestra los 3 primeros y permite expandir con "Ver más".<br>
-      — <b>Por Unidad:</b> busque un bombero y vea su ficha con las emergencias a las que asistió (con consecutivo, tipo y fecha), las actividades (nombre, horas, fecha) y los domingos (fecha, tema, lugar). Use el filtro de mes o "📅 Todo el año".</p>
+      <p><b>🏠 4. Pantalla de inicio</b><br>Arriba, el botón rojo <b>NUEVO INCIDENTE</b>, tres contadores (Total · Pendientes · Enviados) y la lista de informes recientes. Debajo, las tres tarjetas de consulta (📖 Manual, ⚙️ Cómo funciona, ⚖️ Bases legales), la fila <b>✏️ REGISTRAR</b> (🎯 Nueva actividad y 📋 Mis actividades) y la fila <b>👁️ CONSULTAR</b> (📊 Operatividad y 🗺️ Mapa de incidentes, ambas solo para el administrador). El avatar de la esquina abre su perfil, el cambio de diseño y el cierre de sesión.</p>
 
-      <p><b>🛡️ 6. Panel Admin</b><br>Accesible solo con contraseña. Permite ver, editar, imprimir y eliminar todos los reportes de emergencia. Al eliminar, se borra en cascada (fila principal + hojas relacionadas + carpeta Drive).</p>
+      <p><b>🚨 5. Registrar un incidente</b><br>Toque el botón rojo. El informe tiene <b>13 secciones plegables</b> y una barra de avance en porcentaje: 1 Datos generales · 2 Clasificación del evento · 3 Ubicación del incidente · 4 Descripción · 5 Recursos desplegados · 6 Diagnóstico y áreas afectadas · 7 Datos del afectado · 8 Acciones realizadas · 9 Víctimas · 10 Investigación y causas · 11 Otras organizaciones · 12 Observaciones · 13 Firma del comandante. Los campos con <span style="color:#c00;">*</span> son obligatorios.<br>
+      — En <b>Ubicación</b>, toque "📡 Usar GPS automático": quedan coordenadas, altitud, velocidad y orientación. La dirección escrita depende de la cobertura de mapas de su zona; si no se llena sola, escríbala — las coordenadas <b>siempre</b> quedan registradas.<br>
+      — En <b>Recursos desplegados</b>, elija el vehículo de su flota, anote el maquinista y los tripulantes, y marque con <b>⭐</b> a quien dirigió en el lugar (Comandante de Incidente).<br>
+      — Abajo, "💾 Borrador" guarda sin enviar y "📤 Enviar" lo manda. El consecutivo (por ejemplo <code>RE-2026-0087</code>) lo asigna el servidor al recibirlo, con bloqueo: dos personas no pueden sacar el mismo número.</p>
 
-      <p><b>🖨️ 7. Imprimir</b><br>Desde el detalle de cualquier reporte o desde Operatividad, toque "Imprimir" para generar el informe oficial con logo, firmas y fotos.</p>
+      <p><b>📴 6. Sin señal, el informe no se pierde</b><br>Los incidentes se registran sin internet: quedan guardados en el teléfono y suman en el contador <b>Pendientes</b>. Cuando vuelve la señal se envían solos, o puede forzarlo desde ⚙️ Configuración → "🔄 Sincronizar pendientes ahora". Actividades, Operatividad y Mapa sí necesitan conexión, porque consultan el servidor en el momento.</p>
 
-      <p><b>📡 8. Funcionamiento sin internet</b><br>Los reportes de emergencia funcionan sin internet (se guardan localmente y se envían después). Las secciones de Actividades, Asistencia y Operatividad requieren conexión activa para consultar el servidor.</p>
+      <p><b>📄 7. Ver, corregir e imprimir un informe</b><br>Toque cualquier informe de la lista de inicio. Desde el detalle: <b>🖨️ Imprimir</b> genera el PDF oficial con el escudo del cuerpo, las firmas y las fotos; <b>✏️ Editar</b> corrige; <b>🗑️</b> elimina; y <b>📤 Enviar</b> aparece solo si el informe quedó pendiente.</p>
 
-      <p><b>🔄 9. Sincronización</b><br>Al iniciar sesión en otro dispositivo con el mismo correo, todos los reportes se descargan automáticamente. Nada se pierde al limpiar caché o cambiar de teléfono.</p>
+      <p><b>📋 8. Pasar el informe al RUE</b><br>En el detalle, "📋 Ver para RUE" muestra los datos en el <b>mismo orden del formulario del Registro Único de Emergencias</b>, con un botón "Copiar" campo por campo, y avisa arriba qué datos exige el RUE y todavía faltan. Sea claro con su equipo: <b>no llena el RUE por usted</b> — el RUE se digita a mano, registro por registro. Lo que se elimina es la búsqueda entre papeles y el error de transcripción.</p>
 
-      <p><b>⚠️ 10. Recordatorio de sanciones (admins)</b><br>En la pantalla de inicio, los administradores ven una tarjeta roja con las unidades que deben horas de sanción, sus horas pendientes y el nivel de alerta (verbal, escrito o deserción). Tóquela para ir directo a <b>Ver Deudores</b>.</p>
+      <p><b>🎯 9. Registrar una actividad</b><br>Todo lo que no es un incidente: acompañamientos, capacitaciones, entrenamientos, simulacros, inspecciones, jornadas comunitarias, <b>Bomberitos Junior</b> y arreglos o reparaciones de la institución. Ponga tipo, descripción, fecha, lugar, hora de inicio y de fin, y novedades. Agregue el personal asistente escribiendo el nombre (autocompleta desde su base) y marque con <b>⭐</b> al encargado. Si alguien no aparece, "➕ Persona nueva" lo agrega; cuando quien registra no es administrador, esa persona queda <b>esperando alta</b> en el Panel de administrador hasta que se apruebe. También puede sumar vehículos con su maquinista y hasta <b>3 fotos</b>: inicio, intermedio y final.</p>
 
-      <p><b>⏳ 11. Botones con "Cargando"</b><br>Al enviar cualquier acción (reporte, actividad, asistencia, sanción, edición, eliminación, etc.), el botón se bloquea y muestra una animación de carga. <b>Espere a que termine</b> — tocar varias veces ya no crea registros duplicados, la app lo impide automáticamente.</p>
+      <p><b>📚 10. Mis actividades</b><br>La lista de lo registrado. Toque una para ver su detalle e imprimir el PDF. El administrador puede <b>editarla ✏️</b> o <b>eliminarla 🗑️</b>; al editar se abre el formulario con los datos actuales para corregirlos.</p>
 
-      <p><b>⚠️ 12. Ver Deudores</b><br>Panel exclusivo de administrador (botón rojo en el inicio o desde la tarjeta de sanciones). Lista cada unidad con horas de sanción pendientes. Toque un nombre para desplegar el acordeón con <b>las fechas y temas exactos</b> de los domingos que faltó sin excusa. Desde ahí mismo puede registrar horas cumplidas.</p>
+      <p><b>📊 11. Operatividad del personal</b> <span style="color:#6e2fa0;font-size:12px;">(solo administrador)</span><br>Mide el aporte de cada unidad en el período que elija:<br>
+      — <b>General:</b> las métricas del cuerpo y <b>dos rankings separados</b>, Incidentes y Actividades. Salen los tres primeros y "Ver más" abre el resto. Van aparte a propósito: quien carga la operación y quien carga la formación no compiten en la misma lista.<br>
+      — <b>Por Unidad:</b> busque a una persona y vea su ficha — los incidentes a los que asistió (consecutivo, tipo y fecha) y las actividades (nombre, horas y fecha).<br>
+      Filtre por mes o toque "📅 Todo el año". El puntaje se calcula como <b>incidentes × 2 + horas de actividades</b>.</p>
 
-      <p><b>🗺️ 13. Mapa de Emergencias</b><br>Panel exclusivo de administrador. Muestra en un mapa (sin costo, sin API key) cada emergencia que tenga coordenadas GPS registradas. Cada pin lleva el <b>emoji de su tipo</b> (🔥 incendio, 🚑 primeros auxilios, 🚗 rescate vehicular...). La <b>leyenda filtra</b>: toque un tipo para ocultar/mostrar sus pines; también puede filtrar por <b>año y mes</b>, ver el contador de emergencias visibles y reencuadrar con <b>🎯 Ver todas</b>. Toque un pin para ver dirección, fecha y clasificación, con acceso directo a "Ver reporte completo".</p>
+      <p><b>🗺️ 12. Mapa de incidentes</b> <span style="color:#1a7a5e;font-size:12px;">(solo administrador)</span><br>Cada incidente que tenga coordenadas aparece como un pin con el <b>emoji de su tipo</b> (🔥 incendio, 🚑 primeros auxilios, 🚗 rescate vehicular…). La <b>leyenda filtra</b>: toque un tipo para ocultar o mostrar sus pines. También filtra por <b>año y mes</b>, muestra cuántos incidentes quedan a la vista, reencuadra con "🎯 Ver todas" y se amplía a pantalla completa con "⛶". Al tocar un pin salen dirección, fecha y clasificación, con acceso directo al informe completo. No usa servicios de pago ni claves.</p>
+
+      <p><b>🛡️ 13. Panel de administrador</b><br>Además de lo del punto 3, acá está el archivo completo del cuerpo. Busque por consecutivo, correo o dirección, y sobre cualquier informe puede <b>ver, editar</b> (consecutivo, dirección, barrio, municipio, narrativa, acciones y observaciones), <b>imprimir</b> o <b>eliminar</b>. Eliminar borra <b>en cascada</b>: la fila principal, las hojas relacionadas y la carpeta de archivos en Drive — no tiene vuelta atrás.<br>
+      Arriba se ve quién está firmando ("🪪 Opera") y el botón "Cambiar (relevo)", para que el turno entrante firme con su PIN y no quede operando bajo la firma del turno saliente.<br>
+      Cuando alguien sin permisos de administrador registró una actividad con una persona que no estaba en la base, aparece la bandeja "👥 Personas esperando alta": apruébelas para que el autocompletado las reconozca.</p>
+
+      <p><b>⚙️ 14. Configuración</b><br>Por el avatar → "Mis datos / Configuración": corrija su nombre, grado, cédula y teléfono (el correo no se cambia, es su identidad verificada por Google), elija el diseño <b>Original</b> o <b>Minimalista</b> —solo cambia el aspecto, y solo en este dispositivo— y consulte la dirección del servidor, que es de solo lectura.<br>
+      La <b>★ Zona Administrador</b> agrega: el <b>prefijo del consecutivo</b> (por defecto "RE"), el <b>"📅 Cierre de mes"</b>, que reordena los consecutivos de un mes según la <b>fecha y hora de la llamada</b> y no según cuándo se subieron —lo recomendado al cerrar cada mes—, y "🔄 Renumerar", que solo se usa si los consecutivos quedaron desordenados. Abajo, "⬇️ Exportar mis reportes (JSON)" baja una copia de lo suyo.</p>
+
+      <p><b>🔐 15. Quién puede hacer qué</b><br>Cada persona ve solo sus propios informes; el administrador ve los de todo el cuerpo. Quien crea un informe puede corregirlo o eliminarlo durante las <b>primeras 24 horas</b>; pasado ese plazo, solo el administrador. Las actividades las edita y elimina el administrador. Las acciones sensibles piden dos cosas: la <b>contraseña de administrador</b> y la <b>firma con PIN</b> de quien está operando, para que en la hoja quede el nombre de quien lo hizo.</p>
+
+      <p><b>⏳ 16. Los botones que dicen "Cargando"</b><br>Al enviar un informe, guardar una actividad, editar o eliminar, el botón se bloquea y muestra la animación de carga. <b>Espere a que termine</b> — tocar varias veces ya no crea registros repetidos, la app lo impide sola.</p>
+
+      <div style="background:#fff3e0;border-left:4px solid #e65100;padding:10px 12px;border-radius:6px;margin-top:14px;font-size:13px;">
+        <b>¿Quiere el detalle?</b><br>
+        <b>⚙️ Cómo funciona</b> explica dónde vive cada dato, cómo se calcula la operatividad y qué ve cada quien.<br>
+        <b>⚖️ Bases legales</b> reúne la Ley 1575 de 2012, la Resolución 661 de 2014 y el tratamiento de datos personales (Ley 1581 de 2012).
+      </div>
 
     </div>
     <button onclick="app.irA('pantallaHome')" style="margin-top:16px;padding:14px;background:var(--rojo);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%;">← Volver al inicio</button>
@@ -1497,40 +1533,51 @@ button:active { transform: scale(.96); }
     <h2 style="color:var(--rojo);margin:10px 0;">⚙️ Cómo funciona la app</h2>
     <div style="background:#fff;border-radius:10px;padding:16px;line-height:1.7;color:#222;font-size:14px;">
 
-      <p><b>🔐 Inicio de sesión seguro</b><br>La app usa <b>Google OAuth</b>. Solo accede quien inicie sesión con un correo Gmail autorizado por el administrador. La app NO guarda contraseñas. El administrador tiene una contraseña adicional para funciones sensibles.</p>
+      <p><b>🚒 Una copia para cada cuerpo de bomberos</b><br>La app se descarga <b>vacía</b>: no trae datos, personal ni historia de ningún otro cuerpo. La primera vez que alguien entra, pide cinco cosas —nombre del cuerpo, departamento, municipio, tipo (voluntario, oficial o aeronáutico) y sigla— y con eso <b>se instala sola</b>: crea la base de datos, la deja con su estructura completa y registra a quien la instaló como <b>administrador fundador</b>. Se hace una sola vez: la base nunca se vuelve a crear ni se sobrescribe.</p>
 
-      <p><b>💾 Arquitectura de almacenamiento</b><br>
-      • <b>Módulo Emergencias:</b> funciona sin internet. Los reportes se guardan localmente (IndexedDB) y suben al servidor cuando hay señal.<br>
-      • <b>Módulos Actividades, Asistencia y Operatividad:</b> requieren conexión activa — consultan y escriben directamente en el servidor (Google Sheets vía Apps Script).</p>
+      <p><b>🗄️ Dónde viven los datos — y de quién son</b><br>La hoja de cálculo y las fotos nacen y se quedan <b>en el Google Drive de la cuenta que instaló la app</b>. No hay un servidor del desarrollador en el medio, ni una nube compartida entre cuerpos. <span data-inst="nombre">Su cuerpo de bomberos</span> es el <b>dueño del archivo</b>: puede abrirlo, descargarlo, imprimirlo o quitarle el permiso a la app cuando quiera desde su cuenta de Google. Ningún otro cuerpo ve estos datos, y ningún dato de otro cuerpo entra aquí.</p>
 
-      <p><b>📊 Hojas en Google Sheets</b><br>
-      • <b>Reportes:</b> emergencias con sus 14 secciones.<br>
-      • <b>Bonificaciones:</b> una fila por bombero × emergencia atendida.<br>
-      • <b>Personal:</b> directorio de los 31 bomberos activos (base del autocomplete).<br>
-      • <b>Actividades + Personal_Actividad + Recursos_Actividad:</b> registro de acompañamientos, capacitaciones, etc.<br>
-      • <b>Asistencia_Domingos:</b> presencia, excusas y sanciones por cada reunión dominical.<br>
-      • <b>Sanciones:</b> horas acumuladas por inasistencia sin excusa.<br>
-      • Otras hojas de soporte: Recursos, Organizaciones, Usuarios, etc.</p>
+      <p><b>📄 Qué se crea en su Google Sheets</b><br>
+      <b>Al instalar:</b> <code>Inicio</code>, <code>Administradores</code>, <code>Personal</code>, <code>Personal_Pendiente</code>, <code>Actividades</code>, <code>Personal_Actividad</code> y <code>Vehiculos</code>.<br>
+      <b>Y a medida que se usa</b>, aparecen solas: <code>Reportes</code> —con sus hojas de apoyo <code>Victimas</code>, <code>Recursos</code>, <code>Personal_por_Recurso</code> y <code>Organizaciones</code>—, <code>Personal_por_Incidente</code> y <code>Resumen_por_Bombero</code>, <code>Estadisticas_Mensuales</code>, <code>Recursos_Actividad</code>, <code>Evidencias_Actividades</code>, <code>PINs_Operador</code>, <code>Operadores_Admin</code> y <code>Log_Seguridad</code>.<br>
+      <span style="color:#666;font-size:13px;">No se crea ninguna hoja de régimen disciplinario interno: eso lo lleva cada cuerpo como lo manda su propio reglamento, no como lo diga esta app.</span></p>
 
-      <p><b>📅 Lógica de sanciones (domingos)</b><br>
-      • <b>Horas:</b> cada falta sin excusa genera <b>2 horas</b> de sanción. El plazo para cumplirlas es antes del siguiente domingo. Si llega el siguiente domingo sin cumplirlas, la deuda se <b>duplica</b>: 2h → 4h → 8h → 16h → 32h... (asistir no borra la deuda — solo cumplir las horas la salda).<br>
-      • <b>Alertas (faltas consecutivas):</b> 3 domingos consecutivos sin excusa → 🗣️ llamado de atención <b>verbal</b>. 4 consecutivos → 📄 llamado <b>escrito</b>. 5 consecutivos → 🚨 <b>alerta extrema de DESERCIÓN</b> (gestión de retiro de la institución). Si asiste un domingo, el conteo de consecutivas vuelve a cero.<br>
-      • <b>Horas cumplidas:</b> cuando el admin marca horas como cumplidas, quedan registradas de forma permanente y se descuentan de la deuda — no se pierden aunque se registren más domingos.</p>
+      <p><b>📶 Funciona sin internet</b><br>Un incidente se puede levantar <b>completo, sin una barra de señal</b>: queda guardado en el propio celular y marcado como <b>pendiente</b>. Apenas vuelve la conexión sube solo, y si el envío se corta a la mitad el reintento <b>no duplica</b> el reporte. El <b>número oficial lo asigna el servidor</b> cuando el reporte llega — nunca el celular.<br>
+      Las pantallas que consultan la base viva —Actividades, Operatividad, Personal y Vehículos— sí necesitan conexión en el momento.</p>
 
-      <p><b>📊 Operatividad — cómo se calcula</b><br>Los puntos de cada bombero se calculan así: <b>Emergencias × 2 + Horas de actividades + Domingos presentes</b>. Los rankings son independientes para cada categoría — no se suman en un solo ranking para que cada área sea reconocida por separado.</p>
+      <p><b>🔄 Cambiar de teléfono no pierde nada</b><br>Al iniciar sesión con el mismo correo en otro dispositivo, los reportes se descargan de la base del cuerpo. Limpiar la caché o cambiar de celular no borra lo que ya subió.</p>
 
-      <p><b>🆔 Consecutivo de emergencias</b><br>El servidor asigna automáticamente el número (ej. <code>RE-2026-0085</code>) con bloqueo por concurrencia — es imposible que dos bomberos generen el mismo número simultáneamente.</p>
+      <p><b>🔐 Quién puede entrar</b><br>La app usa el inicio de sesión de <b>Google (OAuth)</b>: aquí nadie escribe ni guarda contraseñas de correo. Al entrar se emite un <b>pase firmado</b> con vigencia limitada, para no depender de la señal en cada toque. Encima de eso hay dos llaves más: el administrador tiene <b>contraseña propia</b> para lo destructivo, y cada unidad tiene un <b>PIN de 4 dígitos</b> para firmar lo que hace de guardia. Los PIN se guardan cifrados — ni el administrador puede verlos, solo reemplazarlos.</p>
 
-      <p><b>⏱️ Regla de integridad (24 horas)</b><br>El bombero que crea un reporte de emergencia puede editarlo o eliminarlo durante las primeras 24 horas. Después, solo el administrador puede modificarlo. Actividades y Asistencia pueden ser editadas/eliminadas solo por el administrador en cualquier momento.</p>
+      <p><b>📊 Operatividad — cómo se calcula</b><br>Los puntos de cada unidad salen de una sola fórmula:<br>
+      <b style="color:#6e2fa0;">Incidentes × 2 + Horas de actividades</b><br>
+      Un incidente cuenta <b>una sola vez por persona</b>, aunque aparezca en varios recursos del mismo reporte, y cada actividad aporta las horas que realmente duró. Los rankings se muestran <b>por separado</b> (incidentes por un lado, actividades por otro) para que ninguna de las dos áreas quede tapada por la otra.</p>
 
-      <p><b>🛡️ Poderes del Administrador</b><br>
-      • Reportes de emergencia: ver todos, editar, imprimir, eliminar (cascada: Sheets + Drive).<br>
-      • Actividades: editar datos (tipo, descripción, fecha, horas, lugar, novedades) y eliminar.<br>
-      • Asistencia domingos: editar estados individuales, encargado, comandante de guardia, y eliminar un domingo completo.<br>
-      • Operatividad: dashboard completo con todos los bomberos.<br>
-      • Agregar bomberos nuevos a la base de datos desde el módulo de Asistencia.</p>
+      <p><b>🆔 Número del incidente</b><br>El servidor asigna el consecutivo (ej. <code>RE-2026-0085</code>) con bloqueo por concurrencia: es imposible que dos unidades generen el mismo número al tiempo, ni siquiera reportando desde dos celulares a la vez.</p>
 
-      <p><b>🔒 Privacidad</b><br>Cada bombero ve solo sus propios reportes. El admin ve todos. Los datos NO son públicos — requieren login con Gmail autorizado. La contraseña del admin nunca sale del dispositivo en texto plano.</p>
+      <p><b>⏱️ Regla de integridad (24 horas)</b><br>Quien crea un reporte puede editarlo o eliminarlo durante las primeras <b>24 horas</b>. Después solo el administrador. Las actividades las edita o elimina el administrador en cualquier momento. Todo movimiento sensible queda con fecha, hora y correo en el registro de seguridad.</p>
+
+      <p><b>🛡️ Qué puede hacer el administrador</b><br>
+      • Ver, editar, imprimir y eliminar cualquier incidente (al eliminar se van también sus fotos en Drive).<br>
+      • Editar o eliminar actividades.<br>
+      • Ver el tablero completo de operatividad y el mapa de incidentes.<br>
+      • Manejar el personal, la flota, los PIN de las unidades y la lista de administradores.</p>
+
+      <p style="background:#eff6ff;border-left:4px solid #1d4ed8;border-radius:4px;padding:10px 12px;"><b>📡 Qué sale de este celular — y a dónde va</b><br>
+      • <b>Al Google Sheets y al Drive de su propio cuerpo:</b> los datos del incidente (clasificación, dirección, coordenadas, descripción, víctimas, recursos), las fotos, las firmas y los datos del personal (nombre, cédula, teléfono, correo). Esto no pasa por ningún servidor del desarrollador.<br>
+      • <b>A Google, al iniciar sesión:</b> el correo y el nombre de la cuenta. Es el inicio de sesión estándar; la app nunca ve la contraseña de Gmail.<br>
+      • <b>A OpenStreetMap, solo cuando se usa el mapa:</b> las coordenadas del punto que se está ubicando y un identificador de contacto de la app (el servicio lo exige), para dibujar el mapa y sugerir la dirección. <b>No se envía nombre, cédula, foto ni ningún otro dato del reporte.</b><br>
+      • <b>Correos:</b> la app solo le escribe al administrador, y solo si detecta una anomalía de seguridad. Si no hay anomalías, no envía nada.<br>
+      • <b>A nadie más:</b> no hay publicidad, ni analítica, ni estadísticas que viajen a terceros, ni copia que se le mande a otro cuerpo.</p>
+
+      <p style="background:#fffbe6;border-left:4px solid #f0b800;border-radius:4px;padding:10px 12px;"><b>⚠️ Lo que hay que saber de las fotos</b><br>Las fotos quedan en la carpeta de Drive del cuerpo, pero para poder mostrarse dentro de la app se marcan como <b>«cualquiera con el enlace puede verla»</b>. El enlace no se publica en ninguna parte ni sale en buscadores, pero <b>quien lo tenga puede abrir la foto sin iniciar sesión</b>. Por eso: no reenvíe enlaces de fotos fuera del cuerpo.</p>
+
+      <p><b>🔒 Privacidad y respaldo</b><br>Cada bombero ve solo sus propios reportes; el administrador los ve todos. Nada es público: hay que entrar con una cuenta autorizada. La contraseña del administrador vive en la configuración del servidor del cuerpo — no está en la app, ni en la hoja de cálculo, ni viaja en texto plano. Y la base se respalda <b>sola, todos los días</b>, dentro del mismo Drive del cuerpo.</p>
+
+      <p style="margin-top:14px;color:#666;font-size:12px;">
+        <b><span data-inst="app">Reportes</span> v1.04</b> · Hecha para los cuerpos de bomberos de Colombia.<br>
+        App desarrollada por <b>Bombero Jeferson Jeancarlos Rangel Gil</b>.
+      </p>
 
     </div>
     <button onclick="app.irA('pantallaHome')" style="margin-top:16px;padding:14px;background:var(--rojo);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%;">← Volver al inicio</button>
@@ -1542,31 +1589,57 @@ button:active { transform: scale(.96); }
   <div style="padding:0 4px;">
     <h2 style="color:var(--rojo);margin:10px 0;">⚖️ Bases legales</h2>
     <div style="background:#fff;border-radius:10px;padding:16px;line-height:1.6;color:#222;font-size:14px;">
-      <p><b>Ley 1575 de 2012 — Ley General de Bomberos de Colombia</b><br>Establece la organización y funciones del Sistema Nacional de Bomberos. El reporte oficial de emergencias es de obligatorio diligenciamiento por las unidades que atienden el evento.</p>
 
-      <p><b>Decreto 953 de 2014</b><br>Reglamenta parcialmente la Ley 1575 y precisa las obligaciones operativas de los cuerpos de bomberos respecto al registro y manejo estadístico de las emergencias atendidas.</p>
+      <p style="margin-top:0;color:#555;font-size:13px;">Acá solo aparece normativa <b>nacional</b>: la que le aplica igual a cualquier cuerpo de bomberos de Colombia, sea oficial, voluntario o aeronáutico. Cada norma se cita con número y año, y al lado se dice qué parte de la app responde a ella. El reglamento propio de cada cuerpo (estatutos, régimen disciplinario, horarios de guardia) <b>no</b> está acá, porque no es norma nacional.</p>
 
-      <p><b>Resolución 661 de 2014</b><br>Reglamenta el formato oficial del reporte de emergencias. La app cumple con las 14 secciones requeridas (datos generales, clasificación, ubicación, descripción, recursos, diagnóstico, afectado, acciones, víctimas, causas, organizaciones participantes, observaciones, firma del comandante).</p>
+      <p><b>Ley 1575 de 2012 — Ley General de Bomberos de Colombia</b><br>
+      Es la ley marco del Sistema Nacional de Bomberos. Fija las tres misiones del servicio: gestión integral del riesgo contra incendio, preparativos y atención de rescates en todas sus modalidades, y atención de incidentes con materiales peligrosos.<br>
+      <i>Qué responde en la app:</i> la lista de tipos de incidente cubre las tres misiones — incendios (estructural, forestal, de interfaz, vehicular), rescates (vehicular, en altura, acuático, animal, búsqueda y rescate) y materiales peligrosos (MATPEL).</p>
 
-      <p><b>Ley 1581 de 2012 — Habeas Data</b><br>Los datos personales recolectados (nombre, cédula, teléfono, firma, foto) se tratan exclusivamente para la gestión y estadística de emergencias del Cuerpo de Bomberos. El titular puede solicitar acceso, rectificación o supresión en cualquier momento ante el administrador.</p>
+      <p><b>Ley 1575 de 2012, artículo 45 — Registro Único de Estadísticas (RUE)</b><br>
+      Crea el RUE, la plataforma de la Dirección Nacional de Bomberos de Colombia (DNBC) donde cada cuerpo registra los eventos que atiende. El diligenciamiento se hace <b>a mano, registro por registro</b>, dentro de la plataforma de la DNBC.<br>
+      <i>Qué responde en la app:</i> el botón <b>📋 Ver para RUE</b> de cada informe muestra los datos ya capturados <b>en el orden exacto del formulario oficial</b>, con un botón de copiar campo por campo, y traduce el tipo de incidente de la app al evento equivalente del catálogo del RUE. La app <b>no</b> llena el RUE por usted: le quita la búsqueda en papeles y los errores de transcripción.</p>
 
-      <p><b>Decreto 1377 de 2013</b><br>Reglamenta la Ley 1581 sobre el tratamiento de datos personales. La app respeta los principios de finalidad, libertad, veracidad, transparencia y seguridad de los datos almacenados en Google Sheets y Drive bajo la cuenta institucional de cada cuerpo de bomberos.</p>
+      <p><b>Ley 1575 de 2012, artículo 24 · Decreto 350 de 2013 · Resolución 141 de 2017 — inspección de operatividad</b><br>
+      El artículo 24 de la Ley 1575 es la base legal de la inspección de las condiciones de operatividad. El Decreto 350 de 2013 define la estructura y funciones de la DNBC. La Resolución 141 de 2017 establece el procedimiento de esa inspección y, en su artículo 4, la pone en cabeza de la DNBC para las instituciones bomberiles <b>oficiales y voluntarias</b>; su evidencia de cumplimiento es un <b>formato oficial</b> de inspección de condiciones de operatividad.<br>
+      <i>Qué responde en la app:</i> los módulos de Personal, Vehículos y Operatividad mantienen al día los datos que se piden en una verificación. <b>Aclaración honesta:</b> la app todavía <b>no</b> imprime el formato oficial de la Resolución 141 — conserva los datos, no reproduce el formato.</p>
 
-      <p><b>Ley 527 de 1999 — Firma electrónica</b><br>Las firmas digitales capturadas en pantalla tienen validez legal como manifestación de voluntad para constancia de atención del incidente.</p>
+      <p><b>Resolución 358 de 2014 — el SCI es obligatorio, no una buena práctica</b><br>
+      Adopta el <b>Sistema Comando de Incidentes (SCI)</b> como procedimiento operativo de los cuerpos de bomberos del país.<br>
+      <i>Qué responde en la app:</i> el vocabulario sigue al SCI. Se dice <b>incidente</b> —término que cubre la emergencia, el evento planificado y el operativo— y se habla de <b>recursos</b> (personal y equipo). Por eso el botón principal dice NUEVO INCIDENTE y no "nueva emergencia".</p>
 
-      <p><b>Ley 1437 de 2011 — CPACA (documentos electrónicos)</b><br>Los reportes generados por la app, almacenados en la nube institucional y firmados electrónicamente, tienen el mismo valor probatorio que un documento físico para fines administrativos y estadísticos.</p>
+      <p><b>Resolución 0661 de 2014, artículo 31 — los siete grados</b><br>
+      Reglamento administrativo, operativo, técnico y académico de los cuerpos de bomberos. Su artículo 31 fija la jerarquía, idéntica en todo el país: <b>Capitán, Teniente y Subteniente</b> (oficiales); <b>Sargento y Cabo</b> (suboficiales); <b>Bombero</b>; <b>Aspirante</b>. Sus artículos 100 y 101 fueron modificados por la <b>Resolución 258 de 2015</b>.<br>
+      <i>Qué responde en la app:</i> el selector de grado trae exactamente esos siete y <b>no es configurable</b>. Es de los pocos datos que la app no deja cambiar, justamente porque es nacional.</p>
 
-      <p><b>🔒 Política interna de integridad (24 horas)</b><br>Para preservar la veracidad de la información oficial, cada bombero solo puede modificar o eliminar su propio reporte durante las primeras <b>24 horas</b> desde su creación. Pasado ese plazo, solo el administrador del cuerpo de bomberos puede realizar correcciones, garantizando la trazabilidad de los cambios.</p>
+      <p><b>Circular 008 del 10 de julio de 2026 (DNBC) — caracterización de capacidades</b><br>
+      Lineamientos para la preparación, alistamiento y verificación de capacidades operativas de los cuerpos de bomberos frente al Fenómeno El Niño 2026-2027. Pide caracterizar el recurso humano (bomberos activos, disponibles y capacitados), las capacidades operativas (vehículos, motobombas, herramientas manuales, EPP forestal, comunicaciones, GPS) y las capacidades logísticas, además de identificar y <b>georreferenciar</b> las fuentes de abastecimiento de agua.<br>
+      <i>Qué responde en la app:</i> Personal, Vehículos y Operatividad cubren la parte de recurso humano y vehículos. <b>Aclaración honesta:</b> el inventario de herramientas, equipos y EPP y el mapa de fuentes de agua <b>todavía no existen</b> en la app.</p>
+
+      <p><b>Ley 1581 de 2012 — protección de datos personales (Habeas Data)</b><br>
+      Regula el tratamiento de los datos personales que la app recoge: nombre, cédula, teléfono, firma y foto del personal, y los datos de las personas afectadas por el incidente. El titular puede conocer, actualizar, rectificar y solicitar la supresión de sus datos.<br>
+      <i>Qué responde en la app:</i> la base de datos vive en el Google Drive <b>del propio cuerpo de bomberos</b>, con su propia cuenta. Quien desarrolló la app no tiene acceso a ella. Por eso el <b>responsable del tratamiento es cada cuerpo</b>, y las solicitudes del titular se atienden ante su administrador.</p>
 
       <p style="background:#fffbe6;padding:10px;border-left:4px solid #f0b800;border-radius:4px;font-size:13px;">
-        <b>Aviso Habeas Data:</b> Los datos personales aquí recolectados serán tratados exclusivamente para la gestión y estadística de emergencias de <span data-inst="nombre">su cuerpo de bomberos</span>, así como para el reconocimiento de bonificaciones post-emergencia al personal interviniente.
+        <b>⚠️ El régimen disciplinario NO es nacional</b><br>
+        No existe una norma del país que fije las faltas ni las horas de sanción de un bombero. En los cuerpos <b>voluntarios</b>, el régimen disciplinario se rige por el <b>Decreto 953 de 1997</b>, por los <b>estatutos de cada cuerpo</b> y por su <b>Procedimiento Interno Disciplinario</b>. En los cuerpos <b>oficiales</b>, por la <b>Ley 734 de 2002</b> (Código Disciplinario Único).<br>
+        Es decir: <b>cada cuerpo tiene su propio reglamento disciplinario</b>. Por eso esta app no trae ninguna tabla de sanciones ni ninguna regla de horas escrita en el código: sería imponerle a una institución un reglamento que no es el suyo, y no tendría respaldo legal.
+      </p>
+
+      <p><b>🔒 Regla del producto — no es una norma</b><br>
+      Quien crea un informe de incidente puede editarlo o eliminarlo durante las primeras <b>24 horas</b>. Pasado ese plazo, solo el administrador puede corregirlo. Esto <b>no sale de ninguna norma</b>: es una decisión de la app para que el registro que alimenta el RUE no cambie sin dejar rastro, y para que toda corrección posterior quede a nombre del administrador.</p>
+
+      <p style="background:#fffbe6;padding:10px;border-left:4px solid #f0b800;border-radius:4px;font-size:13px;">
+        <b>Aviso Habeas Data (Ley 1581 de 2012):</b> Los datos personales aquí recolectados serán tratados exclusivamente para la gestión, el registro y la estadística de incidentes de <span data-inst="nombre">su cuerpo de bomberos</span> —incluido el reporte al RUE conforme al artículo 45 de la Ley 1575 de 2012— y para el reconocimiento del personal interviniente, cuando el cuerpo lo otorgue. El titular puede conocer, actualizar, rectificar o solicitar la supresión de sus datos ante el administrador de <span data-inst="nombre">su cuerpo de bomberos</span>.
       </p>
 
       <p style="margin-top:16px;color:#666;font-size:12px;">
+        Responsable del tratamiento de los datos:<br>
         <b data-inst="nombre">Su cuerpo de bomberos</b><br>
         <span data-inst="personeria"></span><br>
         <span data-inst="nit"></span><br>
-        <span data-inst="direccion"></span> <span data-inst="lema"></span>
+        <span data-inst="direccion"></span><br>
+        <i data-inst="lema"></i>
       </p>
     </div>
     <button onclick="app.irA('pantallaHome')" style="margin-top:16px;padding:14px;background:var(--rojo);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%;">← Volver al inicio</button>
@@ -1626,23 +1699,6 @@ button:active { transform: scale(.96); }
       </div>
       <div id="listaFlota" style="margin-top:10px;"></div>
       <button onclick="app.agregarVehiculo()" style="width:100%;margin-top:8px;padding:8px;background:#fff;color:#166534;border:1px dashed #16a34a;border-radius:6px;font-weight:600;cursor:pointer;font-size:11px;">➕ Agregar vehículo</button>
-    </div>
-
-    <!-- Regla disciplinaria. Nace APAGADA: el Decreto 953/1997 fija el marco,
-         pero las horas y la progresión salen de los estatutos de cada cuerpo.
-         Sin esta pantalla la regla solo se podía cambiar escribiendo en Script
-         Properties, que no es algo que un comandante deba hacer. -->
-    <div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:12px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <div style="font-weight:700;font-size:13px;color:#92400e;">⚖️ Regla de sanciones</div>
-        <button onclick="app.cargarReglaSanciones(this)" style="padding:6px 10px;background:#f59e0b;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:11px;">🔄 Actualizar</button>
-      </div>
-      <div style="font-size:11px;color:#92400e;margin-top:5px;line-height:1.45;">
-        Cómo se calculan las horas por inasistencia. Sale de <strong>los estatutos de
-        su cuerpo</strong>, no de una norma nacional. Viene apagada.
-      </div>
-      <div id="reglaSancionesActual" style="margin-top:10px;"></div>
-      <button onclick="app.cambiarReglaSanciones()" style="width:100%;margin-top:8px;padding:8px;background:#fff;color:#92400e;border:1px dashed #f59e0b;border-radius:6px;font-weight:600;cursor:pointer;font-size:11px;">⚙️ Cambiar la regla</button>
     </div>
 
     <!-- Carga inicial del roster. Sin esto, un comandante con 30 unidades tendría
@@ -2348,16 +2404,6 @@ button:active { transform: scale(.96); }
     </div>
 
     <div style="border-top: 1px solid #fde68a; margin: 16px 0; padding-top: 14px;">
-      <h4 style="color: var(--rojo); font-size: 14px; margin-bottom: 8px;">📨 Alerta de sanciones a deudores</h4>
-      <p style="font-size: 12px; color: var(--gris-texto); margin-bottom: 10px;">
-        Envía AHORA el recordatorio por correo: uno personal a cada unidad que debe horas y el resumen completo a la estación. El envío automático de los <strong>viernes 9:30 AM</strong> funciona aparte y no se afecta.
-      </p>
-      <button class="btn btn-completo" onclick="app.enviarAlertaSanciones(this)" style="background: var(--rojo); color: #fff;">
-        📨 Enviar alerta de sanciones ahora
-      </button>
-    </div>
-
-    <div style="border-top: 1px solid #fde68a; margin: 16px 0; padding-top: 14px;">
       <h4 style="color: var(--rojo); font-size: 14px; margin-bottom: 8px;">🔧 Renumerar reportes (peligroso)</h4>
       <p style="font-size: 12px; color: var(--gris-texto); margin-bottom: 10px;">
         Si los consecutivos se desordenaron por usuarios con versiones viejas, este botón pide al servidor renumerar todos los reportes en orden cronológico.
@@ -2477,8 +2523,8 @@ button:active { transform: scale(.96); }
 
 <div id="pdfContenedor"></div>
 
-<script src="logos.js?v=1.01"></script>
-<script src="app.js?v=1.01"></script>
+<script src="logos.js?v=1.06"></script>
+<script src="app.js?v=1.06"></script>
 
 <!-- ══════════ PANTALLA: NUEVA ACTIVIDAD ══════════ -->
 <div class="pantalla" id="pantallaActividades">
@@ -2578,7 +2624,7 @@ button:active { transform: scale(.96); }
 <!-- ══════════ PANTALLA: LISTA ACTIVIDADES ══════════ -->
 <div class="pantalla" id="pantallaListaActividades">
   <div style="padding:0 4px;">
-    <h2 style="color:#1a5276;margin:10px 0;">📋 Mis Actividades y Asistencia de Domingos</h2>
+    <h2 style="color:#1a5276;margin:10px 0;">📋 Mis Actividades</h2>
     <div id="listaActividadesContenido" style="margin-bottom:12px;"><!-- v5.89: skeleton shimmer (el JS lo pisa al cargar) --><div class="skeleton-tarjeta"></div><div class="skeleton-tarjeta"></div><div class="skeleton-tarjeta"></div></div>
     <button onclick="app.irA('pantallaHome')" style="background:#f5f5f5;color:#333;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;">← Volver</button>
   </div>
@@ -2594,138 +2640,14 @@ button:active { transform: scale(.96); }
   </div>
 </div>
 
-<!-- ══════════ PANTALLA: ASISTENCIA ══════════ -->
-<div class="pantalla" id="pantallaAsistencia">
-  <div style="padding:0 4px;">
-    <h2 style="color:#1e8449;margin:10px 0;">📅 Asistencia Domingos</h2>
-    <div id="asistenciaAdminPanel" style="display:none;">
-      <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <label style="font-weight:700;display:block;margin-bottom:6px;">Fecha del domingo *</label>
-        <input type="date" id="asistFecha" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:15px;box-sizing:border-box;" onchange="app.cargarListaAsistencia()">
-        <div style="font-size:11px;color:#888;margin-top:4px;">Puedes registrar hasta 3 días después del domingo</div>
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:4px;">Tipo de reunión</label>
-            <select id="asistTipoReunion" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
-              <option value="">Seleccionar...</option>
-              <option value="Capacitación">Capacitación</option>
-              <option value="Entrenamiento">Entrenamiento</option>
-              <option value="Reunión ordinaria">Reunión ordinaria</option>
-              <option value="Simulacro">Simulacro</option>
-              <option value="Jornada comunitaria">Jornada comunitaria</option>
-              <option value="Otra">Otra</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:4px;">Lugar</label>
-            <input type="text" id="asistLugar" placeholder="Estación, comunidad..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
-          </div>
-        </div>
-        <label style="font-weight:700;font-size:13px;display:block;margin-bottom:4px;">Tema tratado</label>
-        <input type="text" id="asistTema" placeholder="Ej: Incendios forestales, RCP básico, Protocolos..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:4px;">👤 Encargado / Instructor</label>
-            <div style="position:relative;">
-              <input type="text" id="asistEncargado" placeholder="Buscar nombre..." autocomplete="off"
-                style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;"
-                oninput="app._buscarAsistCampo('asistEncargado','asistEncSug',this.value)">
-              <div id="asistEncSug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.1);max-height:150px;overflow-y:auto;"></div>
-            </div>
-          </div>
-          <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:4px;">🛡️ Comandante de guardia</label>
-            <div style="position:relative;">
-              <input type="text" id="asistComandanteGuardia" placeholder="Buscar nombre..." autocomplete="off"
-                style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;"
-                oninput="app._buscarAsistCampo('asistComandanteGuardia','asistGuarSug',this.value)">
-              <div id="asistGuarSug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.1);max-height:150px;overflow-y:auto;"></div>
-            </div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:#888;margin-top:6px;">💡 Si el encargado o guardia ya está en la lista, no se duplica.</div>
-      </div>
-      <div id="asistListaPersonal" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;min-height:60px;">
-        <div style="color:#999;text-align:center;padding:20px;">Selecciona una fecha para cargar el personal</div>
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="font-weight:700;margin-bottom:10px;">📸 Fotos de la reunión (opcionales)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <div style="text-align:center;">
-            <label for="asistFotoInicio" style="display:block;background:#f5f5f5;border:2px dashed #ccc;border-radius:8px;padding:14px 4px;cursor:pointer;font-size:11px;color:#666;">📷<br>Inicio</label>
-            <input type="file" id="asistFotoInicio" accept="image/*" style="display:none;" onchange="app._fotoAsistencia('inicio', this)">
-            <div id="asistFotoInicioOk" style="font-size:10px;color:#1e8449;display:none;margin-top:2px;">✅ Cargada</div>
-          </div>
-          <div style="text-align:center;">
-            <label for="asistFotoMedio" style="display:block;background:#f5f5f5;border:2px dashed #ccc;border-radius:8px;padding:14px 4px;cursor:pointer;font-size:11px;color:#666;">📷<br>Intermedio</label>
-            <input type="file" id="asistFotoMedio" accept="image/*" style="display:none;" onchange="app._fotoAsistencia('medio', this)">
-            <div id="asistFotoMedioOk" style="font-size:10px;color:#1e8449;display:none;margin-top:2px;">✅ Cargada</div>
-          </div>
-          <div style="text-align:center;">
-            <label for="asistFotoFin" style="display:block;background:#f5f5f5;border:2px dashed #ccc;border-radius:8px;padding:14px 4px;cursor:pointer;font-size:11px;color:#666;">📷<br>Final</label>
-            <input type="file" id="asistFotoFin" accept="image/*" style="display:none;" onchange="app._fotoAsistencia('fin', this)">
-            <div id="asistFotoFinOk" style="font-size:10px;color:#1e8449;display:none;margin-top:2px;">✅ Cargada</div>
-          </div>
-        </div>
-      </div>
-      <button onclick="app.guardarAsistencia(this)" id="btnGuardarAsistencia" style="display:none;background:#1e8449;color:#fff;border:none;border-radius:12px;padding:16px;font-weight:700;cursor:pointer;width:100%;font-size:16px;margin-bottom:8px;">💾 Guardar Asistencia</button>
-      <div id="asistFormNuevoBombero" style="display:none;background:#fff3e0;border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid #ff9800;">
-        <div style="font-weight:700;color:#e65100;margin-bottom:8px;">➕ Agregar bombero nuevo a la base de datos</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <input type="text" id="asistNuevoNombre" placeholder="Nombre completo *" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
-          <input type="text" id="asistNuevoCedula" placeholder="Cédula *" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
-          <input type="text" id="asistNuevoTel" placeholder="Teléfono" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
-          <input type="text" id="asistNuevoCorreo" placeholder="Correo" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
-          <select id="asistNuevoRango" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
-            <option value="BOMBERO">Bombero</option><option value="CAPITAN">Capitán</option>
-            <option value="TENIENTE">Teniente</option><option value="SUBTENIENTE">Subteniente</option>
-            <option value="SARGENTO">Sargento</option><option value="CABO">Cabo</option>
-            <option value="ASPIRANTE">Aspirante</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="app.agregarNuevoBomberoAsistencia(this)" style="flex:1;background:#e65100;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer;">✅ Agregar y registrar</button>
-          <button onclick="document.getElementById('asistFormNuevoBombero').style.display='none'" style="background:#f5f5f5;color:#333;border:none;border-radius:8px;padding:10px;cursor:pointer;">✕</button>
-        </div>
-      </div>
-      <button onclick="document.getElementById('asistFormNuevoBombero').style.display=document.getElementById('asistFormNuevoBombero').style.display==='none'?'block':'none'" id="btnMostrarNuevoBombero" style="display:none;background:#fff3e0;color:#e65100;border:1px solid #ff9800;border-radius:12px;padding:12px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;">➕ Agregar bombero que no está en la lista</button>
-    </div>
-    <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-      <div style="font-weight:700;margin-bottom:10px;">📜 Historial de domingos</div>
-      <div id="asistHistorial" style="max-height:300px;overflow-y:auto;"></div>
-    </div>
-    <div id="asistSancionesPanel" style="display:none;background:#fff8e1;border-radius:12px;padding:16px;margin-bottom:12px;">
-      <div style="font-weight:700;color:#e65100;margin-bottom:10px;">⚠️ Sanciones pendientes</div>
-      <div id="asistSanciones"></div>
-    </div>
-    <button onclick="app.irA('pantallaHome')" style="background:#f5f5f5;color:#333;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;">← Volver</button>
-  </div>
-</div>
-
 <!-- ══════════ PANTALLA: OPERATIVIDAD ══════════ -->
 <div class="pantalla" id="pantallaOperatividad">
   <div style="padding:0 4px;">
     <h2 style="color:#6e2fa0;margin:10px 0;">📊 Operatividad del Personal</h2>
     <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e65100;">
-      🏆 Ranking: emergencias + horas de actividades + asistencia domingos
+      🏆 Ranking: incidentes atendidos + horas de actividades
     </div>
     <div id="operatividadContenido"><!-- v5.89: skeleton shimmer (el JS lo pisa al cargar) --><div class="skeleton-tarjeta"></div><div class="skeleton-linea" style="width:60%"></div><div class="skeleton-linea"></div><div class="skeleton-linea" style="width:80%"></div><div class="skeleton-linea"></div></div>
-    <button onclick="app.irA('pantallaHome')" style="background:#f5f5f5;color:#333;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-top:8px;">← Volver</button>
-  </div>
-</div>
-
-<!-- ══════════ PANTALLA: VER DEUDORES (v5.64 — BUG 1+2) ══════════ -->
-<div class="pantalla" id="pantallaDeudores">
-  <div style="padding:0 4px;">
-    <h2 style="color:#c00;margin:10px 0;">⚠️ Deudores de Horas de Sanción</h2>
-    <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#e65100;">
-      Solo consulta y registro de horas cumplidas. Para registrar asistencia de un domingo, ve a 📅 Asistencia.
-    </div>
-    <div id="deudoresContenido"><!-- v5.89: skeleton shimmer (el JS lo pisa al cargar) --><div class="skeleton-tarjeta"></div><div class="skeleton-tarjeta"></div><div class="skeleton-tarjeta"></div></div>
     <button onclick="app.irA('pantallaHome')" style="background:#f5f5f5;color:#333;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-top:8px;">← Volver</button>
   </div>
 </div>
@@ -2733,9 +2655,9 @@ button:active { transform: scale(.96); }
 <!-- ══════════ PANTALLA: MAPA DE EMERGENCIAS (v5.64 — BUG 4) ══════════ -->
 <div class="pantalla" id="pantallaMapa">
   <div style="padding:0 4px;">
-    <h2 style="color:#1a7a5e;margin:10px 0;">🗺️ Mapa de Emergencias</h2>
+    <h2 style="color:#1a7a5e;margin:10px 0;">🗺️ Mapa de Incidentes</h2>
     <div style="background:#e8f5f0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1a7a5e;">
-      📍 Ubicación de emergencias registradas con coordenadas GPS. Toca un pin para ver el detalle.
+      📍 Ubicación de incidentes registrados con coordenadas GPS. Toca un pin para ver el detalle.
     </div>
     <div id="mapaEstado" style="text-align:center;padding:20px;color:#999;">Cargando mapa...</div>
     <!-- v5.86: mapaWrap agrupa filtros+leyenda+mapa para poder ampliarlo todo
