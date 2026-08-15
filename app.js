@@ -73,7 +73,7 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.08';
+const APP_VERSION = '1.09';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
@@ -1253,8 +1253,8 @@ const app = {
       lista.innerHTML = `
         <div class="vacio-estado">
           <div class="icono">📋</div>
-          <div>No hay reportes aún</div>
-          <div style="font-size: 12px; margin-top: 4px;">Toque "Nueva emergencia" para empezar</div>
+          <div>No hay informes aún</div>
+          <div style="font-size: 12px; margin-top: 4px;">Toque "Nuevo incidente" para empezar</div>
         </div>`;
       return;
     }
