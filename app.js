@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.14';
+const APP_VERSION = '1.15';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.15: 🖨️ Arreglada la impresión: antes el botón abría una pestaña EN BLANCO. Ahora el informe se genera y sale listo para imprimir o guardar como PDF. Además, el escudo que usted sube en el Panel de Administrador ya aparece en el encabezado y como marca de agua de los informes; si no subió ninguno, se usa la cruz de bombero por defecto.',
   'v1.05: 🔑 El asistente de instalación ahora le pide su contraseña de administrador. Con eso el fundador queda habilitado para NOMBRAR Y QUITAR administradores, que antes era imposible: la app exigía una contraseña que ninguna pantalla creaba, y quien instalaba quedaba como único admin para siempre.',
   'v1.04: 🧹 Se retiró del servidor todo lo que quedó del módulo dominical: 54 funciones y 14 rutas. Las rutas importan aunque no se vean: la dirección del servidor es pública, así que una ruta abierta se puede llamar desde afuera aunque ninguna pantalla la use. Nada cambia en el uso diario.',
   'v1.03: 🧹 Se terminó de sacar todo lo que ataba la app a una sola estación: ícono propio (cruz de Malta, el símbolo del bombero en todo el mundo), nombres internos, comentarios y datos de personas. El Manual, Cómo funciona y Bases legales se reescribieron: ahora describen la app que usted tiene y citan solo norma nacional. Y se retiró el código muerto del módulo dominical: 1.480 líneas menos.',
@@ -5188,6 +5189,17 @@ const app = {
     return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1600';
   },
 
+  // El logo que va en los PDF: el escudo que subió el cuerpo (Panel Admin);
+  // si no subió ninguno, la cruz de bombero por defecto. LOGO_BIG solo existe
+  // en la estación de origen (vive en su logos.js); acá nace indefinido, por eso
+  // el escudo manda y la cruz roja es el respaldo. Es una data-URL: se embebe
+  // directo en <img> y en la marca de agua sin llamar a la red.
+  _logoImpresion() {
+    return (this._inst().escudoUrl || '')
+        || ((typeof LOGO_BIG !== 'undefined') ? LOGO_BIG : '')
+        || this._CRUZ_ROJA;
+  },
+
   // Espera a que TODAS las imágenes de la ventana de impresión carguen
   // (máximo 10 s, pensado para enlaces lentos) antes de imprimir.
   _imprimirCuandoCarguenImagenes(ventana, maxMs) {
@@ -5206,14 +5218,17 @@ const app = {
   async _imprimirReporteEnVentanaNueva(r) {
     try {
       const html = this.generarHTMLImpresion(r);
-      // v5.86: noopener corta el enlace ventana.opener → esta pestaña de
-      // impresión (que solo escribe HTML propio) ya no tiene forma de tocar
-      // la app viva aunque algún dato inyectado lograra ejecutarse.
-      const ventana = window.open('', '_blank', 'width=900,height=1200,noopener');
+      // Seguridad: cortamos el enlace ventana.opener → esta pestaña de impresión
+      // (que solo escribe HTML propio, ya escapado con _esc) no puede tocar la app
+      // viva aunque algún dato lograra ejecutarse. OJO: NO usar 'noopener' en el 3er
+      // argumento de window.open — en Chrome/Chrome-móvil eso hace que devuelva null
+      // y la pestaña sale EN BLANCO. Nulamos opener a mano: misma protección, con handle.
+      const ventana = window.open('', '_blank', 'width=900,height=1200');
       if (!ventana) {
         this.toast('El navegador bloqueó la ventana emergente. Permita pop-ups e intente de nuevo.', 'error');
         return;
       }
+      try { ventana.opener = null; } catch (e) {}
       ventana.document.open();
       ventana.document.write(html);
       ventana.document.close();
@@ -5418,12 +5433,13 @@ const app = {
     const r = this.reporteActual;
     const html = this.generarHTMLImpresion(r);
 
-    // v5.86: noopener — ver nota en _imprimirReporteEnVentanaNueva.
-    const ventana = window.open('', '_blank', 'noopener');
+    // opener nulo, NO 'noopener' — ver nota en _imprimirReporteEnVentanaNueva.
+    const ventana = window.open('', '_blank', 'width=900,height=1200');
     if (!ventana) {
       this.toast('Bloqueador de ventanas activo. Permita ventanas emergentes.', 'error');
       return;
     }
+    try { ventana.opener = null; } catch (e) {}
     ventana.document.write(html);
     ventana.document.close();
     // v5.49: esperar a que carguen fotos/firmas antes de imprimir (antes: 500ms fijos)
@@ -5497,7 +5513,7 @@ const app = {
       return `
         <div class="pagina pagina-fotos">
           <div class="header-mini">
-            <img src="${typeof LOGO_BIG !== 'undefined' ? LOGO_BIG : ''}" alt="">
+            <img src="${app._logoImpresion()}" alt="">
             <div>
               <strong>CUERPO DE BOMBEROS VOLUNTARIOS</strong><br>
               <span style="font-size: 9pt;">Anexo fotográfico — Reporte ${r.consecutivo || ''} — Hoja ${etiquetaHoja}/${totalHojas}</span>
@@ -5527,7 +5543,7 @@ const app = {
 <meta charset="UTF-8">
 <title>${r.consecutivo}</title>
 <style>
-  :root { --logo-watermark: url("${typeof LOGO_BIG !== 'undefined' ? LOGO_BIG : ''}"); }
+  :root { --logo-watermark: url("${app._logoImpresion()}"); }
   @page { size: A4; margin: 10mm; }
   * {
     box-sizing: border-box;
@@ -5652,7 +5668,7 @@ const app = {
 
 <div class="pagina">
   <div class="header">
-    <img class="logo-h" src="${typeof LOGO_BIG !== 'undefined' ? LOGO_BIG : ''}" alt="">
+    <img class="logo-h" src="${app._logoImpresion()}" alt="">
     <div class="info">
       <h2>CUERPO DE BOMBEROS VOLUNTARIOS</h2>
       <div>${app._esc((app._inst().municipio||"")+(app._inst().departamento?" - "+app._inst().departamento:""))}</div>
@@ -6488,9 +6504,11 @@ ${paginaFotos}
   imprimirActividad() {
     const a = this._detalleActividadData;
     if (!a) return;
-    // v5.86: noopener — ver nota en _imprimirReporteEnVentanaNueva.
-    const w = window.open('', '_blank', 'noopener');
-    const logo = (typeof LOGO_BIG !== 'undefined') ? LOGO_BIG : '';
+    // opener nulo, NO 'noopener' — ver nota en _imprimirReporteEnVentanaNueva.
+    const w = window.open('', '_blank', 'width=900,height=1200');
+    if (!w) { this.toast('El navegador bloqueó la ventana. Permita pop-ups e intente de nuevo.', 'error'); return; }
+    try { w.opener = null; } catch (e) {}
+    const logo = app._logoImpresion();
     const tel = (typeof TELEFONO_ESTACION !== 'undefined') ? TELEFONO_ESTACION : '';
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Actividad ${a.id}</title>
@@ -7243,7 +7261,10 @@ ${paginaFotos}
     const d = this._operData;
     const mesNombre = this._operMes ? ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][parseInt(this._operMes)-1] : 'Todo el año';
     const top = [...d].sort((a,b)=>(b.emergencias*2+b.horasActividades)-(a.emergencias*2+a.horasActividades));
-    const w = window.open('','_blank','noopener');
+    // opener nulo, NO 'noopener' — ver nota en _imprimirReporteEnVentanaNueva.
+    const w = window.open('', '_blank', 'width=900,height=1200');
+    if (!w) { this.toast('El navegador bloqueó la ventana. Permita pop-ups e intente de nuevo.', 'error'); return; }
+    try { w.opener = null; } catch (e) {}
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Informe General Operatividad — ${mesNombre} ${this._operAnio}</title>
       <style>
@@ -7285,7 +7306,10 @@ ${paginaFotos}
   _imprimirReportePorUnidad() {
     const d = [...this._operData].sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
     const mesNombre = this._operMes ? ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][parseInt(this._operMes)-1] : 'Todo el año';
-    const w = window.open('','_blank','noopener');
+    // opener nulo, NO 'noopener' — ver nota en _imprimirReporteEnVentanaNueva.
+    const w = window.open('', '_blank', 'width=900,height=1200');
+    if (!w) { this.toast('El navegador bloqueó la ventana. Permita pop-ups e intente de nuevo.', 'error'); return; }
+    try { w.opener = null; } catch (e) {}
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>Informe por Unidad — ${mesNombre} ${this._operAnio}</title>
       <style>
