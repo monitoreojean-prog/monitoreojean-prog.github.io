@@ -42,8 +42,8 @@ try {
      que la CDN responda.
      Motivo 2: el Service Worker ya puede cachearlo, así que el mapa
      deja de depender de una CDN externa para siquiera abrir. -->
-<link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.13">
-<script src="vendor/leaflet/leaflet.js?v=1.13"></script>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=1.14">
+<script src="vendor/leaflet/leaflet.js?v=1.14"></script>
 
 <style>
   :root {
@@ -1475,7 +1475,7 @@ button:active { transform: scale(.96); }
     <div style="background:#fff;border-radius:10px;padding:16px;line-height:1.7;color:#222;font-size:14px;">
 
       <div style="background:#fff3e0;border-left:4px solid #e65100;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:13px;">
-        <b><span data-inst="app">Reportes</span> v1.13</b> — Sistema de gestión operativa de <span data-inst="nombre">su cuerpo de bomberos</span>.<br>
+        <b><span data-inst="app">Reportes</span> v1.14</b> — Sistema de gestión operativa de <span data-inst="nombre">su cuerpo de bomberos</span>.<br>
         Registra <b>incidentes</b> (el informe oficial), <b>actividades</b> y la <b>operatividad</b> del personal. Todo queda en el Google Drive del cuerpo: los datos son suyos y nadie más los ve.<br>
         <b data-inst="lema"></b>
       </div>
@@ -1696,6 +1696,18 @@ button:active { transform: scale(.96); }
 <div class="pantalla" id="pantallaPanelAdmin">
   <div style="padding:0 4px;">
     <h2 style="color:var(--rojo);margin:10px 0;">🛡️ Panel de Administrador</h2>
+
+    <!-- Escudo del cuerpo. Se guarda como imagen en la hoja del propio cuerpo (ver
+         guardarEscudo en Codigo.gs) y reemplaza a la cruz de Malta en el encabezado,
+         el login, Acerca de y los PDF. -->
+    <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px;margin-bottom:12px;text-align:center;">
+      <div style="font-weight:700;font-size:13px;color:#334155;margin-bottom:10px;">🎖️ Escudo del cuerpo</div>
+      <img id="escudoPreview" src="" alt="" style="width:88px;height:88px;object-fit:contain;border-radius:12px;background:#fff;border:1px solid #e5e5e5;padding:4px;">
+      <div style="font-size:11px;color:#64748b;margin:10px 0;line-height:1.45;">Aparece en el encabezado, la pantalla de inicio y los informes en PDF. Si no sube ninguno, se usa la cruz de bombero por defecto.</div>
+      <input type="file" id="escudoInput" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="app._procesarEscudo(this)">
+      <button onclick="document.getElementById('escudoInput').click()" style="width:100%;padding:9px;background:var(--rojo);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">📤 Subir / cambiar escudo</button>
+      <button id="btnQuitarEscudo" onclick="app.quitarEscudo()" style="width:100%;margin-top:6px;padding:8px;background:#fff;color:#64748b;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;display:none;">Quitar escudo (volver a la cruz)</button>
+    </div>
 
     <!-- v6.02: quién está firmado + relevo de guardia -->
     <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
@@ -2569,8 +2581,8 @@ button:active { transform: scale(.96); }
 
 <div id="pdfContenedor"></div>
 
-<script src="logos.js?v=1.13"></script>
-<script src="app.js?v=1.13"></script>
+<script src="logos.js?v=1.14"></script>
+<script src="app.js?v=1.14"></script>
 
 <!-- ══════════ PANTALLA: NUEVA ACTIVIDAD ══════════ -->
 <div class="pantalla" id="pantallaActividades">

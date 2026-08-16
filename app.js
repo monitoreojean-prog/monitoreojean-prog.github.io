@@ -82,7 +82,7 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.13';
+const APP_VERSION = '1.14';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
@@ -280,24 +280,9 @@ const app = {
        habría puesto ese emblema a todos los cuerpos del país.
        Orden: el que configuró el cuerpo → el genérico de logos.js → nada.
        "Nada" es aceptable: mejor sin escudo que con el de otra institución. */
-    const _escudo = (this._inst().escudoUrl || '')
-                 || (typeof LOGO_SMALL !== 'undefined' ? LOGO_SMALL : '');
-    /* Solo se muestra si de verdad hay escudo. Un <img> sin imagen deja un
-       hueco (y con alt, muestra el texto del alt), que es peor que no ponerlo:
-       parece que algo se rompió. Sin escudo configurado, simplemente no va. */
-    /* Logo por defecto: la CRUZ DE MALTA, el símbolo del bombero en todo el mundo, que
-       no es de ninguna estación. Es el emblema correcto hasta que el cuerpo suba SU
-       escudo (INSTITUCION.escudoUrl). Antes, sin escudo, no se mostraba nada y la app
-       se veía sin logo — Jeferson lo notó el 16/08. El header es rojo oscuro y el login
-       es claro, por eso la cruz va crema en uno y roja en el otro. */
-    const _cruzCrema = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%23f7f3ea%22/%3E%3C/svg%3E';
-    const _cruzRoja  = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%237a1010%22/%3E%3C/svg%3E';
-    [['logoHeader', _cruzCrema], ['logoLogin', _cruzRoja]].forEach(function (par) {
-      const el = document.getElementById(par[0]);
-      if (!el) return;
-      el.src = _escudo || par[1];
-      el.style.display = '';
-    });
+    /* El pintado del logo se movió a _pintarLogos() para poder refrescarlo al instante
+       cuando el admin sube o quita el escudo, sin recargar la app. */
+    this._pintarLogos();
 
     // === Detectar nueva versión y mostrar banner por 10 min ===
     this._mostrarBannerSiHayNuevaVersion();
@@ -1209,6 +1194,97 @@ const app = {
 
   /* Ofrece el recorrido UNA sola vez, tras el primer Inicio. Guarda el flag apenas
      lo ofrece (no cuando lo termina): así, si lo omite, no vuelve a molestar. */
+  /* ═══════════════ LOGO / ESCUDO ═══════════════ */
+  _CRUZ_CREMA: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%23f7f3ea%22/%3E%3C/svg%3E',   // para el header rojo
+  _CRUZ_ROJA:  'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%237a1010%22/%3E%3C/svg%3E',    // para el login/fondo claro
+
+  /* Pinta el logo en el header y en el login. Si el cuerpo subió su escudo, ese;
+     si no, la cruz de Malta (crema en el header, roja en el login). Reutilizable
+     para refrescar al instante cuando el admin cambia el escudo. */
+  _pintarLogos() {
+    const escudo = (this._inst().escudoUrl || '');
+    [['logoHeader', this._CRUZ_CREMA], ['logoLogin', this._CRUZ_ROJA]].forEach((par) => {
+      const el = document.getElementById(par[0]);
+      if (!el) return;
+      el.src = escudo || par[1];
+      el.style.display = '';
+    });
+  },
+
+  _pintarEscudoPanel() {
+    const escudo = (this._inst().escudoUrl || '');
+    const prev = document.getElementById('escudoPreview');
+    if (prev) prev.src = escudo || this._CRUZ_ROJA;
+    const btn = document.getElementById('btnQuitarEscudo');
+    if (btn) btn.style.display = escudo ? 'block' : 'none';
+  },
+
+  /* Toma el archivo, lo REDUCE en el navegador a máx 180px y lo manda como PNG
+     (conserva transparencia). Reducir acá evita mandar 5MB al servidor y mantiene
+     la imagen chica para que quepa en una celda de la hoja (~50KB). */
+  _procesarEscudo(input) {
+    const file = input.files && input.files[0];
+    input.value = '';   // permite volver a elegir el mismo archivo
+    if (!file) return;
+    if (String(file.type).indexOf('image/') !== 0) { this.toast('Elija una imagen (PNG o JPG).', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 180;
+        let w = img.width, h = img.height;
+        if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        else if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        let dataUrl;
+        try { dataUrl = c.toDataURL('image/png'); } catch (err) { this.toast('No se pudo procesar la imagen.', 'error'); return; }
+        // Si el PNG sale muy grande (foto con muchos colores), se recomprime en JPEG.
+        if (dataUrl.length > 46000) { try { dataUrl = c.toDataURL('image/jpeg', 0.85); } catch (e2) {} }
+        if (dataUrl.length > 46000) { this.toast('La imagen es muy compleja. Use uno más simple o recórtelo.', 'error'); return; }
+        this._subirEscudo(dataUrl);
+      };
+      img.onerror = () => this.toast('No se pudo leer la imagen.', 'error');
+      img.src = e.target.result;
+    };
+    reader.onerror = () => this.toast('No se pudo leer el archivo.', 'error');
+    reader.readAsDataURL(file);
+  },
+
+  async _subirEscudo(dataUrl) {
+    const pw = await this._obtenerPwdAdmin('🔐 Contraseña de administrador');
+    if (!pw) return;
+    this.toast('Guardando el escudo...', 'info');
+    try {
+      const r = await fetch(_exigirBackend(), {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'guardarEscudo', escudo: dataUrl, adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '' })
+      });
+      const d = await r.json();
+      if (!d.ok) { this.toast(d.error || 'No se pudo guardar.', 'error'); return; }
+      this._aplicarEscudo(d.escudoUrl || '');
+      this.toast('✅ Escudo actualizado.', 'exito');
+    } catch (e) { this.toast('Sin conexión: no se pudo guardar el escudo.', 'error'); }
+  },
+
+  async quitarEscudo() {
+    const ok = await this.confirmar('Quitar escudo', '¿Volver a la cruz de bombero por defecto?');
+    if (!ok) return;
+    this._subirEscudo('');   // vacío = quitar
+  },
+
+  /* Guarda el escudo en la copia cacheada de la institución y refresca la UI al
+     instante — header, login, Acerca de y el preview del Panel — sin recargar. */
+  _aplicarEscudo(escudoUrl) {
+    let inst = {};
+    try { inst = JSON.parse(localStorage.getItem('inst_cuerpo') || '{}') || {}; } catch (e) {}
+    inst.escudoUrl = escudoUrl;
+    try { localStorage.setItem('inst_cuerpo', JSON.stringify(inst)); } catch (e) {}
+    this._pintarLogos();
+    this._pintarEscudoPanel();
+    if (this.pantallaActual === 'pantallaAcercaDe') this._pintarAcercaDe();
+  },
   _ofrecerTour() {
     try { if (localStorage.getItem('app_tour_visto')) return; } catch (e) { return; }
     try { localStorage.setItem('app_tour_visto', '1'); } catch (e) {}
@@ -3169,6 +3245,7 @@ const app = {
     // que faltaba personal.
     this._pinsFiltro = '';
     this.cargarEstadoPins();
+    this._pintarEscudoPanel();
   },
 
   // v5.94: deja el Panel Admin en su estado inicial (lista visible, detalle y
