@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.15';
+const APP_VERSION = '1.16';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.16: 🖨️ Se depuró el pie de página de los informes impresos: ya no incluye datos de contacto del autor.',
   'v1.15: 🖨️ Arreglada la impresión: antes el botón abría una pestaña EN BLANCO. Ahora el informe se genera y sale listo para imprimir o guardar como PDF. Además, el escudo que usted sube en el Panel de Administrador ya aparece en el encabezado y como marca de agua de los informes; si no subió ninguno, se usa la cruz de bombero por defecto.',
   'v1.05: 🔑 El asistente de instalación ahora le pide su contraseña de administrador. Con eso el fundador queda habilitado para NOMBRAR Y QUITAR administradores, que antes era imposible: la app exigía una contraseña que ninguna pantalla creaba, y quien instalaba quedaba como único admin para siempre.',
   'v1.04: 🧹 Se retiró del servidor todo lo que quedó del módulo dominical: 54 funciones y 14 rutas. Las rutas importan aunque no se vean: la dirección del servidor es pública, así que una ruta abierta se puede llamar desde afuera aunque ninguna pantalla la use. Nada cambia en el uso diario.',
@@ -5900,7 +5901,7 @@ const app = {
   <div class="pie-pagina">
     Documento bajo Ley 1575 de 2012 (Ley General de Bomberos de Colombia) | Ley 1581 de 2012 (Habeas Data)<br>
     ${app._esc(app._inst().nombre || "")}${app._membrete() ? " | " + app._membrete() : ""}
-    <span class="credito">— App desarrollada por ${CREDITO_AUTOR.nombre} · 📧 ${CREDITO_AUTOR.correo} · 📱 ${CREDITO_AUTOR.telefono} —</span>
+    <span class="credito">— App desarrollada por ${CREDITO_AUTOR.nombre} —</span>
   </div>
 </div>
 
