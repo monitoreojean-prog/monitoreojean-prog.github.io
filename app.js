@@ -1,7 +1,16 @@
 /* ============================================================
-   APP DE REPORTE DE EMERGENCIAS - BOMBEROS INÍRIDA v4
-   Login con Google, Sistema de administrador, Auto-completado GPS
+   REPORTES DE BOMBEROS — App de gestión operativa multi-cuerpo
+   Login con Google · Panel de administrador · GPS · offline-first
+
+   © 2026 Jeferson Jeancarlos Rangel Gil. Todos los derechos reservados.
+   Prohibida la reproducción o distribución de este código sin autorización
+   escrita del autor.
    ============================================================ */
+
+/* El tutorial en video lo graba el autor; hasta que exista, esta constante va vacía
+   y la pantalla "Acerca de" muestra "próximamente" en vez de abrir una página rota.
+   Cuando esté, se pega acá el enlace (YouTube, Drive, lo que sea) y listo. */
+const URL_TUTORIAL_VIDEO = '';
 
 // ==================== CONFIGURACIÓN ====================
 /* ⚠️⚠️ ACOPLAMIENTO PENDIENTE DE ROMPER — ya es el Client ID del producto.
@@ -50,7 +59,7 @@ let NOMBRE_ESTACION = '';
    QUIEN ENTRA, así que la hoja de cálculo se crea en el Drive de cada cuerpo y
    no en el de nadie más. Ese ajuste es el que sostiene el modelo entero.
 
-   🔴 DESDE HOY ESTA URL TIENE EL MISMO ESTATUS QUE LA DE INÍRIDA (invariante I1):
+   🔴 DESDE HOY ESTA URL TIENE EL MISMO ESTATUS QUE LA DE LA ESTACIÓN DE ORIGEN (invariante I1):
    NO se cambia. Para publicar un backend nuevo: Implementar → Administrar
    implementaciones → ✏️ Editar → Nueva versión, SOBRE LA MISMA implementación.
    Crear una implementación nueva genera otra URL y deja ciega a toda app ya
@@ -73,7 +82,7 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.11';
+const APP_VERSION = '1.13';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
@@ -114,7 +123,7 @@ const ROSTER_BOMBEROS = [
 /* Crédito del AUTOR de la app. Se conserva a propósito: es atribución de autoría.
 
    14/08/2026 — SE QUITÓ EL CAMPO `cuerpo`. Decía "Cuerpo de Bomberos Voluntarios de
-   Inírida" y se imprimía en el pie de TODOS los PDF oficiales — actas, informes de
+   la estación de origen" y se imprimía en el pie de TODOS los PDF oficiales — actas, informes de
    incidente, anexos fotográficos. O sea que el documento oficial de cualquier otro
    cuerpo salía firmado al pie con el nombre de OTRA institución.
 
@@ -276,11 +285,18 @@ const app = {
     /* Solo se muestra si de verdad hay escudo. Un <img> sin imagen deja un
        hueco (y con alt, muestra el texto del alt), que es peor que no ponerlo:
        parece que algo se rompió. Sin escudo configurado, simplemente no va. */
-    ['logoHeader', 'logoLogin'].forEach((id) => {
-      const el = document.getElementById(id);
+    /* Logo por defecto: la CRUZ DE MALTA, el símbolo del bombero en todo el mundo, que
+       no es de ninguna estación. Es el emblema correcto hasta que el cuerpo suba SU
+       escudo (INSTITUCION.escudoUrl). Antes, sin escudo, no se mostraba nada y la app
+       se veía sin logo — Jeferson lo notó el 16/08. El header es rojo oscuro y el login
+       es claro, por eso la cruz va crema en uno y roja en el otro. */
+    const _cruzCrema = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%23f7f3ea%22/%3E%3C/svg%3E';
+    const _cruzRoja  = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%237a1010%22/%3E%3C/svg%3E';
+    [['logoHeader', _cruzCrema], ['logoLogin', _cruzRoja]].forEach(function (par) {
+      const el = document.getElementById(par[0]);
       if (!el) return;
-      if (_escudo) { el.src = _escudo; el.style.display = ''; }
-      else { el.style.display = 'none'; }
+      el.src = _escudo || par[1];
+      el.style.display = '';
     });
 
     // === Detectar nueva versión y mostrar banner por 10 min ===
@@ -1138,10 +1154,14 @@ const app = {
       document.getElementById('zonaAdmin').style.display = this.esAdmin() ? 'block' : 'none';
     }
 
+    if (pantallaId === 'pantallaAcercaDe') { this._pintarAcercaDe(); }
+
     if (pantallaId === 'pantallaHome') {
       btnVolver.style.display = 'none';
       document.getElementById('headerTitulo').textContent = this._rotuloApp();
       this.actualizarHome();
+      // Primer arranque: ofrecer el recorrido UNA vez (revisa el flag adentro).
+      this._ofrecerTour();
     } else {
       btnVolver.style.display = 'inline-block';
       btnVolver.onclick = () => this.atras();
@@ -1153,10 +1173,106 @@ const app = {
         pantallaListaActividades: '📋 Actividades',
         pantallaDetalleActividad: '🎯 Detalle Actividad',
         pantallaOperatividad: '📊 Operatividad',
-        pantallaMapa: '🗺️ Mapa de Incidentes'
+        pantallaMapa: '🗺️ Mapa de Incidentes',
+        pantallaAcercaDe: 'ℹ️ Acerca de'
       };
       document.getElementById('headerTitulo').textContent = titulos[pantallaId] || this._rotuloApp();
     }
+  },
+
+  /* ═══════════════ ACERCA DE + TUTORIAL ═══════════════
+     El video lo grabará Jeferson; hasta que exista, `URL_TUTORIAL_VIDEO` está vacía y el
+     botón lo dice en vez de abrir una página rota. Cuando lo tenga, se pone acá y listo. */
+  _pintarAcercaDe() {
+    const v = document.getElementById('acercaVersion');
+    if (v) v.textContent = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '');
+    // El logo: el escudo del cuerpo si lo subió, si no la cruz de Malta.
+    const cont = document.getElementById('acercaLogo');
+    if (cont) {
+      const esc = (this._inst().escudoUrl || '') ||
+        'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect x=%224%22 y=%224%22 width=%2292%22 height=%2292%22 rx=%2222%22 fill=%22%237a1010%22/%3E%3Cpath d=%22M50,50L56.9,44.94L96,28.84L82.2,50L96,71.16L56.9,55.06ZM50,50L44.94,43.1L28.84,4L50,17.8L71.16,4L55.06,43.1ZM50,50L43.1,55.06L4,71.16L17.8,50L4,28.84L43.1,44.94ZM50,50L55.06,56.9L71.16,96L50,82.2L28.84,96L44.94,56.9Z%22 fill=%22%23f7f3ea%22/%3E%3C/svg%3E';
+      cont.innerHTML = '<img src="' + esc + '" alt="" style="width:76px;height:76px;border-radius:16px;object-fit:contain;">';
+    }
+    const btn = document.getElementById('btnVideoTutorial');
+    if (btn) {
+      const hay = typeof URL_TUTORIAL_VIDEO !== 'undefined' && URL_TUTORIAL_VIDEO;
+      btn.textContent = hay ? '🎬 Ver tutorial en video' : '🎬 Video: próximamente';
+      btn.style.opacity = hay ? '' : '0.6';
+    }
+  },
+
+  abrirVideoTutorial() {
+    const url = (typeof URL_TUTORIAL_VIDEO !== 'undefined') ? URL_TUTORIAL_VIDEO : '';
+    if (!url) { this.toast('El video estará disponible pronto.', 'info'); return; }
+    try { window.open(url, '_blank', 'noopener'); } catch (e) { location.href = url; }
+  },
+
+  /* Ofrece el recorrido UNA sola vez, tras el primer Inicio. Guarda el flag apenas
+     lo ofrece (no cuando lo termina): así, si lo omite, no vuelve a molestar. */
+  _ofrecerTour() {
+    try { if (localStorage.getItem('app_tour_visto')) return; } catch (e) { return; }
+    try { localStorage.setItem('app_tour_visto', '1'); } catch (e) {}
+    // Un respiro para que el Inicio termine de pintarse antes del modal.
+    setTimeout(() => { try { this._preguntarTour(); } catch (e) {} }, 700);
+  },
+
+  _preguntarTour() {
+    const m = document.createElement('div');
+    m.className = 'modal-js';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+    m.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);">'
+      + '<div style="font-size:40px;">🚒</div>'
+      + '<div style="font-size:17px;font-weight:800;color:var(--rojo);margin:8px 0 4px;">¡Bienvenido!</div>'
+      + '<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:18px;">¿Quiere un recorrido rápido de la app? Toma menos de un minuto y lo puede saltar cuando quiera.</div>'
+      + '<button id="_tourVer" style="width:100%;background:var(--rojo);color:#fff;border:none;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;font-size:15px;margin-bottom:8px;">▶️ Ver recorrido</button>'
+      + '<button id="_tourNo" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:10px;padding:11px;font-weight:700;cursor:pointer;font-size:13px;">Omitir</button>'
+      + '<div style="font-size:11px;color:#999;margin-top:12px;">Siempre puede verlo de nuevo en <b>ℹ️ Acerca de</b>.</div>'
+      + '</div>';
+    document.body.appendChild(m);
+    const cerrar = () => { try { document.body.removeChild(m); } catch (e) {} };
+    m.querySelector('#_tourNo').onclick = cerrar;
+    m.querySelector('#_tourVer').onclick = () => { cerrar(); this.mostrarTour(); };
+  },
+
+  /* Pasos del recorrido. Texto por defecto; Jeferson lo ajusta cuando quiera —
+     es una sola lista, no hay que tocar la lógica. */
+  _PASOS_TOUR: [
+    { icono: '🚨', titulo: 'Nuevo incidente', texto: 'El botón rojo grande. Registra una emergencia con todos sus datos: clasificación, ubicación GPS, recursos, víctimas y firmas. Si no hay internet, queda pendiente y se envía solo cuando vuelve la señal.' },
+    { icono: '🎯', titulo: 'Actividades', texto: 'Capacitaciones, reuniones, mantenimientos. Cada actividad registra quién participó y cuántas horas, y eso alimenta la operatividad del personal.' },
+    { icono: '📊', titulo: 'Operatividad', texto: 'El ranking del personal: incidentes atendidos y horas de actividad, por persona. Solo lo ve el administrador.' },
+    { icono: '🛡️', titulo: 'Panel de Administrador', texto: 'El corazón de la configuración: los datos de su cuerpo, los vehículos con su indicativo, el personal, y quiénes son administradores. Empiece por acá.' },
+    { icono: '📋', titulo: 'RUE y bases legales', texto: 'Cada informe tiene un botón "Ver para RUE" que le ordena los datos como el formulario oficial. Y en Bases legales está la norma nacional que aplica a cualquier cuerpo.' },
+    { icono: 'ℹ️', titulo: 'Ayuda siempre a mano', texto: 'En el inicio, los botones Manual, Cómo funciona y Acerca de. Ahí puede volver a ver este recorrido y, pronto, un video con el paso a paso.' }
+  ],
+
+  mostrarTour(desdeAcerca) {
+    let i = 0;
+    const pasos = this._PASOS_TOUR;
+    const m = document.createElement('div');
+    m.className = 'modal-js';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    document.body.appendChild(m);
+    const cerrar = () => { try { document.body.removeChild(m); } catch (e) {} };
+    const pintar = () => {
+      const p = pasos[i];
+      const puntos = pasos.map((_, k) => '<span style="width:7px;height:7px;border-radius:50%;display:inline-block;margin:0 3px;background:' + (k === i ? 'var(--rojo)' : '#ddd') + ';"></span>').join('');
+      const ultimo = i === pasos.length - 1;
+      m.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:350px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);">'
+        + '<div style="text-align:right;"><span id="_tX" style="font-size:20px;color:#bbb;cursor:pointer;line-height:1;">✕</span></div>'
+        + '<div style="text-align:center;font-size:44px;margin-top:-6px;">' + p.icono + '</div>'
+        + '<div style="text-align:center;font-size:12px;color:#999;font-weight:700;">Paso ' + (i + 1) + ' de ' + pasos.length + '</div>'
+        + '<div style="text-align:center;font-size:18px;font-weight:800;color:var(--rojo);margin:6px 0 8px;">' + app._esc(p.titulo) + '</div>'
+        + '<div style="font-size:13px;color:#555;line-height:1.6;text-align:center;min-height:96px;">' + app._esc(p.texto) + '</div>'
+        + '<div style="text-align:center;margin:14px 0;">' + puntos + '</div>'
+        + '<div style="display:flex;gap:8px;">'
+        + (i > 0 ? '<button id="_tPrev" style="flex:1;background:#f5f5f5;color:#333;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;">← Atrás</button>' : '')
+        + '<button id="_tNext" style="flex:2;background:var(--rojo);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;font-size:15px;">' + (ultimo ? '¡Listo!' : 'Siguiente →') + '</button>'
+        + '</div></div>';
+      m.querySelector('#_tX').onclick = cerrar;
+      const prev = m.querySelector('#_tPrev'); if (prev) prev.onclick = () => { i--; pintar(); };
+      m.querySelector('#_tNext').onclick = () => { if (ultimo) cerrar(); else { i++; pintar(); } };
+    };
+    pintar();
   },
 
   async atras() {
