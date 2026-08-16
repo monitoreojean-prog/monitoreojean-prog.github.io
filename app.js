@@ -73,7 +73,7 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.10';
+const APP_VERSION = '1.11';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
@@ -640,6 +640,9 @@ const app = {
           // T1: el superadmin lo decide el servidor (es el FUNDADOR de esta
           // instalación), no una comparación de correo quemada en el front.
           if (typeof dPase.esSuperAdmin === 'boolean') this.usuario.esSuperAdmin = dPase.esSuperAdmin;
+          // Firma con PIN: el backend dice si ESTE cuerpo la exige. Apagada por defecto
+          // (cada admin entra con su propia cuenta), así que normalmente nunca se pide.
+          this._firmaObligatoria = (dPase.firmaObligatoria === true);
           // T1b: la identidad del cuerpo llega en el login y se cachea para el
           // próximo arranque, cuando todavía no hay servidor que preguntar.
           if (dPase.institucion) { try { this._pintarInstitucion(dPase.institucion); } catch (e) {} }
@@ -1305,6 +1308,8 @@ const app = {
         // v6.05: se refresca el privilegio desde la hoja en CADA arranque con
         // señal. Si cambió (te agregaron o te quitaron), la interfaz se redibuja
         // sola; si no, el menú seguiría mostrando lo de antes indefinidamente.
+        // Se refresca también la exigencia de PIN por si el cuerpo la cambió.
+        if (typeof data.firmaObligatoria === 'boolean') this._firmaObligatoria = data.firmaObligatoria;
         if (typeof data.esAdmin === 'boolean') {
           const antesEraAdmin = this.usuario.esAdminSrv;
           this.usuario.esAdminSrv = data.esAdmin;
@@ -6747,6 +6752,30 @@ ${paginaFotos}
 
   // Devuelve true solo si hay una firma verificada en esta sesión.
   async _exigirFirma() {
+    /* ═══ EL FUNDADOR NO PUEDE QUEDAR AFUERA DE SU PROPIA INSTALACIÓN ═══
+
+       Lo reportó Jeferson el 15/08/2026 probando la instalación de un cuerpo nuevo:
+       acababa de instalar, entró como fundador, y el Panel Admin le pidió un PIN.
+       Pero los PINes los asigna el administrador DESDE el Panel Admin. Círculo cerrado:
+       la instalación quedaba inutilizable el mismo minuto de nacer.
+
+       Es el mismo callejón que tenía ADMIN_PASSWORD, y por el mismo motivo: se diseñó
+       pensando en una estación que YA venía funcionando, donde los PINes existían desde
+       antes. En una instalación nueva no existe ninguno.
+
+       El PIN resuelve un problema concreto: el celular de la guardia tiene UNA sesión de
+       Google compartida por varias personas, así que la cuenta no dice quién operó. Al
+       fundador eso no le aplica: entró con SU cuenta, verificada por Google. Pedirle un
+       PIN además no agrega trazabilidad — solo lo deja afuera. */
+    if (this.esSuperAdmin()) return true;
+
+    /* ═══ FIRMA APAGADA = LA IDENTIDAD DE GOOGLE BASTA ═══
+       En el producto cada admin entra con su propia cuenta, así que ya se sabe quién es.
+       El PIN solo suma cuando VARIAS personas comparten un teléfono; ese cuerpo lo
+       enciende (FIRMA_OPERADOR='SI' en el backend). Mientras esté apagado —el caso normal—
+       no se pide nada: pedirlo dejaba al segundo admin fuera igual que al fundador. */
+    if (!this._firmaObligatoria) return true;
+
     const oper = await this._obtenerOperador();
     if (oper) {
       // Avisar una vez si se pasó sin firmar por backend antiguo, para que no
@@ -6914,7 +6943,7 @@ ${paginaFotos}
       modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
         + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:6px;text-align:center;">🪪 ¿Quién está de guardia?</div>'
-        + '<div style="font-size:11px;color:#666;margin-bottom:12px;text-align:center;line-height:1.45;">Este celular lo usa la guardia y el turno cambia. Tu nombre queda registrado junto a lo que hagas: sanciones, asistencias y ediciones. Por eso hace falta <b>tu PIN</b> — así nadie puede firmar en tu nombre.</div>'
+        + '<div style="font-size:11px;color:#666;margin-bottom:12px;text-align:center;line-height:1.45;">Cuando varias personas comparten el mismo teléfono, la cuenta de Google no alcanza para saber quién hizo qué. Su nombre queda registrado junto a cada informe, actividad o edición que haga. Por eso el <b>PIN</b>: para que nadie pueda firmar en su nombre.</div>'
         + '<div style="position:relative;">'
         + '<input id="_operInput" type="text" autocomplete="off" oninput="app._buscarOperadorSug(this.value)" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;" placeholder="Escribe tu nombre y tócalo">'
         + '<div id="_operSug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.15);max-height:150px;overflow-y:auto;"></div>'
