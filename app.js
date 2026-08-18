@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.16';
+const APP_VERSION = '1.17';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.17: ⚡ Nuevo tipo "Incendio en red eléctrica" (transformadores, loncheras, cables y redes del servicio público; en el RUE es FALLA ELÉCTRICA), separado de "Incendio de interfaz", que queda para el fuego en la franja donde el monte se junta con el pueblo.',
   'v1.16: 🖨️ Se depuró el pie de página de los informes impresos: ya no incluye datos de contacto del autor.',
   'v1.15: 🖨️ Arreglada la impresión: antes el botón abría una pestaña EN BLANCO. Ahora el informe se genera y sale listo para imprimir o guardar como PDF. Además, el escudo que usted sube en el Panel de Administrador ya aparece en el encabezado y como marca de agua de los informes; si no subió ninguno, se usa la cruz de bombero por defecto.',
   'v1.05: 🔑 El asistente de instalación ahora le pide su contraseña de administrador. Con eso el fundador queda habilitado para NOMBRAR Y QUITAR administradores, que antes era imposible: la app exigía una contraseña que ninguna pantalla creaba, y quien instalaba quedaba como único admin para siempre.',
@@ -146,6 +147,10 @@ const CREDITO_AUTOR = {
 // mapa se pintan DESDE este arreglo; los reportes viejos no se afectan.
 const TIPOS_EVENTO = [
   'Incendio estructural', 'Incendio forestal', 'Incendio de interfaz', 'Incendio vehicular',
+  // v1.17: "Incendio en red eléctrica" = transformadores, loncheras, cables y redes del
+  // servicio público → en el RUE es FALLA ELÉCTRICA. Distinto de "Incendio de interfaz"
+  // (fuego monte-pueblo), que sigue existiendo con su significado real.
+  'Incendio en red eléctrica',
   'Rescate vehicular', 'Rescate en altura', 'Rescate acuático', 'Búsqueda y rescate',
   'Primeros auxilios', 'Traslado', 'Materiales peligrosos (MATPEL)',
   'Atención de árbol caído', 'Atención de abejas / avispas', 'Rescate animal',
@@ -7372,6 +7377,7 @@ ${paginaFotos}
     { tipo: 'Incendio estructural',              color: '#e65100', emoji: '🔥', etiqueta: 'Incendio' },
     { tipo: 'Incendio forestal',                 color: '#e65100', emoji: '🔥', etiqueta: 'Incendio' },
     { tipo: 'Incendio de interfaz',              color: '#bf360c', emoji: '🔥', etiqueta: 'Incendio de interfaz' },
+    { tipo: 'Incendio en red eléctrica',         color: '#f57f17', emoji: '⚡', etiqueta: 'Red eléctrica' },
     { tipo: 'Incendio vehicular',                color: '#e65100', emoji: '🔥', etiqueta: 'Incendio' },
     { tipo: 'Búsqueda y rescate',                color: '#4527a0', emoji: '🔦', etiqueta: 'Búsqueda y rescate' },
     { tipo: 'Rescate vehicular',                 color: '#1565c0', emoji: '🚗', etiqueta: 'Rescate vehicular' },
