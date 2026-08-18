@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.17';
+const APP_VERSION = '1.18';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.18: 📥 Importar personal, más robusto: reconoce cuando el nombre y el apellido vienen en columnas separadas (los une en el nombre completo) y detecta la cédula aunque el título diga "Cédula (CC)", "Documento" u otras variantes. Antes esas columnas se perdían.',
   'v1.17: ⚡ Nuevo tipo "Incendio en red eléctrica" (transformadores, loncheras, cables y redes del servicio público; en el RUE es FALLA ELÉCTRICA), separado de "Incendio de interfaz", que queda para el fuego en la franja donde el monte se junta con el pueblo.',
   'v1.16: 🖨️ Se depuró el pie de página de los informes impresos: ya no incluye datos de contacto del autor.',
   'v1.15: 🖨️ Arreglada la impresión: antes el botón abría una pestaña EN BLANCO. Ahora el informe se genera y sale listo para imprimir o guardar como PDF. Además, el escudo que usted sube en el Panel de Administrador ya aparece en el encabezado y como marca de agua de los informes; si no subió ninguno, se usa la cruz de bombero por defecto.',
@@ -3332,13 +3333,14 @@ const app = {
      Excel con las columnas en otro orden y con otros nombres ("CC", "Documento",
      "Cédula"...). Exigir un orden fijo sería devolverle el trabajo al comandante. */
   _COLUMNAS_IMPORT: {
-    nombre:   ['nombre', 'nombres', 'nombre completo', 'apellidos y nombres', 'unidad', 'bombero'],
-    cedula:   ['cedula', 'cédula', 'cc', 'c.c', 'documento', 'identificacion', 'identificación', 'nit'],
-    rango:    ['rango', 'grado', 'jerarquia', 'jerarquía'],
-    telefono: ['telefono', 'teléfono', 'celular', 'movil', 'móvil', 'tel'],
-    email:    ['email', 'correo', 'e-mail', 'correo electronico', 'correo electrónico'],
-    cargo:    ['cargo', 'funcion', 'función'],
-    rh:       ['rh', 'sangre', 'tipo de sangre', 'grupo sanguineo', 'grupo sanguíneo']
+    nombre:   ['nombre', 'nombres', 'nombre completo', 'apellidos y nombres', 'nombres y apellidos', 'unidad', 'bombero'],
+    apellido: ['apellido', 'apellidos'],
+    cedula:   ['cedula', 'cc', 'documento', 'identificacion', 'nit', 'numero de cedula', 'documento de identidad'],
+    rango:    ['rango', 'grado', 'jerarquia'],
+    telefono: ['telefono', 'celular', 'movil', 'tel'],
+    email:    ['email', 'mail', 'correo', 'correo electronico'],
+    cargo:    ['cargo', 'funcion'],
+    rh:       ['rh', 'sangre', 'tipo de sangre', 'grupo sanguineo', 'hemoclasificacion']
   },
 
   /* Normaliza un título de columna: sin tildes, minúsculas, sin puntuación.
@@ -3346,6 +3348,17 @@ const app = {
   _normTitulo(s) {
     return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  },
+
+  /* Casa un título YA normalizado contra los alias de un campo. Alias de UNA
+     palabra: casa si aparece como token; de VARIAS: como subcadena. Antes se exigía
+     igualdad EXACTA del título completo, y por eso "Cédula (CC)" no casaba con
+     "cedula" y la cédula se perdía. */
+  _tituloCoincide(tituloNorm, alias) {
+    const tokens = tituloNorm.split(' ').filter(Boolean);
+    return alias.some((a) => a.indexOf(' ') !== -1
+      ? tituloNorm.indexOf(a) !== -1
+      : tokens.indexOf(a) !== -1);
   },
 
   _parsearPegado(texto) {
@@ -3360,9 +3373,12 @@ const app = {
     const mapa = {};
     Object.keys(this._COLUMNAS_IMPORT).forEach((campo) => {
       const alias = this._COLUMNAS_IMPORT[campo];
-      const i = titulos.findIndex((t) => t && alias.indexOf(t) !== -1);
+      const i = titulos.findIndex((t) => t && this._tituloCoincide(t, alias));
       if (i !== -1) mapa[campo] = i;
     });
+
+    // Si el roster trae "Apellidos" pero no "Nombres", esa columna ES el nombre.
+    if (mapa.nombre === undefined && mapa.apellido !== undefined) { mapa.nombre = mapa.apellido; delete mapa.apellido; }
 
     if (mapa.nombre === undefined) {
       return { error: 'No se encontró una columna de nombres. Títulos detectados: ' +
@@ -3374,6 +3390,11 @@ const app = {
       const c = celdas(lineas[i]);
       const p = {};
       Object.keys(mapa).forEach((campo) => { p[campo] = (c[mapa[campo]] || '').trim(); });
+      // "Nombres" + "Apellidos" en columnas DISTINTAS → se unen en el nombre completo.
+      if (p.apellido !== undefined) {
+        if (mapa.apellido !== mapa.nombre) p.nombre = (p.nombre + ' ' + p.apellido).trim().replace(/\s+/g, ' ');
+        delete p.apellido;
+      }
       if (p.nombre) filas.push(p);
     }
     return { filas: filas, columnas: Object.keys(mapa) };
