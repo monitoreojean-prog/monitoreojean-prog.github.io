@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.22';
+const APP_VERSION = '1.23';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.23: 🔥 Mapa de calor. En ⚙️ Herramientas → ✨ Vistas, el botón "Mapa de calor" pinta en rojo las zonas donde más se repiten los incidentes. Respeta el filtro que tengas puesto (tipo y fecha).',
   'v1.22: 🚒 Estación en el mapa. En ⚙️ Herramientas → "Fijar estación (mi ubicación)" guardás dónde queda la estación de su cuerpo (parado ahí, una sola vez). Después el mapa muestra un 🚒 y, en cada reporte, a cuántos km está de la estación.',
   'v1.21: 🗺️ Mapa más ordenado: los controles ahora se despliegan en dos menús — "⚙️ Herramientas" (fechas y acciones) y "🏷️ Tipos" (la leyenda) — para no saturar la pantalla. Además, filtros rápidos de fecha: Últimos 30 días, Este mes, Este año.',
   'v1.20: 🗺️ Ajustes al mapa: la capa 🛰️ Satélite ahora deja acercar más (antes salía "sin datos" al hacer zoom, según la zona), y el botón 📍 Mi ubicación dibuja un círculo con la precisión — en el celular con GPS es exacta; en el computador es aproximada (no tiene GPS).',
@@ -7526,6 +7527,10 @@ ${paginaFotos}
                   ? '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'">🚒 Cambiar</button><button onclick="app._mapaQuitarEstacion()" style="'+estiloChip+'">Quitar</button>'
                   : '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'">🚒 Fijar estación (mi ubicación)</button>')
           +   '</div>'
+          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin:9px 0 5px;">✨ Vistas</div>'
+          +   '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
+          +     '<button id="mapaBtnCalor" onclick="app._mapaToggleCalor()" style="'+estiloChip+'">🔥 Mapa de calor</button>'
+          +   '</div>'
           + '</div>';
       }
 
@@ -7550,6 +7555,7 @@ ${paginaFotos}
       this._mapaMarkers = [];
       this._mapaEtiquetasOff = new Set();
       this._mapaDesde = null;   // v1.21: corte para "últimos 30 días" (null = sin corte)
+      this._mapaHeat = null;    // v1.23: capa de mapa de calor (null = apagada)
       reportes.forEach(r => {
         const regla = this._reglaPorClasificacion(r.clasificacion);
         const clas = (r.clasificacion || []).join(', ') || 'Sin clasificar';
@@ -7711,6 +7717,28 @@ ${paginaFotos}
   // v1.21: elegir año/mes a mano anula el rango rodante de "últimos 30 días".
   _mapaSelectFecha() { this._mapaDesde = null; this._aplicarFiltroMapa(); },
 
+  // v1.23: mapa de calor (leaflet.heat, incrustado en index.html). Pinta dónde se
+  // concentran los incidentes; respeta el filtro (solo cuentan los visibles).
+  _mapaToggleCalor() {
+    if (typeof L === 'undefined' || typeof L.heatLayer !== 'function') { this.toast('El mapa de calor no cargó', 'error'); return; }
+    const btn = document.getElementById('mapaBtnCalor');
+    if (this._mapaHeat) {
+      try { this._leafletMapa.removeLayer(this._mapaHeat); } catch (e) {}
+      this._mapaHeat = null;
+      if (btn) { btn.style.background = '#fff'; btn.style.color = '#333'; }
+    } else {
+      this._mapaConstruirCalor();
+      if (btn) { btn.style.background = '#c62828'; btn.style.color = '#fff'; }
+    }
+  },
+  _mapaConstruirCalor() {
+    if (!this._leafletMapa || typeof L.heatLayer !== 'function') return;
+    const pts = [];
+    this._mapaMarkers.forEach(m => { if (this._mapaMarcadorPasa(m)) { const ll = m.marker.getLatLng(); pts.push([ll.lat, ll.lng, 0.6]); } });
+    if (this._mapaHeat) { try { this._leafletMapa.removeLayer(this._mapaHeat); } catch (e) {} }
+    this._mapaHeat = L.heatLayer(pts, { radius: 25, blur: 18, maxZoom: 17 }).addTo(this._leafletMapa);
+  },
+
   // v1.22: estación de bomberos en el mapa. Se fija con el GPS (parado EN la estación)
   // y se guarda en el dispositivo (localStorage). Con eso el mapa muestra un 🚒 y, en
   // cada reporte, a cuántos km está de la estación. Cada cuerpo guarda la suya.
@@ -7748,19 +7776,24 @@ ${paginaFotos}
   // v5.82: aplica leyenda + año + mes sobre los marcadores ya creados.
   // ajustarVista=true solo en la carga inicial (no le mueve el zoom al admin
   // cada vez que cambia un filtro).
-  _aplicarFiltroMapa(ajustarVista) {
-    if (!this._leafletMapa || !this._mapaMarkers) return;
+  // v1.23: ¿este marcador pasa los filtros actuales? (tipo + año/mes + rango rodante).
+  // Extraído para que el mapa de calor use EXACTAMENTE el mismo criterio que los pines.
+  _mapaMarcadorPasa(m) {
     const selA = document.getElementById('mapaFiltroAnio');
     const selM = document.getElementById('mapaFiltroMes');
     const anio = selA ? selA.value : '';
     const mes = selM ? selM.value : '';
+    return !this._mapaEtiquetasOff.has(m.etiqueta)
+      && (!anio || m.anio === anio)
+      && (!mes || m.mes === mes)
+      && (!this._mapaDesde || (m.fecha && m.fecha >= this._mapaDesde));
+  },
+
+  _aplicarFiltroMapa(ajustarVista) {
+    if (!this._leafletMapa || !this._mapaMarkers) return;
     const bounds = []; let visibles = 0;
     this._mapaMarkers.forEach(m => {
-      const pasa = !this._mapaEtiquetasOff.has(m.etiqueta)
-        && (!anio || m.anio === anio)
-        && (!mes || m.mes === mes)
-        && (!this._mapaDesde || (m.fecha && m.fecha >= this._mapaDesde));
-      if (pasa) {
+      if (this._mapaMarcadorPasa(m)) {
         if (!this._leafletMapa.hasLayer(m.marker)) m.marker.addTo(this._leafletMapa);
         const ll = m.marker.getLatLng(); bounds.push([ll.lat, ll.lng]); visibles++;
       } else if (this._leafletMapa.hasLayer(m.marker)) {
@@ -7771,6 +7804,7 @@ ${paginaFotos}
     const contador = document.getElementById('mapaContador');
     if (contador) contador.textContent = '📍 ' + visibles + ' de ' + this._mapaMarkers.length;
     if (ajustarVista === true && bounds.length > 1) this._leafletMapa.fitBounds(bounds, { padding: [30, 30] });
+    if (this._mapaHeat) this._mapaConstruirCalor();   // v1.23: el calor sigue el filtro
   },
 
   // v5.82: reencuadra el mapa para ver todos los pines visibles.
