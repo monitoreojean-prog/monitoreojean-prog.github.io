@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.23';
+const APP_VERSION = '1.24';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.24: ⭕ Los pines del mapa ahora se AGRUPAN cuando están amontonados: en vez de muchos marcadores encimados, ves un círculo con el número, y al acercar el zoom se abren. La estación (🚒) y el mapa de calor no se agrupan.',
   'v1.23: 🔥 Mapa de calor. En ⚙️ Herramientas → ✨ Vistas, el botón "Mapa de calor" pinta en rojo las zonas donde más se repiten los incidentes. Respeta el filtro que tengas puesto (tipo y fecha).',
   'v1.22: 🚒 Estación en el mapa. En ⚙️ Herramientas → "Fijar estación (mi ubicación)" guardás dónde queda la estación de su cuerpo (parado ahí, una sola vez). Después el mapa muestra un 🚒 y, en cada reporte, a cuántos km está de la estación.',
   'v1.21: 🗺️ Mapa más ordenado: los controles ahora se despliegan en dos menús — "⚙️ Herramientas" (fechas y acciones) y "🏷️ Tipos" (la leyenda) — para no saturar la pantalla. Además, filtros rápidos de fecha: Últimos 30 días, Este mes, Este año.',
@@ -7534,7 +7535,7 @@ ${paginaFotos}
           + '</div>';
       }
 
-      if (this._leafletMapa) { this._leafletMapa.remove(); this._leafletMapa = null; }
+      if (this._leafletMapa) { this._leafletMapa.remove(); this._leafletMapa = null; this._mapaCapaPines = null; }
       this._leafletMapa = L.map(cont).setView([reportes[0].lat, reportes[0].lng], 12);
       // v1.19: dos capas base con selector arriba a la derecha. El satélite (Esri)
       // ayuda en zona rural/ríos donde el callejero (OSM) no marca calles.
@@ -7549,6 +7550,15 @@ ${paginaFotos}
       });
       capaCalles.addTo(this._leafletMapa);
       L.control.layers({ '🗺️ Calles': capaCalles, '🛰️ Satélite': capaSatelite }, null, { position: 'topright', collapsed: false }).addTo(this._leafletMapa);
+
+      // v1.24: los pines viven en un GRUPO DE CLUSTER — se agrupan cuando se amontonan
+      // (círculo con el número) y se abren al acercar. Si la librería no cargó, cae al
+      // mapa directo (misma interfaz addLayer/hasLayer/removeLayer). La estación y el
+      // calor NO se agrupan: van directo sobre el mapa.
+      this._mapaCapaPines = (typeof L.markerClusterGroup === 'function')
+        ? L.markerClusterGroup({ maxClusterRadius: 45, showCoverageOnHover: false, spiderfyOnMaxZoom: true })
+        : this._leafletMapa;
+      if (this._mapaCapaPines !== this._leafletMapa) this._leafletMapa.addLayer(this._mapaCapaPines);
 
       // v5.82: cada marcador queda registrado con su etiqueta y fecha para
       // poder filtrar sin volver a pedir nada al servidor.
@@ -7572,7 +7582,8 @@ ${paginaFotos}
           + '<button data-id="' + String(r.id||'').replace(/"/g,'&quot;') + '" onclick="app._verReporteDesdeMapa(this.dataset.id)" style="margin-top:8px;background:#6e2fa0;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;width:100%;">Ver reporte completo</button>'
           + '</div>';
         const marker = L.marker([r.lat, r.lng], { icon: this._iconoMapa(regla) }).bindPopup(popupHtml);
-        marker.addTo(this._leafletMapa);
+        // v1.24: NO se agrega al mapa acá; _aplicarFiltroMapa lo mete en la capa de pines
+        // (cluster) según el filtro. Antes se agregaba directo y luego se filtraba.
         this._mapaMarkers.push({ marker: marker, etiqueta: regla.etiqueta, anio: f.substring(0,4), mes: f.substring(5,7), fecha: f.substring(0,10) });
       });
       // v1.22: marcador fijo de la estación (si está configurada).
@@ -7792,12 +7803,13 @@ ${paginaFotos}
   _aplicarFiltroMapa(ajustarVista) {
     if (!this._leafletMapa || !this._mapaMarkers) return;
     const bounds = []; let visibles = 0;
+    const capa = this._mapaCapaPines || this._leafletMapa;   // v1.24: cluster (o mapa si no cargó)
     this._mapaMarkers.forEach(m => {
       if (this._mapaMarcadorPasa(m)) {
-        if (!this._leafletMapa.hasLayer(m.marker)) m.marker.addTo(this._leafletMapa);
+        if (!capa.hasLayer(m.marker)) capa.addLayer(m.marker);
         const ll = m.marker.getLatLng(); bounds.push([ll.lat, ll.lng]); visibles++;
-      } else if (this._leafletMapa.hasLayer(m.marker)) {
-        this._leafletMapa.removeLayer(m.marker);
+      } else if (capa.hasLayer(m.marker)) {
+        capa.removeLayer(m.marker);
       }
     });
     this._mapaBoundsVisibles = bounds;
