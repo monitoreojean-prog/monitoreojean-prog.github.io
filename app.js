@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.21';
+const APP_VERSION = '1.22';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.22: 🚒 Estación en el mapa. En ⚙️ Herramientas → "Fijar estación (mi ubicación)" guardás dónde queda la estación de su cuerpo (parado ahí, una sola vez). Después el mapa muestra un 🚒 y, en cada reporte, a cuántos km está de la estación.',
   'v1.21: 🗺️ Mapa más ordenado: los controles ahora se despliegan en dos menús — "⚙️ Herramientas" (fechas y acciones) y "🏷️ Tipos" (la leyenda) — para no saturar la pantalla. Además, filtros rápidos de fecha: Últimos 30 días, Este mes, Este año.',
   'v1.20: 🗺️ Ajustes al mapa: la capa 🛰️ Satélite ahora deja acercar más (antes salía "sin datos" al hacer zoom, según la zona), y el botón 📍 Mi ubicación dibuja un círculo con la precisión — en el celular con GPS es exacta; en el computador es aproximada (no tiene GPS).',
   'v1.19: 🗺️ Mapa de Incidentes mejorado. Botones "✓ Todos" y "✕ Ninguno", y un "solo" en cada tipo para ver únicamente ese de un toque (antes había que apagar los demás uno por uno). Nueva capa 🛰️ Satélite (además de calles) y botón 📍 Mi ubicación.',
@@ -7479,6 +7480,7 @@ ${paginaFotos}
       if (!this._reportesAdmin) this._reportesAdmin = [];
       reportes.forEach(r => { if (!this._reportesAdmin.some(x => x.id === r.id)) this._reportesAdmin.push(r); });
 
+      const estCoord = this._estacionCoord();   // v1.22: estación configurada ([lat,lng]) o null
       // v5.82: filtros por año/mes (poblados con las fechas reales) + contador
       const filtros = document.getElementById('mapaFiltros');
       if (filtros) {
@@ -7518,6 +7520,12 @@ ${paginaFotos}
           +     '<button onclick="app._mapaMiUbicacion()" style="padding:6px 10px;border:none;border-radius:8px;background:#1565c0;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">📍 Mi ubicación</button>'
           +     '<button id="mapaBtnFullscreen" onclick="app._toggleMapaFullscreen()" style="padding:6px 10px;border:none;border-radius:8px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">⛶ Pantalla completa</button>'
           +   '</div>'
+          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin:9px 0 5px;">🚒 Estación</div>'
+          +   '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
+          +     (estCoord
+                  ? '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'">🚒 Cambiar</button><button onclick="app._mapaQuitarEstacion()" style="'+estiloChip+'">Quitar</button>'
+                  : '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'">🚒 Fijar estación (mi ubicación)</button>')
+          +   '</div>'
           + '</div>';
       }
 
@@ -7553,6 +7561,7 @@ ${paginaFotos}
           + '<div style="font-weight:700;color:'+regla.color+';">'+regla.emoji+' ' + app._esc(String(r.consecutivo || r.id)) + '</div>'
           + '<div style="margin-top:4px;"><b>Fecha:</b> ' + app._esc(f.substring(0,10) || '-') + '</div>'
           + '<div><b>Dirección:</b> ' + app._esc(r.direccion || '-') + '</div>'
+          + (estCoord && r.lat && r.lng ? '<div><b>🚒 A la estación:</b> ~' + this._distanciaKm(estCoord[0], estCoord[1], r.lat, r.lng).toFixed(1) + ' km</div>' : '')
           + '<div><b>Clasificación:</b> ' + app._esc(clas) + '</div>'
           + '<button data-id="' + String(r.id||'').replace(/"/g,'&quot;') + '" onclick="app._verReporteDesdeMapa(this.dataset.id)" style="margin-top:8px;background:#6e2fa0;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;width:100%;">Ver reporte completo</button>'
           + '</div>';
@@ -7560,6 +7569,12 @@ ${paginaFotos}
         marker.addTo(this._leafletMapa);
         this._mapaMarkers.push({ marker: marker, etiqueta: regla.etiqueta, anio: f.substring(0,4), mes: f.substring(5,7), fecha: f.substring(0,10) });
       });
+      // v1.22: marcador fijo de la estación (si está configurada).
+      if (this._mapaMarcadorEstacion) { try { this._leafletMapa.removeLayer(this._mapaMarcadorEstacion); } catch (e) {} this._mapaMarcadorEstacion = null; }
+      if (estCoord) {
+        this._mapaMarcadorEstacion = L.marker(estCoord, { icon: L.divIcon({ html: '<div style="font-size:26px;line-height:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));">🚒</div>', className: '', iconSize: [26, 26], iconAnchor: [13, 13] }) })
+          .bindPopup('🚒 Estación de bomberos').addTo(this._leafletMapa);
+      }
       this._pintarLeyendaMapa();
       const _ley = document.getElementById('mapaLeyenda'); if (_ley) _ley.style.display = 'none';  // v1.21: cerrada por defecto
       this._aplicarFiltroMapa(true);
@@ -7695,6 +7710,40 @@ ${paginaFotos}
 
   // v1.21: elegir año/mes a mano anula el rango rodante de "últimos 30 días".
   _mapaSelectFecha() { this._mapaDesde = null; this._aplicarFiltroMapa(); },
+
+  // v1.22: estación de bomberos en el mapa. Se fija con el GPS (parado EN la estación)
+  // y se guarda en el dispositivo (localStorage). Con eso el mapa muestra un 🚒 y, en
+  // cada reporte, a cuántos km está de la estación. Cada cuerpo guarda la suya.
+  _EST_KEY: 'mapa_estacion_coord',
+  _estacionCoord() {
+    try {
+      const v = JSON.parse(localStorage.getItem(this._EST_KEY) || 'null');
+      return (Array.isArray(v) && v.length === 2 && isFinite(v[0]) && isFinite(v[1])) ? v : null;
+    } catch (e) { return null; }
+  },
+  // Distancia en km entre dos coordenadas (fórmula de Haversine).
+  _distanciaKm(lat1, lng1, lat2, lng2) {
+    const R = 6371, g = Math.PI / 180;
+    const dLat = (lat2 - lat1) * g, dLng = (lng2 - lng1) * g;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * g) * Math.cos(lat2 * g) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  },
+  _mapaFijarEstacion() {
+    if (!navigator.geolocation) { this.toast('Tu dispositivo no permite ubicación', 'error'); return; }
+    this.toast('🚒 Parado EN la estación, tomando ubicación…', 'info');
+    navigator.geolocation.getCurrentPosition((pos) => {
+      try { localStorage.setItem(this._EST_KEY, JSON.stringify([pos.coords.latitude, pos.coords.longitude])); } catch (e) {}
+      this.toast('🚒 Estación fijada. Verás la distancia en cada reporte.', 'exito');
+      this.cargarPantallaMapa();   // recarga para pintar el 🚒 y las distancias
+    }, () => { this.toast('No se pudo tomar la ubicación (revisa el permiso)', 'error'); },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  },
+  async _mapaQuitarEstacion() {
+    if (!await this.confirmar('¿Quitar la ubicación de la estación del mapa?')) return;
+    try { localStorage.removeItem(this._EST_KEY); } catch (e) {}
+    this.toast('Estación quitada del mapa', 'info');
+    this.cargarPantallaMapa();
+  },
 
   // v5.82: aplica leyenda + año + mes sobre los marcadores ya creados.
   // ajustarVista=true solo en la carga inicial (no le mueve el zoom al admin
