@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.24';
+const APP_VERSION = '1.25';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.25: 🔗 Invitar unidades por link. En el Panel de Administrador → "🔗 Invitar unidades", generás un link y lo compartís con tus bomberos: al abrirlo y entrar con Google quedan enlazados a tu cuerpo, sin configurar nada. Si un link se filtra, generás uno nuevo (invalida los anteriores).',
   'v1.24: ⭕ Los pines del mapa ahora se AGRUPAN cuando están amontonados: en vez de muchos marcadores encimados, ves un círculo con el número, y al acercar el zoom se abren. La estación (🚒) y el mapa de calor no se agrupan.',
   'v1.23: 🔥 Mapa de calor. En ⚙️ Herramientas → ✨ Vistas, el botón "Mapa de calor" pinta en rojo las zonas donde más se repiten los incidentes. Respeta el filtro que tengas puesto (tipo y fecha).',
   'v1.22: 🚒 Estación en el mapa. En ⚙️ Herramientas → "Fijar estación (mi ubicación)" guardás dónde queda la estación de su cuerpo (parado ahí, una sola vez). Después el mapa muestra un 🚒 y, en cada reporte, a cuántos km está de la estación.',
@@ -283,6 +284,9 @@ const app = {
     // quien vuelve no vea un parpadeo con el nombre neutro.
     try { this._pintarInstitucion(); } catch (e) {}
 
+    // v1.25: si la URL trae ?unir=TOKEN (link de invitación), guardarlo antes de nada.
+    this._detectarInvitacion();
+
     // v5.48 SEGURIDAD: inyecta el idToken de Google en toda petición al backend.
     this._instalarFetchToken();
 
@@ -330,6 +334,8 @@ const app = {
       // v5.98: refrescar el roster desde la hoja Personal (caché primero,
       // red después). En segundo plano: no debe demorar el arranque de la app.
       this._cargarRosterDesdeHoja().catch(() => {});
+      // v1.25: unidad que abre el link estando YA logueada → unirse y recargar limpio.
+      if (await this._procesarInvitacionPendiente()) { location.reload(); return; }
       this.actualizarUIUsuario();
       // Si ya completó registro complementario, ir a Home
       if (sesion.registroCompleto) {
@@ -352,6 +358,94 @@ const app = {
       this.toast('Conexión restablecida. Sincronizando...', 'exito');
       this.sincronizarPendientes(true);
     });
+  },
+
+  // v1.25: link de UNIRSE. Si la URL trae ?unir=TOKEN, se guarda (sobrevive al login de
+  // Google) y se limpia la URL para que un refresh no lo repita.
+  _detectarInvitacion() {
+    try {
+      const tok = new URLSearchParams(location.search || '').get('unir');
+      if (tok) {
+        try { localStorage.setItem('_invitacionPendiente', tok); } catch (e) {}
+        try { history.replaceState({}, '', location.pathname + location.hash); } catch (e) {}
+      }
+    } catch (e) {}
+  },
+
+  // Si hay una invitación guardada y ya hay identidad (pase/idToken), une al cuerpo.
+  // Devuelve true si se unió (el que llama recarga para entrar limpio como miembro).
+  async _procesarInvitacionPendiente() {
+    let token = '';
+    try { token = localStorage.getItem('_invitacionPendiente') || ''; } catch (e) {}
+    if (!token) return false;
+    if (!this._pase && !this._googleIdToken) return false;   // sin identidad aún: espera al login
+    try {
+      const r = await fetch(_exigirBackend(), {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'unirseACuerpo', invitacion: token, pase: this._pase || '', idToken: this._googleIdToken || '' })
+      });
+      const d = await r.json();
+      try { localStorage.removeItem('_invitacionPendiente'); } catch (e) {}   // token consumido (bueno o malo)
+      if (d && d.ok) { this.toast('✅ Te uniste a ' + (d.cuerpo || 'tu cuerpo'), 'exito'); return true; }
+      this.toast(d && d.error ? d.error : 'No se pudo unir al cuerpo', 'error');
+      return false;
+    } catch (e) {
+      // Error de red: NO se borró el token (el removeItem quedó después del fetch) → reintenta luego.
+      this.toast('Sin conexión para unirte. Se reintenta al abrir la app.', 'error');
+      return false;
+    }
+  },
+
+  // v1.25: el comandante genera un link de invitación (firmado por el backend) y lo comparte.
+  async compartirInvitacion(btn, rotar) {
+    await this._conBloqueo(btn, 'Generando…', async () => {
+      try {
+        const r = await fetch(_exigirBackend(), {
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accion: 'generarInvitacion', rotar: !!rotar,
+            adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '', pase: this._pase || '' })
+        });
+        const d = await r.json();
+        if (!d.ok) { this.toast(d.error || 'No se pudo generar la invitación', 'error'); return; }
+        const url = location.origin + location.pathname + '?unir=' + encodeURIComponent(d.token);
+        this._invUrlActual = url;
+        this._mostrarModalInvitacion(url, d.cuerpo || '');
+      } catch (e) { this.toast('Sin conexión para generar la invitación', 'error'); }
+    });
+  },
+
+  _mostrarModalInvitacion(url, cuerpo) {
+    this._cerrarModalInvitacion();
+    const cont = document.createElement('div');
+    cont.id = '_modalInvitacion';
+    cont.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px;';
+    cont.innerHTML =
+      '<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.3);">'
+      + '<div style="font-weight:700;font-size:15px;color:#1e40af;margin-bottom:4px;">🔗 Invitación a ' + app._esc(cuerpo) + '</div>'
+      + '<div style="font-size:12px;color:#555;margin-bottom:10px;">Compártelo con tus unidades. Al abrirlo y entrar con Google, quedan enlazadas a este cuerpo — sin configurar nada.</div>'
+      + '<div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-size:11px;word-break:break-all;">' + app._esc(url) + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'
+      +   '<button onclick="app._copiarInvitacion()" style="flex:1;min-width:110px;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">📋 Copiar link</button>'
+      +   '<button onclick="app._compartirInvitacionNativo()" style="flex:1;min-width:110px;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">📤 Compartir</button>'
+      + '</div>'
+      + '<button onclick="app.compartirInvitacion(this,true)" style="width:100%;margin-top:8px;padding:8px;background:#fff;color:#b45309;border:1px dashed #fbbf24;border-radius:8px;font-weight:600;cursor:pointer;font-size:11px;">↻ Generar link nuevo (invalida los anteriores)</button>'
+      + '<button onclick="app._cerrarModalInvitacion()" style="width:100%;margin-top:8px;padding:10px;background:#e5e7eb;color:#111;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">Cerrar</button>'
+      + '</div>';
+    document.body.appendChild(cont);
+  },
+  _cerrarModalInvitacion() { const m = document.getElementById('_modalInvitacion'); if (m) m.remove(); },
+  _copiarInvitacion() {
+    const url = this._invUrlActual || '';
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(() => this.toast('📋 Link copiado', 'exito')); return; }
+    } catch (e) {}
+    try { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); this.toast('📋 Link copiado', 'exito'); }
+    catch (e) { this.toast('Copia el link a mano', 'info'); }
+  },
+  async _compartirInvitacionNativo() {
+    const url = this._invUrlActual || '';
+    try { if (navigator.share) { await navigator.share({ title: 'Únete al cuerpo de bomberos', text: 'Ábrelo para unirte:', url: url }); return; } } catch (e) { return; }
+    this._copiarInvitacion();
   },
 
   // Banner de notificación de nueva versión.
@@ -672,6 +766,10 @@ const app = {
       // v5.98: tras un login NUEVO también se trae el roster de la hoja
       // (el arranque con sesión ya restaurada lo hace en su propia rama).
       this._cargarRosterDesdeHoja().catch(() => {});
+
+      // v1.25: si la unidad venía con una invitación, unirse ANTES de decidir si es
+      // fundador (un miembro nuevo NO debe caer en la pantalla de instalación).
+      if (await this._procesarInvitacionPendiente()) { location.reload(); return; }
 
       /* ⚠️ EL ASISTENTE VA PRIMERO QUE TODO. Sin base de datos configurada no hay
          dónde guardar el registro del bombero, así que mandarlo a completar sus
