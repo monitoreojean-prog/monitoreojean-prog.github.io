@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.25';
+const APP_VERSION = '1.26';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.26: 📷 Código QR para invitar. Al generar el link de invitación ahora sale también un QR: tus unidades lo escanean con la cámara del celular y entran, sin copiar ni pegar nada. Y cuando una unidad se une, ve un aviso claro de a qué cuerpo pertenece.',
   'v1.25: 🔗 Invitar unidades por link. En el Panel de Administrador → "🔗 Invitar unidades", generás un link y lo compartís con tus bomberos: al abrirlo y entrar con Google quedan enlazados a tu cuerpo, sin configurar nada. Si un link se filtra, generás uno nuevo (invalida los anteriores).',
   'v1.24: ⭕ Los pines del mapa ahora se AGRUPAN cuando están amontonados: en vez de muchos marcadores encimados, ves un círculo con el número, y al acercar el zoom se abren. La estación (🚒) y el mapa de calor no se agrupan.',
   'v1.23: 🔥 Mapa de calor. En ⚙️ Herramientas → ✨ Vistas, el botón "Mapa de calor" pinta en rojo las zonas donde más se repiten los incidentes. Respeta el filtro que tengas puesto (tipo y fecha).',
@@ -386,7 +387,12 @@ const app = {
       });
       const d = await r.json();
       try { localStorage.removeItem('_invitacionPendiente'); } catch (e) {}   // token consumido (bueno o malo)
-      if (d && d.ok) { this.toast('✅ Te uniste a ' + (d.cuerpo || 'tu cuerpo'), 'exito'); return true; }
+      if (d && d.ok) {
+        // v1.26: guardar el cuerpo para la BIENVENIDA prominente tras el reload
+        // (el toast se perdía porque la página se recarga enseguida).
+        try { localStorage.setItem('_bienvenidaCuerpo', String(d.cuerpo || 'tu cuerpo')); } catch (e) {}
+        this.toast('✅ Te uniste a ' + (d.cuerpo || 'tu cuerpo'), 'exito'); return true;
+      }
       this.toast(d && d.error ? d.error : 'No se pudo unir al cuerpo', 'error');
       return false;
     } catch (e) {
@@ -414,6 +420,18 @@ const app = {
     });
   },
 
+  // v1.26: QR del link (qrcode-generator, incrustado en index.html). Genera un GIF
+  // en data:URL SIN canvas → funciona en el WebView del APK y offline. Si por lo que
+  // sea la librería no cargó, devuelve '' y el modal sigue con copiar/compartir.
+  _qrImg(url) {
+    try {
+      if (typeof qrcode === 'undefined') return '';
+      const qr = qrcode(0, 'M'); qr.addData(String(url || '')); qr.make();
+      return '<div style="text-align:center;margin:12px 0 2px;">'
+        + '<img alt="Código QR de la invitación" src="' + qr.createDataURL(5, 4) + '" style="max-width:100%;image-rendering:pixelated;background:#fff;border-radius:6px;">'
+        + '<div style="font-size:11px;color:#64748b;margin-top:4px;">📷 Escanéalo con la cámara del celular</div></div>';
+    } catch (e) { return ''; }
+  },
   _mostrarModalInvitacion(url, cuerpo) {
     this._cerrarModalInvitacion();
     const cont = document.createElement('div');
@@ -423,6 +441,7 @@ const app = {
       '<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.3);">'
       + '<div style="font-weight:700;font-size:15px;color:#1e40af;margin-bottom:4px;">🔗 Invitación a ' + app._esc(cuerpo) + '</div>'
       + '<div style="font-size:12px;color:#555;margin-bottom:10px;">Compártelo con tus unidades. Al abrirlo y entrar con Google, quedan enlazadas a este cuerpo — sin configurar nada.</div>'
+      + this._qrImg(url)
       + '<div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-size:11px;word-break:break-all;">' + app._esc(url) + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'
       +   '<button onclick="app._copiarInvitacion()" style="flex:1;min-width:110px;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">📋 Copiar link</button>'
@@ -434,6 +453,28 @@ const app = {
     document.body.appendChild(cont);
   },
   _cerrarModalInvitacion() { const m = document.getElementById('_modalInvitacion'); if (m) m.remove(); },
+  // v1.26: bienvenida PROMINENTE al unirse a un cuerpo. Se muestra UNA vez, tras
+  // recargar como miembro (el flag lo pone _procesarInvitacionPendiente). Deja
+  // claro a qué cuerpo pertenece la unidad, sin tener que "probar subiendo algo".
+  _mostrarBienvenidaCuerpo() {
+    let cuerpo = '';
+    try { cuerpo = localStorage.getItem('_bienvenidaCuerpo') || ''; } catch (e) {}
+    if (!cuerpo) return;
+    try { localStorage.removeItem('_bienvenidaCuerpo'); } catch (e) {}
+    const cont = document.createElement('div');
+    cont.id = '_modalBienvenida';
+    cont.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10002;display:flex;align-items:center;justify-content:center;padding:20px;';
+    cont.innerHTML =
+      '<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35);">'
+      + '<div style="font-size:52px;line-height:1;margin-bottom:6px;">✅</div>'
+      + '<div style="font-size:14px;color:#475569;font-weight:600;">Ya perteneces a</div>'
+      + '<div style="font-size:22px;font-weight:800;color:#166534;margin:4px 0 12px;line-height:1.15;">' + app._esc(cuerpo) + '</div>'
+      + '<div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:16px;">Tus reportes, actividades y asistencias quedan registrados en este cuerpo. Lo ves siempre en la parte de arriba, junto al nombre de la app.</div>'
+      + '<button onclick="app._cerrarBienvenidaCuerpo()" style="width:100%;padding:12px;background:#166534;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;">Entendido</button>'
+      + '</div>';
+    document.body.appendChild(cont);
+  },
+  _cerrarBienvenidaCuerpo() { const m = document.getElementById('_modalBienvenida'); if (m) m.remove(); },
   _copiarInvitacion() {
     const url = this._invUrlActual || '';
     try {
@@ -1539,6 +1580,7 @@ const app = {
 
   // ==================== HOME ====================
   async actualizarHome() {
+    try { this._mostrarBienvenidaCuerpo(); } catch (e) {} // v1.26: solo aparece si acabás de unirte a un cuerpo
     let reportes = await DB.listarReportes();
     // FILTRO POR CORREO: cada bombero solo ve SUS propios reportes
     // Identificamos por operadorEmail (el correo con que se creó el reporte)
