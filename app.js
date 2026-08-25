@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.26';
+const APP_VERSION = '1.27';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.27: ✅ Aprobación de ingreso. Ahora, cuando alguien abre el link o el QR, NO entra solo: queda como una SOLICITUD (con su nombre y una descripción de quién es). Cualquier administrador la aprueba o la descarta desde el Panel → "📥 Solicitudes de ingreso", y queda registrado quién decidió. Así, si a una unidad se le filtra el link a un tercero, ese tercero no entra sin permiso.',
   'v1.26: 📷 Código QR para invitar. Al generar el link de invitación ahora sale también un QR: tus unidades lo escanean con la cámara del celular y entran, sin copiar ni pegar nada. Y cuando una unidad se une, ve un aviso claro de a qué cuerpo pertenece.',
   'v1.25: 🔗 Invitar unidades por link. En el Panel de Administrador → "🔗 Invitar unidades", generás un link y lo compartís con tus bomberos: al abrirlo y entrar con Google quedan enlazados a tu cuerpo, sin configurar nada. Si un link se filtra, generás uno nuevo (invalida los anteriores).',
   'v1.24: ⭕ Los pines del mapa ahora se AGRUPAN cuando están amontonados: en vez de muchos marcadores encimados, ves un círculo con el número, y al acercar el zoom se abren. La estación (🚒) y el mapa de calor no se agrupan.',
@@ -336,7 +337,7 @@ const app = {
       // red después). En segundo plano: no debe demorar el arranque de la app.
       this._cargarRosterDesdeHoja().catch(() => {});
       // v1.25: unidad que abre el link estando YA logueada → unirse y recargar limpio.
-      if (await this._procesarInvitacionPendiente()) { location.reload(); return; }
+      if (await this._manejarIngreso()) return; // v1.27: solicitud/pendiente/rechazado toma la pantalla
       this.actualizarUIUsuario();
       // Si ya completó registro complementario, ir a Home
       if (sesion.registroCompleto) {
@@ -373,33 +374,174 @@ const app = {
     } catch (e) {}
   },
 
-  // Si hay una invitación guardada y ya hay identidad (pase/idToken), une al cuerpo.
-  // Devuelve true si se unió (el que llama recarga para entrar limpio como miembro).
-  async _procesarInvitacionPendiente() {
+  // v1.27: GATE DE INGRESO. Reemplaza el auto-join. Devuelve true si toma la pantalla
+  // (el init/login NO debe seguir al Home).
+  //  - Si hay un link guardado → muestra el FORMULARIO de solicitud (nombre + descripción).
+  //  - Si no, y la persona quedó PENDIENTE/RECHAZADA de una solicitud previa → esa pantalla.
+  //  - Si ya está aprobada (o nunca pidió) → false (sigue el flujo normal).
+  async _manejarIngreso() {
+    if (!this._pase && !this._googleIdToken) return false;   // sin identidad aún: espera al login
     let token = '';
     try { token = localStorage.getItem('_invitacionPendiente') || ''; } catch (e) {}
-    if (!token) return false;
-    if (!this._pase && !this._googleIdToken) return false;   // sin identidad aún: espera al login
+    if (token) { this._mostrarFormSolicitud(token); return true; }
+    // ¿ya aprobado antes? evita la llamada extra a los miembros de siempre.
+    let aprobadoLocal = false;
+    try { aprobadoLocal = localStorage.getItem('_ingresoAprobado') === '1'; } catch (e) {}
+    if (aprobadoLocal) return false;
     try {
       const r = await fetch(_exigirBackend(), {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ accion: 'unirseACuerpo', invitacion: token, pase: this._pase || '', idToken: this._googleIdToken || '' })
+        body: JSON.stringify({ accion: 'estadoMiSolicitud', pase: this._pase || '', idToken: this._googleIdToken || '' })
       });
       const d = await r.json();
-      try { localStorage.removeItem('_invitacionPendiente'); } catch (e) {}   // token consumido (bueno o malo)
       if (d && d.ok) {
-        // v1.26: guardar el cuerpo para la BIENVENIDA prominente tras el reload
-        // (el toast se perdía porque la página se recarga enseguida).
-        try { localStorage.setItem('_bienvenidaCuerpo', String(d.cuerpo || 'tu cuerpo')); } catch (e) {}
-        this.toast('✅ Te uniste a ' + (d.cuerpo || 'tu cuerpo'), 'exito'); return true;
+        if (d.estado === 'aprobado') {
+          // bienvenida notoria SOLO a quien venía de una solicitud pendiente (no a los
+          // miembros de siempre, que no pasaron por la cola).
+          let fuiPend = false; try { fuiPend = localStorage.getItem('_fuiPendiente') === '1'; } catch (e) {}
+          if (fuiPend) {
+            try { localStorage.setItem('_bienvenidaCuerpo', String(d.cuerpo || 'tu cuerpo')); } catch (e) {}
+            try { localStorage.removeItem('_fuiPendiente'); } catch (e) {}
+          }
+          try { localStorage.setItem('_ingresoAprobado', '1'); } catch (e) {}
+          return false;
+        }
+        if (d.estado === 'pendiente') { this._mostrarEstadoIngreso('pendiente', d.cuerpo || ''); return true; }
+        if (d.estado === 'rechazada') { this._mostrarEstadoIngreso('rechazada', d.cuerpo || ''); return true; }
       }
-      this.toast(d && d.error ? d.error : 'No se pudo unir al cuerpo', 'error');
-      return false;
-    } catch (e) {
-      // Error de red: NO se borró el token (el removeItem quedó después del fetch) → reintenta luego.
-      this.toast('Sin conexión para unirte. Se reintenta al abrir la app.', 'error');
-      return false;
-    }
+    } catch (e) { /* sin red: sigue normal; el backend igual bloquea escrituras de un pendiente */ }
+    return false;
+  },
+  _mostrarFormSolicitud(token) {
+    this._tokenSolicitud = token;
+    const viejo = document.getElementById('_overlayIngreso'); if (viejo) viejo.remove();
+    const nombreGoogle = (this.usuario && this.usuario.nombre) ? this.usuario.nombre : '';
+    const correo = (this.usuario && this.usuario.email) ? this.usuario.email : '';
+    const cont = document.createElement('div');
+    cont.id = '_overlayIngreso';
+    cont.style.cssText = 'position:fixed;inset:0;background:#0f172a;z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
+    cont.innerHTML =
+      '<div style="background:#fff;border-radius:16px;max-width:400px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.4);">'
+      + '<div style="font-size:40px;text-align:center;line-height:1;">🔗</div>'
+      + '<div style="font-size:18px;font-weight:800;color:#1e40af;text-align:center;margin:6px 0 4px;">Solicitar ingreso</div>'
+      + '<div style="font-size:12px;color:#64748b;text-align:center;margin-bottom:16px;">Un administrador debe aprobar tu ingreso antes de que puedas usar la app.</div>'
+      + '<label style="font-size:12px;font-weight:600;color:#334155;">Tu nombre completo</label>'
+      + '<input id="_solNombre" type="text" value="' + app._esc(nombreGoogle) + '" placeholder="Nombre y apellido" style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;margin:4px 0 12px;">'
+      + '<label style="font-size:12px;font-weight:600;color:#334155;">¿Quién eres? (para que te reconozcan)</label>'
+      + '<textarea id="_solDesc" rows="2" maxlength="200" placeholder="Ej: Soy Juan, unidad de rescate M-3" style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;margin:4px 0 16px;resize:vertical;"></textarea>'
+      + '<button id="_solEnviar" style="width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;">Enviar solicitud</button>'
+      + '<div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:10px;word-break:break-all;">Entrarás con: ' + app._esc(correo) + '</div>'
+      + '</div>';
+    document.body.appendChild(cont);
+    const btn = document.getElementById('_solEnviar');
+    if (btn) btn.onclick = () => this._enviarSolicitud();
+  },
+  async _enviarSolicitud() {
+    const btn = document.getElementById('_solEnviar');
+    const nombre = ((document.getElementById('_solNombre') || {}).value || '').trim();
+    const descripcion = ((document.getElementById('_solDesc') || {}).value || '').trim();
+    if (!nombre) { this.toast('Escribe tu nombre', 'error'); return; }
+    await this._conBloqueo(btn, 'Enviando…', async () => {
+      try {
+        const r = await fetch(_exigirBackend(), {
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accion: 'unirseACuerpo', invitacion: this._tokenSolicitud, nombre: nombre, descripcion: descripcion, pase: this._pase || '', idToken: this._googleIdToken || '' })
+        });
+        const d = await r.json();
+        if (!d.ok) { this.toast(d.error || 'No se pudo enviar la solicitud', 'error'); return; }
+        try { localStorage.removeItem('_invitacionPendiente'); } catch (e) {}
+        if (d.estado === 'aprobado') {   // ya era miembro → entra directo
+          try { localStorage.setItem('_ingresoAprobado', '1'); } catch (e) {}
+          try { localStorage.setItem('_bienvenidaCuerpo', String(d.cuerpo || 'tu cuerpo')); } catch (e) {}
+          location.reload(); return;
+        }
+        this._mostrarEstadoIngreso('pendiente', d.cuerpo || '');
+      } catch (e) { this.toast('Sin conexión. Intenta de nuevo.', 'error'); }
+    });
+  },
+  _mostrarEstadoIngreso(estado, cuerpo) {
+    const viejo = document.getElementById('_overlayIngreso'); if (viejo) viejo.remove();
+    const esPend = estado === 'pendiente';
+    // marca para la bienvenida notoria cuando lo aprueben (solo quien pasó por la cola)
+    if (esPend) { try { localStorage.setItem('_fuiPendiente', '1'); } catch (e) {} }
+    const cont = document.createElement('div');
+    cont.id = '_overlayIngreso';
+    cont.style.cssText = 'position:fixed;inset:0;background:#0f172a;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;';
+    cont.innerHTML =
+      '<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:28px 22px;box-shadow:0 10px 40px rgba(0,0,0,.4);">'
+      + '<div style="font-size:52px;line-height:1;">' + (esPend ? '⏳' : '🚫') + '</div>'
+      + '<div style="font-size:19px;font-weight:800;color:' + (esPend ? '#b45309' : '#b91c1c') + ';margin:8px 0;">' + (esPend ? 'Solicitud enviada' : 'Solicitud no aprobada') + '</div>'
+      + '<div style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:18px;">'
+      +   (esPend
+          ? 'Tu ingreso a <b>' + app._esc(cuerpo || 'el cuerpo') + '</b> está esperando que un administrador lo apruebe. Vuelve a abrir la app más tarde.'
+          : 'Un administrador no aprobó tu ingreso a <b>' + app._esc(cuerpo || 'el cuerpo') + '</b>. Si crees que es un error, pídele el link de invitación otra vez.')
+      + '</div>'
+      + '<button onclick="app._salirIngreso()" style="width:100%;padding:12px;background:#e2e8f0;color:#0f172a;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">Cerrar sesión</button>'
+      + '</div>';
+    document.body.appendChild(cont);
+  },
+  _salirIngreso() {
+    const o = document.getElementById('_overlayIngreso'); if (o) o.remove();
+    try { this.cerrarSesion(); } catch (e) { try { location.reload(); } catch (e2) {} }
+  },
+
+  // v1.27: SOLICITUDES DE INGRESO (lado admin). Cualquier admin lista/aprueba/descarta.
+  async cargarSolicitudes(btn) {
+    const cont = document.getElementById('listaSolicitudes');
+    if (!cont) return;
+    if (btn) return this._conBloqueo(btn, 'Actualizando…', () => this.cargarSolicitudes());
+    cont.innerHTML = this._skeleton(2, 'linea');
+    try {
+      const r = await fetch(URL_BACKEND, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ accion: 'listarSolicitudesIngreso', adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '', pase: this._pase || '' }) });
+      const d = await r.json();
+      if (!d.ok) { cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">' + app._esc(d.error || 'Error') + '</div>'; return; }
+      const lista = d.solicitudes || [];
+      const badge = document.getElementById('solicitudesBadge');
+      if (badge) badge.innerHTML = lista.length ? '<span style="background:#dc2626;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;">' + lista.length + '</span>' : '';
+      if (!lista.length) { cont.innerHTML = '<div style="font-size:12px;color:#78350f;padding:6px;">No hay solicitudes pendientes.</div>'; return; }
+      cont.innerHTML = lista.map(function (s) {
+        const c = encodeURIComponent(s.correo || '');
+        const desc = app._esc(s.descripcion || '');
+        return '<div style="background:#fff;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:8px;">'
+          + '<div style="font-weight:700;font-size:13px;color:#78350f;">' + app._esc(s.nombre || '(sin nombre)') + '</div>'
+          + '<div style="font-size:11px;color:#92400e;word-break:break-all;">' + app._esc(s.correo || '') + '</div>'
+          + (desc ? '<div style="font-size:12px;color:#334155;margin-top:4px;font-style:italic;">“' + desc + '”</div>' : '')
+          + (s.fecha ? '<div style="font-size:10px;color:#a16207;margin-top:3px;">' + app._esc(s.fecha) + '</div>' : '')
+          + '<div style="display:flex;gap:6px;margin-top:8px;">'
+          +   '<button onclick="app._aprobarSolicitud(this,\'' + c + '\')" style="flex:1;padding:8px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">✅ Aceptar</button>'
+          +   '<button onclick="app._rechazarSolicitud(this,\'' + c + '\')" style="flex:1;padding:8px;background:#e5e7eb;color:#7f1d1d;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">✕ Descartar</button>'
+          + '</div></div>';
+      }).join('');
+    } catch (e) { cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">Sin conexión</div>'; }
+  },
+  async _aprobarSolicitud(btn, correoEnc) {
+    const correo = decodeURIComponent(correoEnc || '');
+    await this._conBloqueo(btn, 'Aprobando…', async () => {
+      try {
+        const r = await fetch(URL_BACKEND, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accion: 'aprobarSolicitudIngreso', correo: correo, adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '', pase: this._pase || '' }) });
+        const d = await r.json();
+        if (!d.ok) { this.toast(d.error || 'No se pudo aprobar', 'error'); return; }
+        this.toast('✅ Ingreso aprobado', 'exito');
+        this.cargarSolicitudes();
+      } catch (e) { this.toast('Sin conexión', 'error'); }
+    });
+  },
+  async _rechazarSolicitud(btn, correoEnc) {
+    const correo = decodeURIComponent(correoEnc || '');
+    const ok = await this.confirmar('Descartar solicitud', '¿Descartar esta solicitud? La persona no entrará (podría volver a pedir con el link).');
+    if (!ok) return;
+    await this._conBloqueo(btn, 'Descartando…', async () => {
+      try {
+        const r = await fetch(URL_BACKEND, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accion: 'rechazarSolicitudIngreso', correo: correo, adminEmail: this.usuario.email, adminPassword: this._adminPwdSession || '', pase: this._pase || '' }) });
+        const d = await r.json();
+        if (!d.ok) { this.toast(d.error || 'No se pudo descartar', 'error'); return; }
+        this.toast('Solicitud descartada', 'info');
+        this.cargarSolicitudes();
+      } catch (e) { this.toast('Sin conexión', 'error'); }
+    });
   },
 
   // v1.25: el comandante genera un link de invitación (firmado por el backend) y lo comparte.
@@ -810,7 +952,7 @@ const app = {
 
       // v1.25: si la unidad venía con una invitación, unirse ANTES de decidir si es
       // fundador (un miembro nuevo NO debe caer en la pantalla de instalación).
-      if (await this._procesarInvitacionPendiente()) { location.reload(); return; }
+      if (await this._manejarIngreso()) return; // v1.27: solicitud/pendiente/rechazado toma la pantalla
 
       /* ⚠️ EL ASISTENTE VA PRIMERO QUE TODO. Sin base de datos configurada no hay
          dónde guardar el registro del bombero, así que mandarlo a completar sus
@@ -3377,6 +3519,8 @@ const app = {
     // v6.00: bandeja de altas pendientes. Sin await a propósito: es información
     // secundaria y no debe demorar la apertura del Panel ni romperla si falla.
     this.cargarPersonalPendiente();
+    // v1.27: solicitudes de ingreso por link/QR (mismo criterio: secundario, sin await).
+    this.cargarSolicitudes();
     /* Flota: sin esto el bloque de vehículos salía vacío hasta que alguien
        tocara "Actualizar", y un cuerpo con su flota ya cargada creería que se
        le perdió. Sin await por el mismo motivo que la bandeja. */
