@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.31';
+const APP_VERSION = '1.32';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.32: 🌈 Los emojis vuelven a color. Se probó ponerlos en gris/silueta, pero se ven mejor a color. El resto del nuevo diseño se mantiene.',
   'v1.31: 🩶 Emojis más legibles. Algunos quedaban como cuadrado negro o no se veían sobre los botones de color. Ahora van en escala de grises: conservan su forma y se ven bien en todos lados.',
   'v1.30: 🖼️ Panel de administrador y ventanas al estilo "Acta Oficial". Las tarjetas del panel pasan a fondo blanco con una franja de color a la izquierda (aire de documento) y las ventanas de confirmación llevan borde dorado y título de imprenta. Solo cambia el aspecto.',
   'v1.29: 🎯 Emojis en monocromo. Los emojis de colores se convierten en siluetas tipo ícono (oscuras sobre fondo claro, blancas sobre el rojo) para que peguen con el diseño institucional y no se vean como "stickers". Solo cambia el aspecto.',
@@ -290,9 +291,6 @@ const app = {
     // quien vuelve no vea un parpadeo con el nombre neutro.
     try { this._pintarInstitucion(); } catch (e) {}
 
-    // v1.29: emojis en monocromo (silueta) para el diseño "Acta Oficial".
-    try { this._iniciarMonoEmoji(); } catch (e) {}
-
     // v1.25: si la URL trae ?unir=TOKEN (link de invitación), guardarlo antes de nada.
     this._detectarInvitacion();
 
@@ -371,61 +369,6 @@ const app = {
 
   // v1.25: link de UNIRSE. Si la URL trae ?unir=TOKEN, se guarda (sobrevive al login de
   // Google) y se limpia la URL para que un refresh no lo repita.
-  /* ═══ v1.29: EMOJIS EN MONOCROMO ═══
-     Los emojis a color chocaban con el diseño "Acta Oficial". En vez de tocar cientos
-     de textos, se envuelven en runtime en <span class="_ico"> y el CSS los vuelve
-     siluetas monocromas. Patrón probado (estilo twemoji). TODO defensivo y envuelto en
-     try/catch: si algo falla, los emojis quedan a color y la app sigue igual. Reversible. */
-  _reEmoji: /(\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*)/gu,
-  _saltarMono: { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, NOSCRIPT: 1, OPTION: 1 },
-  _envolverEmojis(root) {
-    if (!root || !root.ownerDocument) return;
-    const RE = this._reEmoji, saltar = this._saltarMono;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode: (n) => {
-        const p = n.parentNode;
-        if (!p || saltar[p.nodeName]) return NodeFilter.FILTER_REJECT;
-        if (p.classList && p.classList.contains('_ico')) return NodeFilter.FILTER_REJECT;
-        RE.lastIndex = 0;
-        return RE.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-      }
-    });
-    const objetivo = [];
-    let x; while ((x = walker.nextNode())) objetivo.push(x);
-    objetivo.forEach((n) => {
-      const s = n.nodeValue, frag = document.createDocumentFragment();
-      let last = 0, m; RE.lastIndex = 0;
-      while ((m = RE.exec(s))) {
-        if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
-        const sp = document.createElement('span'); sp.className = '_ico'; sp.textContent = m[0];
-        frag.appendChild(sp); last = m.index + m[0].length;
-      }
-      if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
-      if (n.parentNode) n.parentNode.replaceChild(frag, n);
-    });
-  },
-  _iniciarMonoEmoji() {
-    if (this._monoOn) return; this._monoOn = true;
-    const correr = (root) => { try { this._envolverEmojis(root); } catch (e) {} };
-    correr(document.body);
-    try {
-      let pend = null;
-      const obs = new MutationObserver((muts) => {
-        // se juntan los nodos nuevos y se procesan en el próximo frame (sin re-entrar:
-        // los <span class="_ico"> que agregamos se saltan por el guard de arriba).
-        const nuevos = [];
-        muts.forEach((mu) => { mu.addedNodes && mu.addedNodes.forEach((nd) => {
-          if (nd.nodeType === 1) nuevos.push(nd);
-          else if (nd.nodeType === 3 && nd.parentNode) nuevos.push(nd.parentNode);
-        }); });
-        if (!nuevos.length) return;
-        if (pend) return;
-        pend = (window.requestAnimationFrame || window.setTimeout)(() => { pend = null; nuevos.forEach(correr); }, 16);
-      });
-      obs.observe(document.body, { childList: true, subtree: true });
-      this._monoObs = obs;
-    } catch (e) {}
-  },
   _detectarInvitacion() {
     try {
       const tok = new URLSearchParams(location.search || '').get('unir');
