@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.30';
+const APP_VERSION = '1.31';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.31: 🩶 Emojis más legibles. Algunos quedaban como cuadrado negro o no se veían sobre los botones de color. Ahora van en escala de grises: conservan su forma y se ven bien en todos lados.',
   'v1.30: 🖼️ Panel de administrador y ventanas al estilo "Acta Oficial". Las tarjetas del panel pasan a fondo blanco con una franja de color a la izquierda (aire de documento) y las ventanas de confirmación llevan borde dorado y título de imprenta. Solo cambia el aspecto.',
   'v1.29: 🎯 Emojis en monocromo. Los emojis de colores se convierten en siluetas tipo ícono (oscuras sobre fondo claro, blancas sobre el rojo) para que peguen con el diseño institucional y no se vean como "stickers". Solo cambia el aspecto.',
   'v1.28: 🎨 Rediseño visual "Acta Oficial". Tipografía de imprenta (Oswald + Barlow), el rojo institucional usado con disciplina y un dorado de seguridad como acento. La app se ve como un instrumento oficial de bomberos, no una plantilla genérica. Cambia solo el aspecto: la lógica, la estructura y tus datos NO cambian.',
