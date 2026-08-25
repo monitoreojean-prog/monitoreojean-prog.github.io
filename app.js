@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.27';
+const APP_VERSION = '1.28';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.28: 🎨 Rediseño visual "Acta Oficial". Tipografía de imprenta (Oswald + Barlow), el rojo institucional usado con disciplina y un dorado de seguridad como acento. La app se ve como un instrumento oficial de bomberos, no una plantilla genérica. Cambia solo el aspecto: la lógica, la estructura y tus datos NO cambian.',
   'v1.27: ✅ Aprobación de ingreso. Ahora, cuando alguien abre el link o el QR, NO entra solo: queda como una SOLICITUD (con su nombre y una descripción de quién es). Cualquier administrador la aprueba o la descarta desde el Panel → "📥 Solicitudes de ingreso", y queda registrado quién decidió. Así, si a una unidad se le filtra el link a un tercero, ese tercero no entra sin permiso.',
   'v1.26: 📷 Código QR para invitar. Al generar el link de invitación ahora sale también un QR: tus unidades lo escanean con la cámara del celular y entran, sin copiar ni pegar nada. Y cuando una unidad se une, ve un aviso claro de a qué cuerpo pertenece.',
   'v1.25: 🔗 Invitar unidades por link. En el Panel de Administrador → "🔗 Invitar unidades", generás un link y lo compartís con tus bomberos: al abrirlo y entrar con Google quedan enlazados a tu cuerpo, sin configurar nada. Si un link se filtra, generás uno nuevo (invalida los anteriores).',
