@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.35';
+const APP_VERSION = '1.36';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.36: 📋 Vista RUE más completa y más exacta. Nuevo bloque "Recursos desplegados" que cruza los vehículos del incidente con la clase que pide el RUE. Además, "Quien Reporta" ahora muestra el nombre completo de quien avisó (antes solo mostraba la relación), y se corrigió un caso donde un incidente con varias clasificaciones podía dejar mal marcado ese tipo en informes futuros.',
   'v1.35: 👥 Unidades vinculadas. En el Panel de Administrador → "Unidades vinculadas" (solo el administrador principal), vea todo correo que ya usa la app y cuándo entró por última vez, y bloquéele el acceso a quien haga falta — sin borrar sus datos, y siempre reversible. Además: el tour explica dónde vive su base de datos (el Google Sheets del cuerpo), la explicación de "Quién opera" en el Panel Admin ahora habla de qué administrador firma (no de guardia, que ahí no aplica), y se corrigieron un par de palabras ambiguas ("emergencia" → "incidente", "cobertura" → "señal").',
   'v1.34: 🧭 Tour más completo. El de unidades (antes "para bomberos") ahora también recorre su perfil en Configuración. El de administrador creció bastante: ahora explica el escudo/logo del cuerpo, el relevo de guardia, invitar unidades e importar personal por separado, y el ranking y el mapa con más detalle.',
   'v1.33: 🧭 Tour interactivo renovado. El recorrido de ayuda ya no es una tarjeta de texto: ahora se mueve de verdad por la app y señala cada botón real. Hay uno para bomberos y otro, distinto, para administradores (Panel Admin, Operatividad, Mapa, Zona Administrador). Se abre desde ℹ️ Acerca de.',
@@ -4023,6 +4024,10 @@ const app = {
 
     h += bloque('1 · Nueva Emergencia', d.emergencia);
     h += bloque('2 · Nuevo Detalle Emergencia', d.detalle);
+    // v1.36 (deuda portada de la app de referencia): recursos desplegados con su clase del
+    // RUE (el backend ya la manda; faltaba pintarla). Solo si el reporte trae
+    // vehículos con match en la flota.
+    if (d.recursos && d.recursos.length) h += bloque('3 · Recursos desplegados (clase para el RUE)', d.recursos);
     document.getElementById('modalRUECuerpo').innerHTML = h;
   },
 
