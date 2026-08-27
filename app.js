@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.34';
+const APP_VERSION = '1.35';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.35: 👥 Unidades vinculadas. En el Panel de Administrador → "Unidades vinculadas" (solo el administrador principal), vea todo correo que ya usa la app y cuándo entró por última vez, y bloquéele el acceso a quien haga falta — sin borrar sus datos, y siempre reversible. Además: el tour explica dónde vive su base de datos (el Google Sheets del cuerpo), la explicación de "Quién opera" en el Panel Admin ahora habla de qué administrador firma (no de guardia, que ahí no aplica), y se corrigieron un par de palabras ambiguas ("emergencia" → "incidente", "cobertura" → "señal").',
   'v1.34: 🧭 Tour más completo. El de unidades (antes "para bomberos") ahora también recorre su perfil en Configuración. El de administrador creció bastante: ahora explica el escudo/logo del cuerpo, el relevo de guardia, invitar unidades e importar personal por separado, y el ranking y el mapa con más detalle.',
   'v1.33: 🧭 Tour interactivo renovado. El recorrido de ayuda ya no es una tarjeta de texto: ahora se mueve de verdad por la app y señala cada botón real. Hay uno para bomberos y otro, distinto, para administradores (Panel Admin, Operatividad, Mapa, Zona Administrador). Se abre desde ℹ️ Acerca de.',
   'v1.32: 🌈 Los emojis vuelven a color. Se probó ponerlos en gris/silueta, pero se ven mejor a color. El resto del nuevo diseño se mantiene.',
@@ -1633,29 +1634,38 @@ const app = {
      reales (nuevoReporte() pide GPS, pantallaDetalle necesita un informe
      real) que el tour no debe disparar (Regla 1). */
   _TOUR_NO_ADMIN: [
-    { id: 'nuevo-incidente', pantalla: 'pantallaHome', selector: '[data-tour="cta-nuevo-incidente"]', icono: '🚨', titulo: 'Nuevo incidente', texto: 'Registra una emergencia oficial: clasificación, ubicación por GPS automático, recursos desplegados, víctimas y firmas en 13 secciones con barra de avance. Sin señal igual queda guardado y se envía solo cuando vuelve la cobertura.' },
+    { id: 'nuevo-incidente', pantalla: 'pantallaHome', selector: '[data-tour="cta-nuevo-incidente"]', icono: '🚨', titulo: 'Nuevo incidente', texto: 'Registra un incidente oficial: clasificación, ubicación por GPS automático, recursos desplegados, víctimas y firmas en 13 secciones con barra de avance. Sin señal igual queda guardado y se envía solo cuando vuelva a tener señal.' },
     { id: 'contadores', pantalla: 'pantallaHome', selector: '[data-tour="stats-home"]', icono: '🔢', titulo: 'Sus contadores', texto: 'Total es todo lo que usted ha registrado. Pendientes es lo que guardó sin señal — se envía solo, o lo puede forzar desde Configuración. Enviados ya quedó en el servidor.' },
     { id: 'informes', pantalla: 'pantallaHome', selector: '[data-tour="informes-recientes"]', icono: '🧾', titulo: 'Informes recientes', texto: 'Toque cualquiera para ver su detalle: ahí imprime el PDF oficial, ve el resumen listo para copiar al RUE, o lo edita durante las primeras 24 horas. Pasado ese plazo, solo el administrador corrige. Cada quien ve solo sus propios informes.' },
-    { id: 'actividades', pantalla: 'pantallaHome', selector: '[data-tour="fila-registrar"]', icono: '🎯', titulo: 'Nueva actividad', texto: 'Acá registra lo que no es una emergencia: capacitaciones, simulacros, inspecciones, jornadas comunitarias. Sume el personal que asistió, vehículos y hasta 3 fotos. "Mis actividades" guarda todo lo que ya registró.' },
+    { id: 'actividades', pantalla: 'pantallaHome', selector: '[data-tour="fila-registrar"]', icono: '🎯', titulo: 'Nueva actividad', texto: 'Acá registra lo que no es un incidente: capacitaciones, simulacros, inspecciones, jornadas comunitarias. Sume el personal que asistió, vehículos y hasta 3 fotos. "Mis actividades" guarda todo lo que ya registró.' },
     { id: 'config-perfil', pantalla: 'pantallaConfig', selector: '[data-tour="config-perfil"]', icono: '👤', titulo: 'Su perfil', texto: 'Por el avatar de arriba a la derecha llega aquí: corrija su nombre, grado, cédula y teléfono, elija el diseño Original o Minimalista de la app, y sincronice sus informes pendientes cuando quiera.' },
     { id: 'ayuda', pantalla: 'pantallaHome', selector: '[data-tour="ayuda-home"]', icono: '📖', titulo: 'Manual y ayuda', texto: 'Manual explica cada pantalla paso a paso, Cómo funciona cuenta dónde viven sus datos, y Bases legales reúne la norma nacional que respalda cada informe (RUE, grados, tipos de incidente).' },
     { id: 'cierre', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para operar', texto: 'Ahí abajo está el lema de su cuerpo. Operatividad, Mapa y Panel de administrador quedan solo para su administrador — ya conoce todo lo que usted necesita para trabajar.' }
   ],
 
-  /* Guion del tour para administradores (v1.34: bastante más largo a
+  /* Guion del tour para administradores (v1.35: bastante más largo a
      propósito — Jeferson pidió más contexto acá porque es quien necesita
-     entender TODO el sistema, y faltaba explicar el escudo/logo, el relevo
-     de guardia, invitar por separado de aprobar, e importar personal).
+     entender TODO el sistema. v1.34 explicó el escudo/logo, invitar por
+     separado de aprobar, e importar personal. v1.35 agrega dónde vive la
+     base de datos (hoja de cálculo), y reescribe "Quién opera": dentro del
+     Panel Admin ya no aplica el lenguaje de "guardia/turno" — a este panel
+     solo entran administradores (abrirPanelAdmin() ya lo exige), así que lo
+     que importa es CUÁL administrador está firmando las acciones, no un
+     turno de guardia genérico. La firma en sí (PIN) no cambia — es el mismo
+     mecanismo que usa cualquier unidad para firmar de guardia en el resto de
+     la app; acá solo se explica distinto porque el público de este paso ya
+     son administradores.
      Entra al Panel Admin navegando directo (irA), SIN pedir la contraseña ni
-     firmar relevo de guardia: eso es un candado real que el tour no debe
-     destrabar por su cuenta. Las tarjetas se ven vacías hasta que se abre el
-     Panel de verdad, igual que en una instalación nueva — no rompe nada,
-     solo no trae datos. */
+     firmar: eso es un candado real que el tour no debe destrabar por su
+     cuenta. Las tarjetas se ven vacías hasta que se abre el Panel de verdad,
+     igual que en una instalación nueva — no rompe nada, solo no trae datos. */
   _TOUR_ADMIN: [
     { id: 'bienvenida-admin', pantalla: 'pantallaHome', selector: '[data-tour="fila-consultar"]', icono: '🛡️', titulo: 'Bienvenido, administrador', texto: 'Ya conoce Nuevo Incidente y Actividades igual que cualquier unidad. Este recorrido es distinto: todo lo que solo ve un administrador, empezando por esta fila y siguiendo por el Panel de Administrador.' },
+    { id: 'datos', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-titulo"]', icono: '🗄️', titulo: 'Dónde viven sus datos', texto: 'Todo lo que se registra en la app se guarda en un Google Sheets — una hoja de cálculo — que vive en el Google Drive de SU cuerpo, no en un servidor de terceros. Usted es dueño del archivo: puede abrirlo, descargarlo o quitarle el permiso a la app cuando quiera.' },
     { id: 'escudo', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-escudo"]', icono: '🎖️', titulo: 'Escudo del cuerpo', texto: 'Suba el escudo o logo de su institución: reemplaza la cruz de Malta en el encabezado, la pantalla de inicio, Acerca de y el PDF de cada informe. Si no sube ninguno, se usa la cruz por defecto.' },
-    { id: 'relevo', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-relevo"]', icono: '🪪', titulo: 'Quién opera', texto: 'Acá se ve qué unidad está firmando de guardia ahora mismo. Al cambiar de turno, toque "Cambiar (relevo)" para que quien entra firme con su propio PIN y no quede todo a nombre del turno anterior.' },
+    { id: 'relevo', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-relevo"]', icono: '🪪', titulo: 'Quién firma como administrador', texto: 'Acá ve qué administrador está firmando las acciones que se hacen desde este panel. Si cambia quien administra en este dispositivo, toque "Cambiar (relevo)" para que quede firmando el administrador correcto — no el anterior.' },
     { id: 'llaves', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-pins"]', icono: '🔑', titulo: 'PIN de las unidades', texto: 'Cada unidad necesita un PIN de 4 dígitos para firmar lo que hace de guardia. Se guardan cifrados — ni usted los ve, solo los reemplaza. Si es el administrador principal, más abajo también decide quién más entra a este panel.' },
+    { id: 'unidades-vinculadas', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-unidades"]', icono: '👥', titulo: 'Quién usa la app', texto: 'Solo si usted es el administrador principal: acá ve todo correo vinculado a su cuerpo, cuándo entró por última vez, y puede bloquearle el acceso a quien haga falta — sin borrar sus datos, y siempre reversible.' },
     { id: 'invitar', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-invitar"]', icono: '🔗', titulo: 'Invitar unidades', texto: 'Comparta el link o el código QR: quien lo abra y entre con Google queda enlazado a este cuerpo, sin configurar nada. Si un link se filtra, genere uno nuevo — invalida los anteriores.' },
     { id: 'solicitudes', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-solicitudes"]', icono: '📥', titulo: 'Aprobar el ingreso', texto: 'Quien entra por el link o el QR NO entra solo: queda AQUÍ esperando su aprobación. Revise quién es antes de aceptar — aceptar da acceso a la app, pero no lo agrega a Personal: eso se hace aparte.' },
     { id: 'flota', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-vehiculos"]', icono: '🚒', titulo: 'Vehículos del cuerpo', texto: 'Registre cada vehículo con el indicativo que usan en la radio — Móvil 1, M-3, como le digan — y su clase, que es lo que entiende el RUE. Sin esto, los formularios no tienen qué ofrecer.' },
@@ -3720,12 +3730,16 @@ const app = {
     // principal. El backend valida igual — esto evita ofrecer botones que fallan.
     const _aw = document.getElementById('adminsWrap');
     if (_aw) _aw.style.display = this.esSuperAdmin() ? 'block' : 'none';
+    // v1.35: unidades vinculadas — mismo criterio que Administradores.
+    const _uw = document.getElementById('unidadesWrap');
+    if (_uw) _uw.style.display = this.esSuperAdmin() ? 'block' : 'none';
     // v6.05: las cajas se llenan SOLAS al abrir el Panel. Hasta v6.04 solo se
     // hacían visibles y quedaban vacías: un título, un texto que hablaba de una
     // lista, y ninguna lista. Por eso se veía "de adorno" (lo reportó Jeferson).
     // Sin await a propósito: son datos secundarios y no deben demorar la apertura
     // del Panel ni romperla si el servidor tarda o falla.
     if (_aw && _aw.style.display === 'block') this.cargarAdministradores();
+    if (_uw && _uw.style.display === 'block') this.cargarUnidadesVinculadas();
     // v6.07: el buscador arranca limpio en cada apertura. Sin esto, si habías
     // filtrado antes de salir, al volver la lista aparecía recortada y parecía
     // que faltaba personal.
@@ -4522,6 +4536,95 @@ const app = {
       } catch (e) {
         this.toast('No llegó la confirmación. Revisando cómo quedó...', 'info');
         await this.cargarAdministradores();
+      }
+    });
+  },
+
+  /* ═══ v1.35: UNIDADES VINCULADAS — quién usa la app, y bloquear/desbloquear ═══
+     Mismo patrón que Administradores (arriba): _conBloqueo anti-doble-click,
+     app.confirmar() en vez de confirm() nativo (I4), data-* en vez de IDs
+     escapados en el onclick (I10), _esc() en todo lo que viene del servidor (I5). */
+  async cargarUnidadesVinculadas(btn) {
+    const cont = document.getElementById('listaUnidadesVinculadas');
+    if (!cont) return;
+    if (btn) return this._conBloqueo(btn, 'Actualizando...', () => this.cargarUnidadesVinculadas());
+    cont.innerHTML = this._skeleton(3, 'linea');
+    try {
+      const resp = await fetch(URL_BACKEND, { method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ accion:'listarUnidadesVinculadas', adminEmail:this.usuario.email, adminPassword:this._adminPwdSession||'' }) });
+      const d = await resp.json();
+      if (!d.ok) { cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">'+app._esc(d.error||'Error')+'</div>'; return; }
+      if (!d.unidades || !d.unidades.length) {
+        cont.innerHTML = '<div style="font-size:11px;color:#999;padding:8px;">Todavía no hay nadie vinculado a este cuerpo.</div>';
+        return;
+      }
+      const miCorreo = String((this.usuario&&this.usuario.email)||'').toLowerCase().trim();
+      cont.innerHTML = d.unidades.map(u => {
+        const correoCrudo = String(u.correo||'').toLowerCase().trim();
+        const correo = app._esc(u.correo||'');
+        const nombre = app._esc(u.nombre||'');
+        const visto = u.ultimoAcceso ? app._esc(new Date(u.ultimoAcceso).toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})) : 'nunca entró';
+        const bloqueada = !!u.bloqueado;
+        let botones = '';
+        if (u.esSuper) {
+          botones = '<span style="font-size:9px;color:#991b1b;font-weight:700;">(TÚ — no se puede bloquear)</span>';
+        } else if (correoCrudo === miCorreo) {
+          botones = '<span style="font-size:9px;color:#666;">(no puede bloquearse a sí mismo)</span>';
+        } else if (bloqueada) {
+          botones = '<button data-co="'+correo+'" onclick="app.desbloquearUnidadApp(this, this.dataset.co)" style="padding:6px 10px;background:#166534;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:11px;">Desbloquear</button>';
+        } else {
+          botones = '<button data-co="'+correo+'" onclick="app.bloquearUnidadApp(this, this.dataset.co)" style="padding:6px 10px;background:#991b1b;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:11px;">Bloquear</button>';
+        }
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #fecaca;'+(bloqueada?'opacity:0.6;':'')+'">'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div style="font-size:12px;font-weight:600;color:#1f2937;word-break:break-all;">'+(nombre||correo)
+          + (u.esAdmin && !u.esSuper ? ' <span style="font-size:9px;color:#991b1b;font-weight:700;">(admin)</span>' : '')
+          + (bloqueada ? ' <span style="font-size:9px;color:#991b1b;font-weight:700;">(bloqueada)</span>' : '') + '</div>'
+          + (nombre ? '<div style="font-size:10px;color:#94a3b8;word-break:break-all;">'+correo+'</div>' : '')
+          + '<div style="font-size:10px;color:#94a3b8;">Última vez: '+visto+'</div>'
+          + '</div>' + botones + '</div>';
+      }).join('');
+    } catch (e) {
+      cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">Error de red: '+app._esc(e.message||'')+'</div>';
+    }
+  },
+
+  async bloquearUnidadApp(btn, correo) {
+    const ok = await this.confirmar('Bloquear acceso',
+      `¿Bloquear el acceso a la app de "${correo}"? No podrá volver a entrar hasta que lo desbloquee. No borra sus datos ni lo saca de Personal.`);
+    if (!ok) return;
+    await this._conBloqueo(btn, 'Bloqueando...', async () => {
+      try {
+        const resp = await fetch(URL_BACKEND, { method:'POST',
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify({ accion:'bloquearUnidad', correo: correo,
+            adminEmail:this.usuario.email, adminPassword:this._adminPwdSession||'' }) });
+        const d = await resp.json();
+        if (!d.ok) { this.toast('Error: ' + (d.error||'?'), 'error'); return; }
+        this.toast('🚫 ' + (d.mensaje||'Bloqueado'), 'info');
+        await this.cargarUnidadesVinculadas();
+      } catch (e) {
+        this.toast('No llegó la confirmación. Revisando cómo quedó...', 'info');
+        await this.cargarUnidadesVinculadas();
+      }
+    });
+  },
+
+  async desbloquearUnidadApp(btn, correo) {
+    await this._conBloqueo(btn, 'Restaurando...', async () => {
+      try {
+        const resp = await fetch(URL_BACKEND, { method:'POST',
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify({ accion:'desbloquearUnidad', correo: correo,
+            adminEmail:this.usuario.email, adminPassword:this._adminPwdSession||'' }) });
+        const d = await resp.json();
+        if (!d.ok) { this.toast('Error: ' + (d.error||'?'), 'error'); return; }
+        this.toast('✅ ' + (d.mensaje||'Restaurado'), 'exito');
+        await this.cargarUnidadesVinculadas();
+      } catch (e) {
+        this.toast('No llegó la confirmación. Revisando cómo quedó...', 'info');
+        await this.cargarUnidadesVinculadas();
       }
     });
   },
