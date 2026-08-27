@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.33';
+const APP_VERSION = '1.34';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.34: 🧭 Tour más completo. El de unidades (antes "para bomberos") ahora también recorre su perfil en Configuración. El de administrador creció bastante: ahora explica el escudo/logo del cuerpo, el relevo de guardia, invitar unidades e importar personal por separado, y el ranking y el mapa con más detalle.',
   'v1.33: 🧭 Tour interactivo renovado. El recorrido de ayuda ya no es una tarjeta de texto: ahora se mueve de verdad por la app y señala cada botón real. Hay uno para bomberos y otro, distinto, para administradores (Panel Admin, Operatividad, Mapa, Zona Administrador). Se abre desde ℹ️ Acerca de.',
   'v1.32: 🌈 Los emojis vuelven a color. Se probó ponerlos en gris/silueta, pero se ven mejor a color. El resto del nuevo diseño se mantiene.',
   'v1.31: 🩶 Emojis más legibles. Algunos quedaban como cuadrado negro o no se veían sobre los botones de color. Ahora van en escala de grises: conservan su forma y se ven bien en todos lados.',
@@ -1625,33 +1626,44 @@ const app = {
     m.querySelector('#_tourVer').onclick = () => { cerrar(); this.mostrarTour(rol); };
   },
 
-  /* Guion del tour para bomberos SIN permisos admin. Todo dentro de Inicio:
-     no navega a pantallaForm/pantallaDetalle porque abrirlas de verdad exige
-     efectos reales (nuevoReporte() pide GPS, pantallaDetalle necesita un
-     informe real) que el tour no debe disparar (Regla 1). */
+  /* Guion del tour para unidades SIN permisos admin (v1.34: más contenido —
+     Jeferson lo sintió corto para alguien que lo ve por primera vez). Todo
+     dentro de Inicio + Configuración (ambas sin efectos reales): no navega a
+     pantallaForm/pantallaDetalle porque abrirlas de verdad exige efectos
+     reales (nuevoReporte() pide GPS, pantallaDetalle necesita un informe
+     real) que el tour no debe disparar (Regla 1). */
   _TOUR_NO_ADMIN: [
-    { id: 'nuevo-incidente', pantalla: 'pantallaHome', selector: '[data-tour="cta-nuevo-incidente"]', icono: '🚨', titulo: 'Nuevo incidente', texto: 'Registra una emergencia oficial en 13 secciones con barra de avance. Sin señal igual queda guardado y se envía solo.' },
-    { id: 'contadores', pantalla: 'pantallaHome', selector: '[data-tour="stats-home"]', icono: '🔢', titulo: 'Sus contadores', texto: 'Total es todo lo que ha registrado. Pendientes es lo que guardó sin señal, y se envía apenas vuelve la cobertura.' },
-    { id: 'informes', pantalla: 'pantallaHome', selector: '[data-tour="informes-recientes"]', icono: '🧾', titulo: 'Informes recientes', texto: 'Toque cualquiera para ver su detalle: ahí imprime el PDF oficial o lo edita durante las primeras 24 horas.' },
-    { id: 'actividades', pantalla: 'pantallaHome', selector: '[data-tour="fila-registrar"]', icono: '🎯', titulo: 'Nueva actividad', texto: 'Acá registra lo que no es una emergencia: capacitaciones, simulacros, jornadas. "Mis actividades" guarda todo lo que ya registró.' },
-    { id: 'ayuda', pantalla: 'pantallaHome', selector: '[data-tour="ayuda-home"]', icono: '📖', titulo: 'Manual y ayuda', texto: 'Si le queda una duda, ahí está la respuesta: el Manual explica paso a paso y Bases legales respalda cada informe.' },
-    { id: 'cierre', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para operar', texto: 'Ahí abajo está el lema de su cuerpo. Operatividad, Mapa y Panel de administrador quedan solo para su administrador.' }
+    { id: 'nuevo-incidente', pantalla: 'pantallaHome', selector: '[data-tour="cta-nuevo-incidente"]', icono: '🚨', titulo: 'Nuevo incidente', texto: 'Registra una emergencia oficial: clasificación, ubicación por GPS automático, recursos desplegados, víctimas y firmas en 13 secciones con barra de avance. Sin señal igual queda guardado y se envía solo cuando vuelve la cobertura.' },
+    { id: 'contadores', pantalla: 'pantallaHome', selector: '[data-tour="stats-home"]', icono: '🔢', titulo: 'Sus contadores', texto: 'Total es todo lo que usted ha registrado. Pendientes es lo que guardó sin señal — se envía solo, o lo puede forzar desde Configuración. Enviados ya quedó en el servidor.' },
+    { id: 'informes', pantalla: 'pantallaHome', selector: '[data-tour="informes-recientes"]', icono: '🧾', titulo: 'Informes recientes', texto: 'Toque cualquiera para ver su detalle: ahí imprime el PDF oficial, ve el resumen listo para copiar al RUE, o lo edita durante las primeras 24 horas. Pasado ese plazo, solo el administrador corrige. Cada quien ve solo sus propios informes.' },
+    { id: 'actividades', pantalla: 'pantallaHome', selector: '[data-tour="fila-registrar"]', icono: '🎯', titulo: 'Nueva actividad', texto: 'Acá registra lo que no es una emergencia: capacitaciones, simulacros, inspecciones, jornadas comunitarias. Sume el personal que asistió, vehículos y hasta 3 fotos. "Mis actividades" guarda todo lo que ya registró.' },
+    { id: 'config-perfil', pantalla: 'pantallaConfig', selector: '[data-tour="config-perfil"]', icono: '👤', titulo: 'Su perfil', texto: 'Por el avatar de arriba a la derecha llega aquí: corrija su nombre, grado, cédula y teléfono, elija el diseño Original o Minimalista de la app, y sincronice sus informes pendientes cuando quiera.' },
+    { id: 'ayuda', pantalla: 'pantallaHome', selector: '[data-tour="ayuda-home"]', icono: '📖', titulo: 'Manual y ayuda', texto: 'Manual explica cada pantalla paso a paso, Cómo funciona cuenta dónde viven sus datos, y Bases legales reúne la norma nacional que respalda cada informe (RUE, grados, tipos de incidente).' },
+    { id: 'cierre', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para operar', texto: 'Ahí abajo está el lema de su cuerpo. Operatividad, Mapa y Panel de administrador quedan solo para su administrador — ya conoce todo lo que usted necesita para trabajar.' }
   ],
 
-  /* Guion del tour para administradores. Entra al Panel Admin navegando
-     directo (irA), SIN pedir la contraseña ni firmar relevo de guardia: eso
-     es un candado real que el tour no debe destrabar por su cuenta. Las
-     tarjetas se ven vacías hasta que se abre el Panel de verdad, igual que
-     en una instalación nueva — no rompe nada, solo no trae datos. */
+  /* Guion del tour para administradores (v1.34: bastante más largo a
+     propósito — Jeferson pidió más contexto acá porque es quien necesita
+     entender TODO el sistema, y faltaba explicar el escudo/logo, el relevo
+     de guardia, invitar por separado de aprobar, e importar personal).
+     Entra al Panel Admin navegando directo (irA), SIN pedir la contraseña ni
+     firmar relevo de guardia: eso es un candado real que el tour no debe
+     destrabar por su cuenta. Las tarjetas se ven vacías hasta que se abre el
+     Panel de verdad, igual que en una instalación nueva — no rompe nada,
+     solo no trae datos. */
   _TOUR_ADMIN: [
-    { id: 'bienvenida-admin', pantalla: 'pantallaHome', selector: '[data-tour="fila-consultar"]', icono: '🛡️', titulo: 'Bienvenido, administrador', texto: 'Ya conoce Nuevo Incidente y Actividades. Este recorrido es distinto: lo que solo ve un administrador, empezando por esta fila.' },
-    { id: 'llaves', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-pins"]', icono: '🔑', titulo: 'Llaves del cuerpo', texto: 'Cada unidad firma de guardia con un PIN de 4 dígitos que nunca se muestra, solo se reemplaza. Más abajo decide quién más es administrador.' },
-    { id: 'solicitudes', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-solicitudes"]', icono: '🔗', titulo: 'Sumar personal', texto: 'Comparta el link o QR: quien entra con Google queda esperando su aprobación aquí, no entra solo a la app.' },
-    { id: 'flota', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-vehiculos"]', icono: '🚒', titulo: 'Flota y personal', texto: 'Registre cada vehículo con el indicativo de radio — Móvil 1, M-3. Debajo, pegue su nómina desde Excel: no borra nada, solo agrega.' },
-    { id: 'operatividad', pantalla: 'pantallaOperatividad', selector: '[data-tour="operatividad-titulo"]', icono: '📊', titulo: 'El ranking', texto: 'El puntaje de cada unidad sale de una sola fórmula: incidentes × 2 + horas de actividades. En una instalación nueva se llena solo.' },
-    { id: 'mapa', pantalla: 'pantallaMapa', selector: '[data-tour="mapa-titulo"]', icono: '🗺️', titulo: 'Mapa de incidentes', texto: 'Cada incidente con coordenadas aparece como un pin con el emoji de su tipo, y la leyenda filtra lo que ve.' },
-    { id: 'zona-admin', pantalla: 'pantallaConfig', selector: '#zonaAdmin', icono: '⭐', titulo: 'Zona Administrador', texto: 'Al cerrar el mes, reorganice los consecutivos por la fecha real de la llamada. "Renumerar" es solo para el caso excepcional.' },
-    { id: 'cierre-admin', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para administrar', texto: 'Ya conoce las herramientas que solo usted administra. Puede volver a verlo cuando quiera desde Acerca de.' }
+    { id: 'bienvenida-admin', pantalla: 'pantallaHome', selector: '[data-tour="fila-consultar"]', icono: '🛡️', titulo: 'Bienvenido, administrador', texto: 'Ya conoce Nuevo Incidente y Actividades igual que cualquier unidad. Este recorrido es distinto: todo lo que solo ve un administrador, empezando por esta fila y siguiendo por el Panel de Administrador.' },
+    { id: 'escudo', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-escudo"]', icono: '🎖️', titulo: 'Escudo del cuerpo', texto: 'Suba el escudo o logo de su institución: reemplaza la cruz de Malta en el encabezado, la pantalla de inicio, Acerca de y el PDF de cada informe. Si no sube ninguno, se usa la cruz por defecto.' },
+    { id: 'relevo', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-relevo"]', icono: '🪪', titulo: 'Quién opera', texto: 'Acá se ve qué unidad está firmando de guardia ahora mismo. Al cambiar de turno, toque "Cambiar (relevo)" para que quien entra firme con su propio PIN y no quede todo a nombre del turno anterior.' },
+    { id: 'llaves', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-pins"]', icono: '🔑', titulo: 'PIN de las unidades', texto: 'Cada unidad necesita un PIN de 4 dígitos para firmar lo que hace de guardia. Se guardan cifrados — ni usted los ve, solo los reemplaza. Si es el administrador principal, más abajo también decide quién más entra a este panel.' },
+    { id: 'invitar', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-invitar"]', icono: '🔗', titulo: 'Invitar unidades', texto: 'Comparta el link o el código QR: quien lo abra y entre con Google queda enlazado a este cuerpo, sin configurar nada. Si un link se filtra, genere uno nuevo — invalida los anteriores.' },
+    { id: 'solicitudes', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-solicitudes"]', icono: '📥', titulo: 'Aprobar el ingreso', texto: 'Quien entra por el link o el QR NO entra solo: queda AQUÍ esperando su aprobación. Revise quién es antes de aceptar — aceptar da acceso a la app, pero no lo agrega a Personal: eso se hace aparte.' },
+    { id: 'flota', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-vehiculos"]', icono: '🚒', titulo: 'Vehículos del cuerpo', texto: 'Registre cada vehículo con el indicativo que usan en la radio — Móvil 1, M-3, como le digan — y su clase, que es lo que entiende el RUE. Sin esto, los formularios no tienen qué ofrecer.' },
+    { id: 'importar', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-importar"]', icono: '📋', titulo: 'Cargar su nómina', texto: 'Pegue su lista completa desde el Excel que ya tiene, con Ctrl+V. Reconoce las columnas por el título, no por el orden, y solo agrega a quien todavía no esté: no borra ni pisa nada.' },
+    { id: 'operatividad', pantalla: 'pantallaOperatividad', selector: '[data-tour="operatividad-titulo"]', icono: '📊', titulo: 'El ranking', texto: 'El puntaje de cada unidad sale de una sola fórmula: incidentes × 2 + horas de actividades. Vea el ranking general o busque a una unidad puntual. En una instalación nueva se llena solo con la primera actividad.' },
+    { id: 'mapa', pantalla: 'pantallaMapa', selector: '[data-tour="mapa-titulo"]', icono: '🗺️', titulo: 'Mapa de incidentes', texto: 'Cada incidente con coordenadas aparece como un pin con el emoji de su tipo. La leyenda filtra por tipo, y también puede filtrar por año y por mes para revisar un período puntual.' },
+    { id: 'zona-admin', pantalla: 'pantallaConfig', selector: '#zonaAdmin', icono: '⭐', titulo: 'Zona Administrador', texto: 'Defina el prefijo del consecutivo (por defecto "RE"), cierre el mes para reorganizar los consecutivos por la fecha real de la llamada, y use "Renumerar" solo si quedaron desordenados por excepción.' },
+    { id: 'cierre-admin', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para administrar', texto: 'Ya conoce el escudo, el relevo, las llaves, cómo sumar y aprobar unidades, la flota, el ranking, el mapa y el cierre de mes. Puede volver a ver este recorrido cuando quiera desde Acerca de.' }
   ],
 
   /* ═══ Motor del tour "Bitácora de Guardia" (v1.33) ═══
@@ -1669,6 +1681,7 @@ const app = {
     // _ofrecerTour() lo volvería a ofrecer como si fuera la primera vez.
     try { localStorage.setItem(esAdminRol ? 'app_tour_visto_admin' : 'app_tour_visto_operativo', '1'); } catch (e) {}
     this._tourActivo = true;
+    this._tourTransicionando = false;
     this._tourOrigen = this.pantallaActual;
     this._tourPasos = esAdminRol ? this._TOUR_ADMIN : this._TOUR_NO_ADMIN;
     this._construirCapasTour();
@@ -1696,8 +1709,15 @@ const app = {
 
   async _pasoTour(i) {
     if (!this._tourActivo) return;
+    // v1.34: mientras se arma un paso (navegar + esperar el scroll) el botón
+    // VIEJO de "Siguiente" sigue en pantalla y sigue respondiendo — un toque
+    // impaciente ahí disparaba OTRO _pasoTour() encimado al que ya estaba en
+    // curso, con dos animaciones de scroll compitiendo por el mismo anillo.
+    // Mismo espíritu que _conBloqueo en el resto de la app: un paso a la vez.
+    if (this._tourTransicionando) return;
+    this._tourTransicionando = true;
     const pasos = this._tourPasos;
-    if (!pasos || i < 0 || i >= pasos.length) return;
+    if (!pasos || i < 0 || i >= pasos.length) { this._tourTransicionando = false; return; }
     this._tourIndice = i;
     const paso = pasos[i];
     const anillo = document.getElementById('tourAnillo');
@@ -1714,6 +1734,8 @@ const app = {
     } catch (e) {
       // Red de seguridad: un fallo del tour nunca debe tapar la app real.
       this._cerrarTour();
+    } finally {
+      this._tourTransicionando = false;
     }
   },
 
@@ -1721,7 +1743,6 @@ const app = {
     const anillo = document.getElementById('tourAnillo');
     if (!anillo) return;
     if (!selector) { anillo.style.opacity = '0'; return; }
-    const reducido = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     let el = null;
     for (let intento = 0; intento < 10; intento++) {
       el = document.querySelector(selector);
@@ -1733,8 +1754,17 @@ const app = {
     if (!el || el.offsetParent === null) { anillo.style.opacity = '0'; return; }
     const panel = document.getElementById('tourPanel');
     try { document.documentElement.style.scrollPaddingBottom = (panel ? panel.offsetHeight + 20 : 140) + 'px'; } catch (e) {}
-    try { el.scrollIntoView({ block: 'center', behavior: reducido ? 'auto' : 'smooth' }); } catch (e) {}
-    await new Promise(r => setTimeout(r, reducido ? 0 : 350));
+    // v1.34: salto instantáneo ('auto'), NO 'smooth'. Se probó 'smooth' con
+    // varias formas de esperar a que terminara (setTimeout fijo, contar
+    // cuadros de animación seguidos, un reloj de tiempo real) y en pruebas
+    // reales siguió midiendo la posición VIEJA a mitad de camino — el anillo
+    // quedaba sobre el elemento equivocado, siempre de forma reproducible.
+    // Un scroll animado no se puede esperar de forma confiable con
+    // setTimeout/rAF porque su duración real varía según el navegador y el
+    // dispositivo. El salto es menos vistoso, pero SIEMPRE cae en el lugar
+    // correcto — y en un celular de gama baja (el público real de esta app)
+    // es preferible a una animación que a veces falla.
+    try { el.scrollIntoView({ block: 'center', behavior: 'auto' }); } catch (e) {}
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     if (!this._tourActivo) return;
     const r2 = el.getBoundingClientRect();
