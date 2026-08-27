@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.32';
+const APP_VERSION = '1.33';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.33: 🧭 Tour interactivo renovado. El recorrido de ayuda ya no es una tarjeta de texto: ahora se mueve de verdad por la app y señala cada botón real. Hay uno para bomberos y otro, distinto, para administradores (Panel Admin, Operatividad, Mapa, Zona Administrador). Se abre desde ℹ️ Acerca de.',
   'v1.32: 🌈 Los emojis vuelven a color. Se probó ponerlos en gris/silueta, pero se ven mejor a color. El resto del nuevo diseño se mantiene.',
   'v1.31: 🩶 Emojis más legibles. Algunos quedaban como cuadrado negro o no se veían sobre los botones de color. Ahora van en escala de grises: conservan su forma y se ven bien en todos lados.',
   'v1.30: 🖼️ Panel de administrador y ventanas al estilo "Acta Oficial". Las tarjetas del panel pasan a fondo blanco con una franja de color a la izquierda (aire de documento) y las ventanas de confirmación llevan borde dorado y título de imprenta. Solo cambia el aspecto.',
@@ -1484,6 +1485,9 @@ const app = {
       btn.textContent = hay ? '🎬 Ver tutorial en video' : '🎬 Video: próximamente';
       btn.style.opacity = hay ? '' : '0.6';
     }
+    // v1.33: el tour de administrador solo se ofrece a quien lo es.
+    const btnTA = document.getElementById('btnTourAdmin');
+    if (btnTA) btnTA.style.display = this.esAdmin() ? 'block' : 'none';
   },
 
   abrirVideoTutorial() {
@@ -1586,69 +1590,210 @@ const app = {
     if (this.pantallaActual === 'pantallaAcercaDe') this._pintarAcercaDe();
   },
   _ofrecerTour() {
-    try { if (localStorage.getItem('app_tour_visto')) return; } catch (e) { return; }
-    try { localStorage.setItem('app_tour_visto', '1'); } catch (e) {}
+    // v1.33: el propio tour navega por irA('pantallaHome') (arranca ahí y el
+    // guion de admin vuelve ahí al cerrar) — sin este guard, ese mismo irA()
+    // podía disparar la oferta de "¿quiere un recorrido?" ENCIMA del tour que
+    // se está viendo o que se acaba de terminar.
+    if (this._tourActivo) return;
+    const esAdm = this.esAdmin();
+    // v1.33: dos tours separados con su propia bandera — quien entró como
+    // bombero y luego se volvió admin recibe la oferta del tour de admin una
+    // sola vez, sin repetirle el básico que ya vio.
+    const clave = esAdm ? 'app_tour_visto_admin' : 'app_tour_visto_operativo';
+    try { if (localStorage.getItem(clave)) return; } catch (e) { return; }
+    try { localStorage.setItem(clave, '1'); } catch (e) {}
     // Un respiro para que el Inicio termine de pintarse antes del modal.
-    setTimeout(() => { try { this._preguntarTour(); } catch (e) {} }, 700);
+    setTimeout(() => { try { this._preguntarTour(esAdm ? 'admin' : 'no_admin'); } catch (e) {} }, 700);
   },
 
-  _preguntarTour() {
+  _preguntarTour(rol) {
+    const esAdm = rol === 'admin';
     const m = document.createElement('div');
     m.className = 'modal-js';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
-    m.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);">'
-      + '<div style="font-size:40px;">🚒</div>'
-      + '<div style="font-size:17px;font-weight:800;color:var(--rojo);margin:8px 0 4px;">¡Bienvenido!</div>'
-      + '<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:18px;">¿Quiere un recorrido rápido de la app? Toma menos de un minuto y lo puede saltar cuando quiera.</div>'
-      + '<button id="_tourVer" style="width:100%;background:var(--rojo);color:#fff;border:none;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;font-size:15px;margin-bottom:8px;">▶️ Ver recorrido</button>'
-      + '<button id="_tourNo" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:10px;padding:11px;font-weight:700;cursor:pointer;font-size:13px;">Omitir</button>'
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(26,21,18,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+    m.innerHTML = '<div style="background:#fff;border-radius:var(--radio-lg);padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:var(--sombra-fuerte);border-top:4px solid var(--oro);">'
+      + '<div style="font-size:38px;">' + (esAdm ? '🛡️' : '🚒') + '</div>'
+      + '<div style="font-family:var(--disp);font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:var(--rojo);margin:8px 0 4px;">¡Bienvenido' + (esAdm ? ', administrador' : '') + '!</div>'
+      + '<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:18px;">¿Quiere un recorrido interactivo por la app' + (esAdm ? ', enfocado en lo que solo usted administra' : '') + '? Se mueve por las pantallas reales y lo puede saltar cuando quiera.</div>'
+      + '<button id="_tourVer" style="width:100%;background:var(--rojo);color:#fff;border:none;border-radius:var(--radio);padding:13px;font-weight:700;cursor:pointer;font-size:15px;margin-bottom:8px;font-family:var(--disp);text-transform:uppercase;letter-spacing:.02em;">▶️ Ver recorrido</button>'
+      + '<button id="_tourNo" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:var(--radio);padding:11px;font-weight:700;cursor:pointer;font-size:13px;">Omitir</button>'
       + '<div style="font-size:11px;color:#999;margin-top:12px;">Siempre puede verlo de nuevo en <b>ℹ️ Acerca de</b>.</div>'
       + '</div>';
     document.body.appendChild(m);
     const cerrar = () => { try { document.body.removeChild(m); } catch (e) {} };
     m.querySelector('#_tourNo').onclick = cerrar;
-    m.querySelector('#_tourVer').onclick = () => { cerrar(); this.mostrarTour(); };
+    m.querySelector('#_tourVer').onclick = () => { cerrar(); this.mostrarTour(rol); };
   },
 
-  /* Pasos del recorrido. Texto por defecto; Jeferson lo ajusta cuando quiera —
-     es una sola lista, no hay que tocar la lógica. */
-  _PASOS_TOUR: [
-    { icono: '🚨', titulo: 'Nuevo incidente', texto: 'El botón rojo grande. Registra una emergencia con todos sus datos: clasificación, ubicación GPS, recursos, víctimas y firmas. Si no hay internet, queda pendiente y se envía solo cuando vuelve la señal.' },
-    { icono: '🎯', titulo: 'Actividades', texto: 'Capacitaciones, reuniones, mantenimientos. Cada actividad registra quién participó y cuántas horas, y eso alimenta la operatividad del personal.' },
-    { icono: '📊', titulo: 'Operatividad', texto: 'El ranking del personal: incidentes atendidos y horas de actividad, por persona. Solo lo ve el administrador.' },
-    { icono: '🛡️', titulo: 'Panel de Administrador', texto: 'El corazón de la configuración: los datos de su cuerpo, los vehículos con su indicativo, el personal, y quiénes son administradores. Empiece por acá.' },
-    { icono: '📋', titulo: 'RUE y bases legales', texto: 'Cada informe tiene un botón "Ver para RUE" que le ordena los datos como el formulario oficial. Y en Bases legales está la norma nacional que aplica a cualquier cuerpo.' },
-    { icono: 'ℹ️', titulo: 'Ayuda siempre a mano', texto: 'En el inicio, los botones Manual, Cómo funciona y Acerca de. Ahí puede volver a ver este recorrido y, pronto, un video con el paso a paso.' }
+  /* Guion del tour para bomberos SIN permisos admin. Todo dentro de Inicio:
+     no navega a pantallaForm/pantallaDetalle porque abrirlas de verdad exige
+     efectos reales (nuevoReporte() pide GPS, pantallaDetalle necesita un
+     informe real) que el tour no debe disparar (Regla 1). */
+  _TOUR_NO_ADMIN: [
+    { id: 'nuevo-incidente', pantalla: 'pantallaHome', selector: '[data-tour="cta-nuevo-incidente"]', icono: '🚨', titulo: 'Nuevo incidente', texto: 'Registra una emergencia oficial en 13 secciones con barra de avance. Sin señal igual queda guardado y se envía solo.' },
+    { id: 'contadores', pantalla: 'pantallaHome', selector: '[data-tour="stats-home"]', icono: '🔢', titulo: 'Sus contadores', texto: 'Total es todo lo que ha registrado. Pendientes es lo que guardó sin señal, y se envía apenas vuelve la cobertura.' },
+    { id: 'informes', pantalla: 'pantallaHome', selector: '[data-tour="informes-recientes"]', icono: '🧾', titulo: 'Informes recientes', texto: 'Toque cualquiera para ver su detalle: ahí imprime el PDF oficial o lo edita durante las primeras 24 horas.' },
+    { id: 'actividades', pantalla: 'pantallaHome', selector: '[data-tour="fila-registrar"]', icono: '🎯', titulo: 'Nueva actividad', texto: 'Acá registra lo que no es una emergencia: capacitaciones, simulacros, jornadas. "Mis actividades" guarda todo lo que ya registró.' },
+    { id: 'ayuda', pantalla: 'pantallaHome', selector: '[data-tour="ayuda-home"]', icono: '📖', titulo: 'Manual y ayuda', texto: 'Si le queda una duda, ahí está la respuesta: el Manual explica paso a paso y Bases legales respalda cada informe.' },
+    { id: 'cierre', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para operar', texto: 'Ahí abajo está el lema de su cuerpo. Operatividad, Mapa y Panel de administrador quedan solo para su administrador.' }
   ],
 
-  mostrarTour(desdeAcerca) {
-    let i = 0;
-    const pasos = this._PASOS_TOUR;
-    const m = document.createElement('div');
-    m.className = 'modal-js';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    document.body.appendChild(m);
-    const cerrar = () => { try { document.body.removeChild(m); } catch (e) {} };
-    const pintar = () => {
-      const p = pasos[i];
-      const puntos = pasos.map((_, k) => '<span style="width:7px;height:7px;border-radius:50%;display:inline-block;margin:0 3px;background:' + (k === i ? 'var(--rojo)' : '#ddd') + ';"></span>').join('');
-      const ultimo = i === pasos.length - 1;
-      m.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:350px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.3);">'
-        + '<div style="text-align:right;"><span id="_tX" style="font-size:20px;color:#bbb;cursor:pointer;line-height:1;">✕</span></div>'
-        + '<div style="text-align:center;font-size:44px;margin-top:-6px;">' + p.icono + '</div>'
-        + '<div style="text-align:center;font-size:12px;color:#999;font-weight:700;">Paso ' + (i + 1) + ' de ' + pasos.length + '</div>'
-        + '<div style="text-align:center;font-size:18px;font-weight:800;color:var(--rojo);margin:6px 0 8px;">' + app._esc(p.titulo) + '</div>'
-        + '<div style="font-size:13px;color:#555;line-height:1.6;text-align:center;min-height:96px;">' + app._esc(p.texto) + '</div>'
-        + '<div style="text-align:center;margin:14px 0;">' + puntos + '</div>'
-        + '<div style="display:flex;gap:8px;">'
-        + (i > 0 ? '<button id="_tPrev" style="flex:1;background:#f5f5f5;color:#333;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;">← Atrás</button>' : '')
-        + '<button id="_tNext" style="flex:2;background:var(--rojo);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;font-size:15px;">' + (ultimo ? '¡Listo!' : 'Siguiente →') + '</button>'
-        + '</div></div>';
-      m.querySelector('#_tX').onclick = cerrar;
-      const prev = m.querySelector('#_tPrev'); if (prev) prev.onclick = () => { i--; pintar(); };
-      m.querySelector('#_tNext').onclick = () => { if (ultimo) cerrar(); else { i++; pintar(); } };
+  /* Guion del tour para administradores. Entra al Panel Admin navegando
+     directo (irA), SIN pedir la contraseña ni firmar relevo de guardia: eso
+     es un candado real que el tour no debe destrabar por su cuenta. Las
+     tarjetas se ven vacías hasta que se abre el Panel de verdad, igual que
+     en una instalación nueva — no rompe nada, solo no trae datos. */
+  _TOUR_ADMIN: [
+    { id: 'bienvenida-admin', pantalla: 'pantallaHome', selector: '[data-tour="fila-consultar"]', icono: '🛡️', titulo: 'Bienvenido, administrador', texto: 'Ya conoce Nuevo Incidente y Actividades. Este recorrido es distinto: lo que solo ve un administrador, empezando por esta fila.' },
+    { id: 'llaves', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-pins"]', icono: '🔑', titulo: 'Llaves del cuerpo', texto: 'Cada unidad firma de guardia con un PIN de 4 dígitos que nunca se muestra, solo se reemplaza. Más abajo decide quién más es administrador.' },
+    { id: 'solicitudes', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-solicitudes"]', icono: '🔗', titulo: 'Sumar personal', texto: 'Comparta el link o QR: quien entra con Google queda esperando su aprobación aquí, no entra solo a la app.' },
+    { id: 'flota', pantalla: 'pantallaPanelAdmin', selector: '[data-tour="panel-vehiculos"]', icono: '🚒', titulo: 'Flota y personal', texto: 'Registre cada vehículo con el indicativo de radio — Móvil 1, M-3. Debajo, pegue su nómina desde Excel: no borra nada, solo agrega.' },
+    { id: 'operatividad', pantalla: 'pantallaOperatividad', selector: '[data-tour="operatividad-titulo"]', icono: '📊', titulo: 'El ranking', texto: 'El puntaje de cada unidad sale de una sola fórmula: incidentes × 2 + horas de actividades. En una instalación nueva se llena solo.' },
+    { id: 'mapa', pantalla: 'pantallaMapa', selector: '[data-tour="mapa-titulo"]', icono: '🗺️', titulo: 'Mapa de incidentes', texto: 'Cada incidente con coordenadas aparece como un pin con el emoji de su tipo, y la leyenda filtra lo que ve.' },
+    { id: 'zona-admin', pantalla: 'pantallaConfig', selector: '#zonaAdmin', icono: '⭐', titulo: 'Zona Administrador', texto: 'Al cerrar el mes, reorganice los consecutivos por la fecha real de la llamada. "Renumerar" es solo para el caso excepcional.' },
+    { id: 'cierre-admin', pantalla: 'pantallaHome', selector: '[data-tour="lema-home"]', icono: '🎖️', titulo: 'Listo para administrar', texto: 'Ya conoce las herramientas que solo usted administra. Puede volver a verlo cuando quiera desde Acerca de.' }
+  ],
+
+  /* ═══ Motor del tour "Bitácora de Guardia" (v1.33) ═══
+     La app navega de verdad con irA(); un anillo dorado (#tourAnillo) señala
+     el elemento real y un panel inferior (#tourPanel) narra cada paso, sin
+     oscurecer el resto de la pantalla. #tourCatcher absorbe los toques sobre
+     la app real mientras el tour está activo, para que ninguna acción real
+     se dispare por accidente (Regla 1). */
+  mostrarTour(rol) {
+    if (this._tourActivo) return;
+    const esAdminRol = rol === 'admin' || (rol == null && this.esAdmin());
+    if (esAdminRol && !this.esAdmin()) { this.toast('Solo administradores pueden ver este recorrido', 'error'); return; }
+    // Marca el flag también cuando se abre a mano desde Acerca de (no solo
+    // cuando lo ofrece _ofrecerTour): si no, al volver a Inicio al cerrarlo
+    // _ofrecerTour() lo volvería a ofrecer como si fuera la primera vez.
+    try { localStorage.setItem(esAdminRol ? 'app_tour_visto_admin' : 'app_tour_visto_operativo', '1'); } catch (e) {}
+    this._tourActivo = true;
+    this._tourOrigen = this.pantallaActual;
+    this._tourPasos = esAdminRol ? this._TOUR_ADMIN : this._TOUR_NO_ADMIN;
+    this._construirCapasTour();
+    this._pasoTour(0);
+  },
+
+  _construirCapasTour() {
+    if (!document.getElementById('tourCatcher')) {
+      const catcher = document.createElement('div');
+      catcher.id = 'tourCatcher';
+      catcher.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+      catcher.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+      document.body.appendChild(catcher);
+    }
+    if (!document.getElementById('tourAnillo')) {
+      const anillo = document.createElement('div');
+      anillo.id = 'tourAnillo';
+      anillo.style.opacity = '0';
+      document.body.appendChild(anillo);
+    }
+    if (!document.getElementById('tourPanel')) {
+      document.body.appendChild(document.createElement('div')).id = 'tourPanel';
+    }
+  },
+
+  async _pasoTour(i) {
+    if (!this._tourActivo) return;
+    const pasos = this._tourPasos;
+    if (!pasos || i < 0 || i >= pasos.length) return;
+    this._tourIndice = i;
+    const paso = pasos[i];
+    const anillo = document.getElementById('tourAnillo');
+    if (anillo) anillo.style.opacity = '0';
+    try {
+      if (paso.pantalla && this.pantallaActual !== paso.pantalla) {
+        this.irA(paso.pantalla, true);
+        await new Promise(r => setTimeout(r, 380));
+      }
+      if (!this._tourActivo) return; // se pudo cerrar mientras esperábamos
+      await this._posicionarAnillo(paso.selector);
+      if (!this._tourActivo) return;
+      this._pintarPanelTour(paso, i, pasos.length);
+    } catch (e) {
+      // Red de seguridad: un fallo del tour nunca debe tapar la app real.
+      this._cerrarTour();
+    }
+  },
+
+  async _posicionarAnillo(selector) {
+    const anillo = document.getElementById('tourAnillo');
+    if (!anillo) return;
+    if (!selector) { anillo.style.opacity = '0'; return; }
+    const reducido = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    let el = null;
+    for (let intento = 0; intento < 10; intento++) {
+      el = document.querySelector(selector);
+      if (el && el.offsetParent !== null) break;
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    // Elemento no encontrado (p. ej. un atributo data-tour se borró en otra
+    // sesión): el panel se sigue viendo, solo sin anillo. Nunca se cuelga.
+    if (!el || el.offsetParent === null) { anillo.style.opacity = '0'; return; }
+    const panel = document.getElementById('tourPanel');
+    try { document.documentElement.style.scrollPaddingBottom = (panel ? panel.offsetHeight + 20 : 140) + 'px'; } catch (e) {}
+    try { el.scrollIntoView({ block: 'center', behavior: reducido ? 'auto' : 'smooth' }); } catch (e) {}
+    await new Promise(r => setTimeout(r, reducido ? 0 : 350));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    if (!this._tourActivo) return;
+    const r2 = el.getBoundingClientRect();
+    const PAD = 7;
+    anillo.style.top = (r2.top - PAD) + 'px';
+    anillo.style.left = (r2.left - PAD) + 'px';
+    anillo.style.width = (r2.width + PAD * 2) + 'px';
+    anillo.style.height = (r2.height + PAD * 2) + 'px';
+    anillo.style.opacity = '1';
+  },
+
+  _pintarPanelTour(paso, i, total) {
+    const panel = document.getElementById('tourPanel');
+    if (!panel) return;
+    const ultimo = i === total - 1;
+    panel.innerHTML = '<div class="tour-franja"></div>'
+      + '<div class="tour-cuerpo">'
+      + '<div class="tour-sello"><span class="icono">' + paso.icono + '</span><span class="paso">Paso ' + (i + 1) + ' de ' + total + '</span></div>'
+      + '<div class="tour-titulo">' + this._esc(paso.titulo) + '</div>'
+      + '<div class="tour-texto">' + this._esc(paso.texto) + '</div>'
+      + '<div class="tour-progreso-track"><div class="tour-progreso-fill" style="width:' + Math.round(((i + 1) / total) * 100) + '%;"></div></div>'
+      + '<div class="tour-acciones">'
+      + (i > 0 ? '<button class="tour-btn tour-btn-atras" id="_tAtras">← Atrás</button>' : '')
+      + '<button class="tour-btn tour-btn-siguiente" id="_tSiguiente">' + (ultimo ? '¡Listo! ✔' : 'Siguiente →') + '</button>'
+      + '</div>'
+      + '<div class="tour-fila-cierre">'
+      + '<button class="tour-saltar" id="_tSaltar">Saltar recorrido</button>'
+      + '<button class="tour-cerrar" id="_tCerrar" aria-label="Cerrar recorrido">✕</button>'
+      + '</div>'
+      + '</div>';
+    const bAtras = document.getElementById('_tAtras');
+    if (bAtras) bAtras.onclick = () => this._pasoTour(i - 1);
+    document.getElementById('_tSiguiente').onclick = () => { if (ultimo) this._cerrarTour(); else this._pasoTour(i + 1); };
+    document.getElementById('_tCerrar').onclick = () => this._cerrarTour();
+    document.getElementById('_tSaltar').onclick = async () => {
+      if (i === 0) { this._cerrarTour(); return; }
+      // El catcher (z-index 9490) queda por encima del modal de confirmar
+      // (.modal-fondo, z-index 200): sin bajarle pointer-events, se comería
+      // el toque en "Sí/No" y el modal se vería pero no respondería a nada.
+      const catcher = document.getElementById('tourCatcher');
+      if (catcher) catcher.style.pointerEvents = 'none';
+      const ok = await this.confirmar('Salir del recorrido', '¿Seguro? Puede volver a verlo cuando quiera desde ℹ️ Acerca de.');
+      if (catcher) catcher.style.pointerEvents = 'auto';
+      if (ok) this._cerrarTour();
     };
-    pintar();
+  },
+
+  _cerrarTour() {
+    if (!this._tourActivo) return;
+    this._tourActivo = false;
+    try { document.documentElement.style.scrollPaddingBottom = ''; } catch (e) {}
+    ['tourPanel', 'tourAnillo', 'tourCatcher'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    const origen = this._tourOrigen || 'pantallaHome';
+    this._tourOrigen = null;
+    this._tourPasos = null;
+    if (this.pantallaActual !== origen) this.irA(origen, true);
   },
 
   async atras() {
@@ -1673,6 +1818,14 @@ const app = {
     // Manejar el botón Atrás del navegador y del celular
     history.pushState({ pantalla: 'inicio' }, '');
     window.addEventListener('popstate', (e) => {
+      // v1.33: el botón Atrás del celular cierra el tour antes que cualquier
+      // otra cosa (no tiene sentido navegar atrás de verdad con el tour
+      // encima tapando la app).
+      if (this._tourActivo) {
+        this._cerrarTour();
+        history.pushState({ pantalla: this.pantallaActual }, '');
+        return;
+      }
       // Cerrar menús/modales primero
       const userMenu = document.getElementById('userMenu');
       if (userMenu.classList.contains('visible')) {
