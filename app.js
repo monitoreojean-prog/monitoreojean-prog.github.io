@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.36';
+const APP_VERSION = '1.37';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.37: 🪪 Ajustes reportados en producción. Al entrar al Panel de Administrador, ahora pregunta "qué administrador entra" (antes decía "quién está de guardia", que ahí no aplicaba — los guardias no llegan a ese modal). En sanciones, asistencia y demás sigue preguntando por la guardia, sin cambios. Además, "🚒 Vehículos del cuerpo" ahora distingue un error de carga (revise su conexión) de una flota genuinamente vacía, para no mostrar un mensaje que confunda a otro administrador.',
   'v1.36: 📋 Vista RUE más completa y más exacta. Nuevo bloque "Recursos desplegados" que cruza los vehículos del incidente con la clase que pide el RUE. Además, "Quien Reporta" ahora muestra el nombre completo de quien avisó (antes solo mostraba la relación), y se corrigió un caso donde un incidente con varias clasificaciones podía dejar mal marcado ese tipo en informes futuros.',
   'v1.35: 👥 Unidades vinculadas. En el Panel de Administrador → "Unidades vinculadas" (solo el administrador principal), vea todo correo que ya usa la app y cuándo entró por última vez, y bloquéele el acceso a quien haga falta — sin borrar sus datos, y siempre reversible. Además: el tour explica dónde vive su base de datos (el Google Sheets del cuerpo), la explicación de "Quién opera" en el Panel Admin ahora habla de qué administrador firma (no de guardia, que ahí no aplica), y se corrigieron un par de palabras ambiguas ("emergencia" → "incidente", "cobertura" → "señal").',
   'v1.34: 🧭 Tour más completo. El de unidades (antes "para bomberos") ahora también recorre su perfil en Configuración. El de administrador creció bastante: ahora explica el escudo/logo del cuerpo, el relevo de guardia, invitar unidades e importar personal por separado, y el ranking y el mapa con más detalle.',
@@ -3706,7 +3707,7 @@ const app = {
     }
     // Pedir contraseña — el backend valida, no el frontend
     // v5.63: modal propio (window.prompt está bloqueado en el APK)
-    const pw = await this._obtenerPwdAdmin('🔐 Contraseña de administrador');
+    const pw = await this._obtenerPwdAdmin('🔐 Contraseña de administrador', 'panelAdmin');
     if (!pw) return;
     this._adminAutorizado = true;
     this.irA('pantallaPanelAdmin');
@@ -4065,11 +4066,22 @@ const app = {
         body: JSON.stringify({ accion: 'listarVehiculos' })
       });
       const d = await r.json();
-      this._flota = (d && d.ok && Array.isArray(d.vehiculos)) ? d.vehiculos : [];
+      if (d && d.ok && Array.isArray(d.vehiculos)) {
+        this._flota = d.vehiculos;
+        this._flotaError = false;
+      } else {
+        /* v1.37 (deuda portada de la app de referencia): el servidor respondió
+           pero sin la lista — NO es lo mismo que "de verdad no hay vehículos".
+           Antes esto se confundía con la flota vacía y "🚒 Vehículos del
+           cuerpo" decía "Todavía no hay vehículos" aunque sí los hubiera. */
+        this._flotaError = true;
+        this._flota = this._flota || [];
+      }
     } catch (e) {
       /* Sin señal NO se bloquea el registro de una emergencia: se devuelve vacío
          y el campo cae a texto libre. Hay cuerpos con zonas sin cobertura por
          días; una lista que no carga no puede impedir anotar lo que pasó. */
+      this._flotaError = true;   // pero sí se distingue de "de verdad no hay" (ver arriba)
       this._flota = this._flota || [];
     }
     return this._flota;
@@ -4153,8 +4165,12 @@ const app = {
     if (!cont) return;
     const lista = this._flota || [];
     if (!lista.length) {
-      cont.innerHTML = '<div style="color:#166534;font-size:12px;text-align:center;padding:10px;opacity:.8;">'
-        + 'Todavía no hay vehículos. Agregue el primero para que aparezca al reportar.</div>';
+      // v1.37: distingue "no se pudo cargar" de "de verdad no hay vehículos"
+      // (ver _cargarFlota) — antes las dos se veían igual.
+      cont.innerHTML = this._flotaError
+        ? '<div style="color:#c00;font-size:12px;text-align:center;padding:10px;">⚠️ No se pudo cargar la flota. Revise su conexión y toque "🔄 Actualizar".</div>'
+        : '<div style="color:#166534;font-size:12px;text-align:center;padding:10px;opacity:.8;">'
+          + 'Todavía no hay vehículos. Agregue el primero para que aparezca al reportar.</div>';
       return;
     }
     // I5: todo texto libre pasa por _esc. I10: data-* en vez de meter el
@@ -7547,20 +7563,20 @@ ${paginaFotos}
   },
 
   // v5.63: obtiene la contraseña admin de la sesión o la pide con modal (APK-safe)
-  async _obtenerPwdAdmin(mensaje) {
+  async _obtenerPwdAdmin(mensaje, contexto) {
     /* v6.03: LA FIRMA ES OBLIGATORIA. Sin PIN no se ejerce como admin.
        Se controla desde acá porque es el único portón por el que pasan TODAS las
        acciones de administrador. Devolver null bloquea el flujo entero sin tener
        que tocar las ~15 pantallas que llaman a esta función: todas ya hacen
        `if (!pwd) return;`.
        Reportar emergencias NO pasa por acá, así que eso sigue funcionando sin PIN. */
-    if (this._adminPwdSession) return (await this._exigirFirma()) ? this._adminPwdSession : null;
-    try { const s = sessionStorage.getItem('adm_pwd'); if (s) { this._adminPwdSession = s; return (await this._exigirFirma()) ? s : null; } } catch(e) {}
+    if (this._adminPwdSession) return (await this._exigirFirma(contexto)) ? this._adminPwdSession : null;
+    try { const s = sessionStorage.getItem('adm_pwd'); if (s) { this._adminPwdSession = s; return (await this._exigirFirma(contexto)) ? s : null; } } catch(e) {}
     const pwd = await this._pedirPwdAdmin(mensaje);
     if (!pwd || !pwd.trim()) return null;
     this._adminPwdSession = pwd.trim();
     try { sessionStorage.setItem('adm_pwd', this._adminPwdSession); } catch(e) {}
-    return (await this._exigirFirma()) ? this._adminPwdSession : null;
+    return (await this._exigirFirma(contexto)) ? this._adminPwdSession : null;
   },
 
   /* OLVIDAR LA CONTRASEÑA — las DOS copias.
@@ -7575,7 +7591,7 @@ ${paginaFotos}
   },
 
   // Devuelve true solo si hay una firma verificada en esta sesión.
-  async _exigirFirma() {
+  async _exigirFirma(contexto) {
     /* ═══ EL FUNDADOR NO PUEDE QUEDAR AFUERA DE SU PROPIA INSTALACIÓN ═══
 
        Lo reportó Jeferson el 15/08/2026 probando la instalación de un cuerpo nuevo:
@@ -7600,7 +7616,7 @@ ${paginaFotos}
        no se pide nada: pedirlo dejaba al segundo admin fuera igual que al fundador. */
     if (!this._firmaObligatoria) return true;
 
-    const oper = await this._obtenerOperador();
+    const oper = await this._obtenerOperador(contexto);
     if (oper) {
       // Avisar una vez si se pasó sin firmar por backend antiguo, para que no
       // parezca que la firma está funcionando cuando en realidad no se aplicó.
@@ -7664,7 +7680,7 @@ ${paginaFotos}
     try { sessionStorage.removeItem('app_oper'); } catch(e) {}
   },
 
-  async _obtenerOperador() {
+  async _obtenerOperador(contexto) {
     if (this._firmaVencida()) {
       this._borrarFirma();
       this.toast('🔒 Pasaron 30 minutos sin actividad: vuelve a firmar con tu PIN.', 'info');
@@ -7694,7 +7710,7 @@ ${paginaFotos}
       this._operadorSesion = '(sin verificar — backend sin PIN)';
       return this._operadorSesion;
     }
-    const r = await this._pedirOperador();
+    const r = await this._pedirOperador(contexto);
     if (!r) return null;   // v6.03: ahora SÍ bloquea (ver _exigirFirma)
     this._operadorSesion = r.nombre; this._operadorCedula = r.cedula; this._operadorPin = r.pin;
     /* v6.03: la llave de comandancia vive SOLO en memoria, nunca en sessionStorage.
@@ -7715,7 +7731,7 @@ ${paginaFotos}
      turno saliente — justo lo que el PIN vino a evitar. */
   async cambiarOperador() {
     this._borrarFirma();   // una sola función limpia las 5 cosas
-    const nom = await this._obtenerOperador();
+    const nom = await this._obtenerOperador('panelAdmin');
     if (nom) this.toast('🪪 Ahora opera: ' + nom, 'exito');
     const et = document.getElementById('operActualTxt');
     if (et) et.textContent = nom || 'sin firmar';
@@ -7760,14 +7776,24 @@ ${paginaFotos}
     }, 350);
   },
 
-  _pedirOperador() {
+  _pedirOperador(contexto) {
+    /* v1.37 (deuda portada de la app de referencia): al Panel Admin NO entra la
+       guardia, entran administradores — preguntar "quién está de guardia" ahí
+       confundía a Jeferson (guardias no llegan a este modal desde ese flujo).
+       En sanciones/asistencia/etc. sí opera la guardia, así que ahí el texto
+       original sigue aplicando sin cambios. */
+    const esPanel = contexto === 'panelAdmin';
+    const titulo = esPanel ? '🪪 ¿Qué administrador entra?' : '🪪 ¿Quién está de guardia?';
+    const cuerpo = esPanel
+      ? 'Este teléfono puede compartirse entre varios administradores. Su nombre queda registrado junto a lo que haga en el Panel. Por eso hace falta <b>su PIN</b> — así nadie firma en su nombre.'
+      : 'Cuando varias personas comparten el mismo teléfono, la cuenta de Google no alcanza para saber quién hizo qué. Su nombre queda registrado junto a cada informe, actividad o edición que haga. Por eso el <b>PIN</b>: para que nadie pueda firmar en su nombre.';
     return new Promise((resolve) => {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
       modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:22px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
-        + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:6px;text-align:center;">🪪 ¿Quién está de guardia?</div>'
-        + '<div style="font-size:11px;color:#666;margin-bottom:12px;text-align:center;line-height:1.45;">Cuando varias personas comparten el mismo teléfono, la cuenta de Google no alcanza para saber quién hizo qué. Su nombre queda registrado junto a cada informe, actividad o edición que haga. Por eso el <b>PIN</b>: para que nadie pueda firmar en su nombre.</div>'
+        + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:6px;text-align:center;">' + titulo + '</div>'
+        + '<div style="font-size:11px;color:#666;margin-bottom:12px;text-align:center;line-height:1.45;">' + cuerpo + '</div>'
         + '<div style="position:relative;">'
         + '<input id="_operInput" type="text" autocomplete="off" oninput="app._buscarOperadorSug(this.value)" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;" placeholder="Escribe tu nombre y tócalo">'
         + '<div id="_operSug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,.15);max-height:150px;overflow-y:auto;"></div>'
