@@ -1,8 +1,8 @@
-/* Service Worker v1.40 - Reportes de Bomberos
+/* Service Worker v1.41 - Reportes de Bomberos
    NETWORK-FIRST para los archivos del propio sitio: con internet SIEMPRE
    baja la última versión (se acabó el caché viejo pegado en el teléfono).
    El caché queda solo como respaldo cuando NO hay señal. */
-const CACHE = 'reportes-bomberos-v1-40';
+const CACHE = 'reportes-bomberos-v1-41';
 // v5.99: se agregan los archivos de Leaflet (ahora autoalojados). Antes venían
 // de unpkg.com y NO se cacheaban: sin señal, la libreria del mapa no existia y
 // la pantalla solo podia mostrar el aviso de "revisa tu conexion".

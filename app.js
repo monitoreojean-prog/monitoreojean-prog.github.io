@@ -82,13 +82,14 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.40';
+const APP_VERSION = '1.41';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.41: ✨ Movimiento en el Panel de Administrador. Antes el Panel entraba sin animación; ahora las listas de reportes, de personal pendiente y de Operatividad entran escalonadas (una tarjeta tras otra) al abrirlas. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
   'v1.40: ✨ Más movimiento (Fase 2). Ahora TODAS las ventanas emergentes se cierran con una animación suave (antes algunas desaparecían de golpe), el PIN muestra una rueda girando mientras verifica y SACUDE si te equivocás, el aviso verde de nueva versión baja y sube suave, y en el reporte la foto recién tomada y cada vehículo/víctima que agregás entran con una pequeña animación. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
   'v1.39: ✨ La app se siente más viva. Se agregó movimiento en las piezas que se usan en todos lados: las ventanas de confirmación y el menú ahora también se cierran con una animación suave (antes desaparecían de golpe), los avisos suben al aparecer, las listas de reportes y actividades entran escalonadas, los botones "ocupados" se atenúan suave, y los campos muestran mejor cuál está activo. Todo liviano para que no trabe, y respeta el modo "reducir movimiento" del celular. No cambia ningún dato ni cómo funciona: solo cómo se ve.',
   'v1.38: 🛟 Menos riesgo de perder trabajo. (1) Al salir de una Actividad que estabas registrando sin haber guardado, la app ahora avisa antes de descartar lo que cargaste (antes se perdía de un toque). (2) El reporte que estás llenando se autoguarda solo: si el celular cierra la app de golpe, no pierdes lo dictado. (3) Los reportes que quedaron "pendientes" por falta de señal ahora se envían solos al reabrir la app con internet, sin forzarlos a mano. Además, un ajuste interno de seguridad al mostrar fotos y firmas.',
@@ -4946,6 +4947,7 @@ const app = {
           </div>`;
       }).join('');
       wrap.style.display = 'block';
+      this._animarEntradaLista(cont);   // v1.41: las altas pendientes entran escalonadas
     } catch (e) {
       wrap.style.display = 'none';
     }
@@ -5042,6 +5044,7 @@ const app = {
         return;
       }
       this.renderizarListaAdmin();
+      this._animarEntradaLista(cont);   // v1.41: las tarjetas entran escalonadas al cargar (no al filtrar)
     } catch (e) {
       { const _d=document.createElement("div"); _d.style.cssText="padding:20px;color:#c00;"; _d.textContent="Error de red: "+(e.message||"")+". Verifica tu conexión."; cont.innerHTML=""; cont.appendChild(_d); }
     }
@@ -6837,6 +6840,19 @@ ${paginaFotos}
     setTimeout(() => { try { if (modal.parentNode) modal.parentNode.removeChild(modal); } catch (e) {} }, 160);
   },
 
+  /* v1.41: stagger de una lista UNA sola vez (al cargarse), no en cada tecla de un
+     filtro. Se llama DESPUÉS de pintar el innerHTML: agrega .stagger (los hijos entran
+     escalonados por CSS) y quita la clase a los 700ms, así un re-render por filtro
+     posterior NO vuelve a escalonar. Sirve para las listas del Panel Admin y de
+     Operatividad, que se pintan por display/innerHTML dentro de una pantalla ya activa
+     (por eso el fade no se re-dispara y quedaban sin movimiento). */
+  _animarEntradaLista(cont) {
+    if (!cont) return;
+    cont.classList.add('stagger');
+    clearTimeout(cont._tStagger);
+    cont._tStagger = setTimeout(() => cont.classList.remove('stagger'), 700);
+  },
+
   escucharConexion() {
     const actualizar = () => {
       const header = document.getElementById('header');
@@ -7357,6 +7373,7 @@ ${paginaFotos}
       this._operData = data.operatividad || [];
       this._operStats = data.stats || null;
       this._renderOperatividad();
+      this._animarEntradaLista(document.getElementById('operatividadContenido'));   // v1.41: entra escalonado
     } catch(e) { cont.innerHTML = `<div style="color:#c00;padding:20px;">Error: ${e.message}</div>`; }
   }
 
