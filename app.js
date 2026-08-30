@@ -82,13 +82,15 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.38';
+const APP_VERSION = '1.40';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.40: ✨ Más movimiento (Fase 2). Ahora TODAS las ventanas emergentes se cierran con una animación suave (antes algunas desaparecían de golpe), el PIN muestra una rueda girando mientras verifica y SACUDE si te equivocás, el aviso verde de nueva versión baja y sube suave, y en el reporte la foto recién tomada y cada vehículo/víctima que agregás entran con una pequeña animación. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
+  'v1.39: ✨ La app se siente más viva. Se agregó movimiento en las piezas que se usan en todos lados: las ventanas de confirmación y el menú ahora también se cierran con una animación suave (antes desaparecían de golpe), los avisos suben al aparecer, las listas de reportes y actividades entran escalonadas, los botones "ocupados" se atenúan suave, y los campos muestran mejor cuál está activo. Todo liviano para que no trabe, y respeta el modo "reducir movimiento" del celular. No cambia ningún dato ni cómo funciona: solo cómo se ve.',
   'v1.38: 🛟 Menos riesgo de perder trabajo. (1) Al salir de una Actividad que estabas registrando sin haber guardado, la app ahora avisa antes de descartar lo que cargaste (antes se perdía de un toque). (2) El reporte que estás llenando se autoguarda solo: si el celular cierra la app de golpe, no pierdes lo dictado. (3) Los reportes que quedaron "pendientes" por falta de señal ahora se envían solos al reabrir la app con internet, sin forzarlos a mano. Además, un ajuste interno de seguridad al mostrar fotos y firmas.',
   'v1.37: 🪪 Ajustes reportados en producción. Al entrar al Panel de Administrador, ahora pregunta "qué administrador entra" (antes decía "quién está de guardia", que ahí no aplicaba — los guardias no llegan a ese modal). En sanciones, asistencia y demás sigue preguntando por la guardia, sin cambios. Además, "🚒 Vehículos del cuerpo" ahora distingue un error de carga (revise su conexión) de una flota genuinamente vacía, para no mostrar un mensaje que confunda a otro administrador.',
   'v1.36: 📋 Vista RUE más completa y más exacta. Nuevo bloque "Recursos desplegados" que cruza los vehículos del incidente con la clase que pide el RUE. Además, "Quien Reporta" ahora muestra el nombre completo de quien avisó (antes solo mostraba la relación), y se corrigió un caso donde un incidente con varias clasificaciones podía dejar mal marcado ese tipo en informes futuros.',
@@ -699,28 +701,33 @@ const app = {
         <div style="font-size:12px;opacity:0.95;margin-bottom:4px;">Cambios:</div>
         <ul style="margin:0;padding-left:18px;font-size:12px;opacity:0.95;">${notasHTML}</ul>
       </div>
-      <button onclick="document.getElementById('bannerNuevaVersion').remove()"
+      <button onclick="app._cerrarBanner()"
               style="position:sticky;top:0;flex-shrink:0;background:rgba(255,255,255,0.25);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;align-self:flex-start;">
         ✕ Cerrar
       </button>
     `;
     if (document.body) {
       document.body.appendChild(banner);
-      // Auto-quitar a los 10 minutos
-      setTimeout(() => {
-        const el = document.getElementById('bannerNuevaVersion');
-        if (el) el.remove();
-      }, 10 * 60 * 1000);
+      // Auto-quitar a los 10 minutos (con la misma salida animada que el botón ✕).
+      setTimeout(() => this._cerrarBanner(), 10 * 60 * 1000);
     } else {
       // Por si el DOM no está aún listo
       document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(banner);
-        setTimeout(() => {
-          const el = document.getElementById('bannerNuevaVersion');
-          if (el) el.remove();
-        }, 10 * 60 * 1000);
+        setTimeout(() => this._cerrarBanner(), 10 * 60 * 1000);
       });
     }
+  },
+
+  /* v1.40: cierre animado del banner de nueva versión — sube y se va (antes hacía un
+     .remove() seco). NO se le quita el id: la animación de subida (CSS) depende de él,
+     y el banner es único (no se reabre), así que no hay colisión posible. */
+  _cerrarBanner() {
+    const el = document.getElementById('bannerNuevaVersion');
+    if (!el || el._cerrando) return;
+    el._cerrando = true;
+    el.classList.add('subiendo');
+    setTimeout(() => { try { el.remove(); } catch (e) {} }, 320);
   },
 
   // ==================== LOGIN GOOGLE ====================
@@ -1259,11 +1266,18 @@ const app = {
   },
 
   toggleUserMenu() {
-    document.getElementById('userMenu').classList.toggle('visible');
+    const m = document.getElementById('userMenu');
+    if (m.classList.contains('visible')) { this.cerrarUserMenu(); return; }
+    // v1.39: al abrir, cancelar un cierre en curso y limpiar la clase de salida.
+    if (m._tCerrar) { clearTimeout(m._tCerrar); m._tCerrar = null; }
+    m.classList.remove('cerrando');
+    m.classList.add('visible');
   },
 
   cerrarUserMenu() {
-    document.getElementById('userMenu').classList.remove('visible');
+    const m = document.getElementById('userMenu');
+    if (!m || !m.classList.contains('visible')) return;
+    this._animarCierre(m, () => m.classList.remove('visible'));   // v1.39: cierre animado
   },
 
   // ==================== TEMA DE DISEÑO (v5.88) ====================
@@ -1633,7 +1647,7 @@ const app = {
       + '<div style="font-size:11px;color:#999;margin-top:12px;">Siempre puede verlo de nuevo en <b>ℹ️ Acerca de</b>.</div>'
       + '</div>';
     document.body.appendChild(m);
-    const cerrar = () => { try { document.body.removeChild(m); } catch (e) {} };
+    const cerrar = () => { try { app._cerrarModalJS(m); } catch (e) {} };
     m.querySelector('#_tourNo').onclick = cerrar;
     m.querySelector('#_tourVer').onclick = () => { cerrar(); this.mostrarTour(rol); };
   },
@@ -2882,7 +2896,7 @@ const app = {
         + '<button id="_caOk" style="flex:1;padding:12px;background:#1e8449;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">'+(txtOk||'Continuar')+'</button>'
         + '</div></div>';
       document.body.appendChild(modal);
-      const fin = (v) => { try { document.body.removeChild(modal); } catch(e){} resolve(v); };
+      const fin = (v) => { try { app._cerrarModalJS(modal); } catch(e){} resolve(v); };
       modal.querySelector('#_caCancel').onclick = () => fin(false);
       modal.querySelector('#_caOk').onclick = () => fin(true);
     });
@@ -4208,7 +4222,7 @@ const app = {
         + '</div></div>';
       document.body.appendChild(modal);
       const sel = modal.querySelector('#_opcSel');
-      const fin = (v) => { try { document.body.removeChild(modal); } catch(e){} resolve(v); };
+      const fin = (v) => { try { app._cerrarModalJS(modal); } catch(e){} resolve(v); };
       modal.querySelector('#_opcCancel').onclick = () => fin(null);
       modal.querySelector('#_opcOk').onclick = () => fin(sel.value || '');
     });
@@ -6760,12 +6774,18 @@ ${paginaFotos}
   confirmar(titulo, mensaje) {
     document.getElementById('modalTitulo').textContent = titulo;
     document.getElementById('modalMensaje').textContent = mensaje;
-    document.getElementById('modalConfirmar').classList.add('visible');
+    const _mc = document.getElementById('modalConfirmar');
+    // v1.39: si venía cerrándose (fade en curso), cancelarlo para que no se oculte
+    // encima del modal nuevo que estamos abriendo.
+    if (_mc._tCerrar) { clearTimeout(_mc._tCerrar); _mc._tCerrar = null; }
+    _mc.classList.remove('cerrando');
+    _mc.classList.add('visible');
     const btnConfirmar = document.getElementById('modalConfirmarBtn');
     return new Promise(resolve => {
       // Función única que resuelve y cierra (sin doble llamada)
       this._modalResolve = (valor) => {
-        document.getElementById('modalConfirmar').classList.remove('visible');
+        const el = document.getElementById('modalConfirmar');
+        this._animarCierre(el, () => el.classList.remove('visible'));   // v1.39: cierre animado
         const r = this._modalResolve;
         this._modalResolve = null;
         if (r) resolve(valor);
@@ -6778,8 +6798,43 @@ ${paginaFotos}
     if (this._modalResolve) {
       this._modalResolve(false);
     } else {
-      document.getElementById('modalConfirmar').classList.remove('visible');
+      const el = document.getElementById('modalConfirmar');
+      this._animarCierre(el, () => el.classList.remove('visible'));
     }
+  },
+
+  /* v1.39: cierre ANIMADO de un modal reutilizable. Agrega .cerrando (fade +
+     pop-out por CSS) y recién a los 160ms hace el cierre real (quitar .visible o
+     removeChild). El timer se guarda en el propio elemento: si el modal se REABRE
+     antes de terminar el fade, quien reabre lo cancela para no cerrarse encima del
+     contenido nuevo. Respeta reduced-motion. La lógica NO espera este tiempo: quien
+     llama resuelve/sigue de una; esto solo demora sacar el nodo del DOM. */
+  _animarCierre(el, hacer) {
+    if (!el) { if (hacer) hacer(); return; }
+    if (el._tCerrar) return;   // ya está cerrando
+    el.classList.add('cerrando');
+    el._tCerrar = setTimeout(() => {
+      el._tCerrar = null;
+      el.classList.remove('cerrando');
+      if (hacer) hacer();
+    }, 160);
+  },
+
+  /* v1.40: cierre ANIMADO de los modales creados por JS (los que hacen removeChild).
+     Cada uno es un elemento NUEVO (createElement); el único riesgo es que el MISMO
+     tipo de modal se reabra dentro de los 160ms del fade y el getElementById encuentre
+     el que se está yendo por su id fijo. Por eso se le QUITAN los id al instante: queda
+     inerte, mientras el CSS lo desvanece y se lo saca del DOM. La lógica que sigue
+     (resolve/callback) NO espera: corre ya. */
+  _cerrarModalJS(modal) {
+    if (!modal || modal._cerrando) return;
+    modal._cerrando = true;
+    try {
+      modal.removeAttribute('id');
+      modal.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    } catch (e) {}
+    modal.classList.add('cerrando');
+    setTimeout(() => { try { if (modal.parentNode) modal.parentNode.removeChild(modal); } catch (e) {} }, 160);
   },
 
   escucharConexion() {
@@ -7532,7 +7587,7 @@ ${paginaFotos}
       document.body.appendChild(modal);
       const inp = modal.querySelector('#_pwdAdmInput');
       setTimeout(() => { try { inp.focus(); } catch(e){} }, 50);
-      const fin = (val) => { try { document.body.removeChild(modal); } catch(e){} resolve(val); };
+      const fin = (val) => { try { app._cerrarModalJS(modal); } catch(e){} resolve(val); };
       modal.querySelector('#_pwdAdmCancel').onclick = () => fin(null);
 
       /* ═══ LA CONTRASEÑA SE COMPRUEBA ACÁ, NO DESPUÉS ═══
@@ -7625,7 +7680,7 @@ ${paginaFotos}
       document.body.appendChild(modal);
       const inp = modal.querySelector('#_txtInput');
       setTimeout(() => { try { inp.focus(); } catch(e){} }, 50);
-      const fin = (v) => { try { document.body.removeChild(modal); } catch(e){} resolve(v); };
+      const fin = (v) => { try { app._cerrarModalJS(modal); } catch(e){} resolve(v); };
       modal.querySelector('#_txtCancel').onclick = () => fin(null);
       modal.querySelector('#_txtOk').onclick = () => fin(inp.value || '');
       inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') fin(inp.value || ''); });
@@ -7883,14 +7938,21 @@ ${paginaFotos}
       const err = modal.querySelector('#_operErr');
       const btn = modal.querySelector('#_operOk');
       setTimeout(() => { try { inp.focus(); } catch(e){} }, 50);
-      const fin = (val) => { try { document.body.removeChild(modal); } catch(e){} resolve(val); };
-      const mostrarErr = (t) => { err.textContent = t; err.style.display = 'block'; };
+      const fin = (val) => { try { app._cerrarModalJS(modal); } catch(e){} resolve(val); };
+      /* v1.40: el error ahora SACUDE la caja (como el modal de contraseña) además de
+         mostrar el texto — antes un PIN malo no daba ninguna señal de movimiento. */
+      const mostrarErr = (t) => {
+        err.textContent = t; err.style.display = 'block';
+        const caja = modal.querySelector('div');
+        if (caja) { caja.classList.remove('sacudir'); void caja.offsetWidth; caja.classList.add('sacudir'); }
+      };
       const intentar = async () => {
         const ced = inp.dataset.ced || '';
         const p = (pin.value || '').trim();
         if (!ced) { mostrarErr('Toca tu nombre en la lista que aparece al escribir.'); return; }
         if (!/^\d{4}$/.test(p)) { mostrarErr('El PIN son 4 dígitos.'); return; }
-        btn.disabled = true; btn.style.opacity = '0.65'; btn.textContent = 'Verificando...';
+        // v1.40: spinner girando en "Verificando..." (igual que _pedirPwdAdmin).
+        btn.disabled = true; btn.style.opacity = '0.65'; btn.innerHTML = '<span class="spinner-app"></span> Verificando...';
         try {
           // Se valida ANTES de aceptar la firma, para avisar en el momento y no
           // dejar que la guardia opere creyendo que quedó firmada cuando no.
@@ -7941,8 +8003,8 @@ ${paginaFotos}
       + '<button id="_modConfirm" style="flex:1;padding:12px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Eliminar</button>'
       + '</div></div>';
     document.body.appendChild(modal);
-    document.getElementById('_modCancel').onclick = () => document.body.removeChild(modal);
-    document.getElementById('_modConfirm').onclick = () => { document.body.removeChild(modal); onConfirmar(); };
+    document.getElementById('_modCancel').onclick = () => app._cerrarModalJS(modal);
+    document.getElementById('_modConfirm').onclick = () => { app._cerrarModalJS(modal); onConfirmar(); };
   },
 
   async eliminarActividad(id, tipo) {
@@ -8651,7 +8713,7 @@ ${paginaFotos}
       this._eaRenderPersonal();
       this._eaRenderRecursos();
 
-      modal.querySelector('#_eaCancel').onclick = () => { document.body.removeChild(modal); this._eaLimpiar(); };
+      modal.querySelector('#_eaCancel').onclick = () => { app._cerrarModalJS(modal); this._eaLimpiar(); };
       modal.querySelector('#_eaGuard').onclick = async () => {
         await this._conBloqueo(modal.querySelector('#_eaGuard'), 'Guardando...', async () => {
         const _pwdEA = await this._obtenerPwdAdmin('🔐 Contraseña admin');
@@ -8676,7 +8738,7 @@ ${paginaFotos}
           const r=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
           const d=await r.json();
           if(!d.ok)throw new Error(d.error);
-          document.body.removeChild(modal);
+          app._cerrarModalJS(modal);
           this._eaLimpiar();
           this.toast('✅ Actividad actualizada','exito');
           setTimeout(()=>this.cargarListaActividades(),800);
