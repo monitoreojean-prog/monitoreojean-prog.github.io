@@ -82,13 +82,20 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.41';
+const APP_VERSION = '1.48';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.48: 🧭 Reportar un incidente ahora es más fácil de recorrer: las 13 secciones están agrupadas en tres fases (aviso, respuesta y cierre), la sección abierta se distingue mejor y las filas, fotos, firmas y botones son más cómodos en el celular. No cambia tus datos ni la forma de guardarlos.',
+  'v1.47: 🧾 Formulario más simple: en Recursos ya no se piden "Cantidad" ni "Placa" — la placa y la clase del vehículo salen del catálogo del cuerpo y van al PDF solas. Se aclaró quién es el afectado que firma y quiénes son las víctimas. Tus reportes anteriores no cambian.',
+  'v1.46: 🛡️ Blindaje de seguridad. El prefijo del consecutivo (Configuración) ahora solo acepta letras y números, y todos los números de reporte se muestran de forma segura en la app y en el PDF. No cambia cómo trabajas ni tus datos.',
+  'v1.45: 🆕 Más completo el registro. En un INCIDENTE se agregó la “Fecha y hora de salida de la estación” (entre la llamada y la llegada). En una ACTIVIDAD ahora se puede: marcar si fue VOLUNTARIA o PAGA (contratada), elegir el tipo “Pernotar” (servicio nocturno, cuyas horas cuentan aunque el turno cruce la medianoche), adjuntar hasta 6 fotos, y registrar VARIAS ATENCIONES (primeros auxilios, traslados, etc.), cada una con sus datos y hasta 3 fotos propias. Todo se ve en el detalle y en el PDF. Las columnas nuevas van al final de las hojas: los datos viejos no se tocan.',
+  'v1.44: 🚨 Cargas con carácter. Los “girando…” genéricos se reemplazaron por animaciones del oficio, repartidas por toda la app: una SIRENA que parpadea, un DESPACHO de puntos que rebotan y una barra de SINCRONIZANDO. Se ven al enviar un reporte, al verificar el PIN, al guardar una actividad y al abrir cualquier lista que carga. Livianas y respetan el modo “reducir movimiento”. No cambian datos ni cómo funciona.',
+  'v1.43: ✨ Cierre de las animaciones. Los pines del Mapa de Emergencias ahora CAEN al aparecer, y las cifras de la pantalla de Operatividad (unidades, emergencias) SUBEN desde 0 al abrir. Todo respeta el modo "reducir movimiento".',
+  'v1.42: ✨ Animaciones que SE NOTAN. Ahora CADA botón, al tocarlo, hace una onda (ripple) que confirma el toque. Los números del Inicio (total, pendientes, enviados) SUBEN desde 0 al abrir. Y al enviar un reporte con un campo obligatorio vacío, ese campo se MARCA EN ROJO, se SACUDE, y la app te LLEVA directo a él. Todo respeta el modo "reducir movimiento".',
   'v1.41: ✨ Movimiento en el Panel de Administrador. Antes el Panel entraba sin animación; ahora las listas de reportes, de personal pendiente y de Operatividad entran escalonadas (una tarjeta tras otra) al abrirlas. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
   'v1.40: ✨ Más movimiento (Fase 2). Ahora TODAS las ventanas emergentes se cierran con una animación suave (antes algunas desaparecían de golpe), el PIN muestra una rueda girando mientras verifica y SACUDE si te equivocás, el aviso verde de nueva versión baja y sube suave, y en el reporte la foto recién tomada y cada vehículo/víctima que agregás entran con una pequeña animación. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
   'v1.39: ✨ La app se siente más viva. Se agregó movimiento en las piezas que se usan en todos lados: las ventanas de confirmación y el menú ahora también se cierran con una animación suave (antes desaparecían de golpe), los avisos suben al aparecer, las listas de reportes y actividades entran escalonadas, los botones "ocupados" se atenúan suave, y los campos muestran mejor cuál está activo. Todo liviano para que no trabe, y respeta el modo "reducir movimiento" del celular. No cambia ningún dato ni cómo funciona: solo cómo se ve.',
@@ -1411,7 +1418,8 @@ const app = {
     // Solo admin puede cambiar consecutivo
     if (this.esAdmin()) {
       this.config.proximoNumero = +document.getElementById('cfg_proximo_numero').value || 1;
-      this.config.prefijo = document.getElementById('cfg_prefijo').value.trim().toUpperCase() || 'RE';
+      // v1.46: mismo filtro que el backend (_prefijoSeguro) — solo letras/dígitos, máx 6.
+      this.config.prefijo = document.getElementById('cfg_prefijo').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'RE';
     }
 
     await DB.guardarConfig('app', this.config);
@@ -1996,11 +2004,10 @@ const app = {
         return r.operadorEmail.toLowerCase() === this.usuario.email.toLowerCase();
       });
     }
-    document.getElementById('statTotal').textContent = reportes.length;
-    document.getElementById('statPendientes').textContent =
-      reportes.filter(r => r.estado === 'pendiente').length;
-    document.getElementById('statEnviados').textContent =
-      reportes.filter(r => r.estado === 'enviado').length;
+    // v1.42: los totales SUBEN desde 0 (count-up) en vez de aparecer secos.
+    this._countUp(document.getElementById('statTotal'), reportes.length);
+    this._countUp(document.getElementById('statPendientes'), reportes.filter(r => r.estado === 'pendiente').length);
+    this._countUp(document.getElementById('statEnviados'), reportes.filter(r => r.estado === 'enviado').length);
 
     const lista = document.getElementById('listaReportes');
     if (reportes.length === 0) {
@@ -2017,20 +2024,23 @@ const app = {
       const fecha = new Date(r.fechaCreacion).toLocaleString('es-CO', {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
       });
+      // v1.46 (I5): consecutivo y clasificación llegan del servidor (listarMisReportes) —
+      // el consecutivo lo arma el backend con un prefijo que MANDA EL CLIENTE. Nada
+      // que venga de otra persona va crudo a innerHTML.
       return `
-        <div class="reporte-item ${r.estado}" data-id="${app._esc(r.id)}" onclick="app.verDetalle(this.dataset.id)">
+        <div class="reporte-item ${this._esc(r.estado)}" data-id="${app._esc(r.id)}" onclick="app.verDetalle(this.dataset.id)">
           <div class="info">
-            <div class="consec">${r.consecutivo || 'Sin asignar'}</div>
-            <div class="desc">${tipos}</div>
+            <div class="consec">${this._esc(r.consecutivo || 'Sin asignar')}</div>
+            <div class="desc">${this._esc(tipos)}</div>
             <div class="fecha">${fecha}</div>
           </div>
-          <span class="badge ${r.estado}">${this.etiquetaEstado(r.estado)}</span>
+          <span class="badge ${this._esc(r.estado)}">${this.etiquetaEstado(r.estado)}</span>
         </div>`;
     }).join('');
   },
 
   etiquetaEstado(estado) {
-    return { borrador: 'Borrador', pendiente: 'Pendiente', enviado: 'Enviado' }[estado] || estado;
+    return { borrador: 'Borrador', pendiente: 'Pendiente', enviado: 'Enviado' }[estado] || this._esc(estado);
   },
 
   // ═══ v5.63 (BUG 9): renovación automática del pase de sesión ═══
@@ -2738,10 +2748,6 @@ const app = {
         </select>
         <input type="text" data-campo="recurso_otro" placeholder="Especifique" style="display:none; margin-top: 6px;">
       </div>
-      <div class="campo-fila">
-        <div class="campo"><label>Cantidad</label><input type="number" data-campo="cantidad" min="0" value="1"></div>
-        <div class="campo"><label>Placa/Código</label><input type="text" data-campo="codigo"></div>
-      </div>
       <div class="campo">
         <label>Responsable / Maquinista</label>
         <div class="nombre-con-ci">
@@ -2773,8 +2779,10 @@ const app = {
         div.querySelector('[data-campo="recurso_otro"]').style.display = 'block';
       }
       this.cambioTipoRecurso(sel);
-      div.querySelector('[data-campo="cantidad"]').value = datos.cantidad || 1;
-      div.querySelector('[data-campo="codigo"]').value = datos.codigo || '';
+      // v1.47 (PLAN-20260915-01): cantidad y código ya no se piden. Los de reportes VIEJOS se conservan
+      // en el dataset de la fila para no perderlos al re-guardar (leerRecursos los lee de ahí).
+      div.dataset.cantidad = datos.cantidad != null ? String(datos.cantidad) : '';
+      div.dataset.codigo = datos.codigo || '';
       div.querySelector('[data-campo="responsable"]').value = datos.responsable || '';
       if (datos.personal && Array.isArray(datos.personal)) {
         datos.personal.forEach(nombre => this.agregarBomberoConNombre(div, nombre));
@@ -2936,7 +2944,7 @@ const app = {
       htmlOrig = btn.innerHTML;
       btn.disabled = true;
       btn.style.opacity = '0.65';
-      btn.innerHTML = '<span class="spinner-app"></span> ' + (textoCargando || 'Cargando...');
+      btn.innerHTML = '<span class="ld-despacho"><i></i><i></i><i></i></span> ' + (textoCargando || 'Cargando...');
     }
     try {
       await fn();
@@ -3074,6 +3082,7 @@ const app = {
     r.fechaModificacion = new Date().toISOString();
     r.estacion = NOMBRE_ESTACION;
     r.fechaLlamada = document.getElementById('f_fecha_llamada').value;
+    r.fechaSalida = document.getElementById('f_fecha_salida').value;
     r.fechaLlegada = document.getElementById('f_fecha_llegada').value;
     r.fechaCierre = document.getElementById('f_fecha_cierre').value;
     r.reportaNombre = document.getElementById('f_reporta_nombre').value;
@@ -3177,11 +3186,14 @@ const app = {
       }
       const personal = Array.from(fila.querySelectorAll('[data-personal] input'))
         .map(i => i.value.trim()).filter(v => v);
+      const responsable = fila.querySelector('[data-campo="responsable"]').value;
       return {
         recurso,
-        cantidad: fila.querySelector('[data-campo="cantidad"]').value,
-        codigo: fila.querySelector('[data-campo="codigo"]').value,
-        responsable: fila.querySelector('[data-campo="responsable"]').value,
+        // cantidad derivada: vehículo/otro = 1; Personal = nombres (responsable + tripulantes). Un reporte viejo
+        // conserva la suya (dataset). Así la columna "Cantidad" de la hoja sigue teniendo sentido sin digitarla.
+        cantidad: fila.dataset.cantidad || (recurso === 'Personal' ? String(personal.length + (responsable.trim() ? 1 : 0)) : '1'),
+        codigo: fila.dataset.codigo || '',
+        responsable,
         personal
       };
     });
@@ -3221,6 +3233,7 @@ const app = {
   cargarEnFormulario(r) {
     document.getElementById('f_consecutivo').value = r.consecutivo || 'Se asigna al enviar';
     document.getElementById('f_fecha_llamada').value = this._isoADatetimeLocal(r.fechaLlamada);
+    document.getElementById('f_fecha_salida').value = this._isoADatetimeLocal(r.fechaSalida);
     document.getElementById('f_fecha_llegada').value = this._isoADatetimeLocal(r.fechaLlegada);
     document.getElementById('f_fecha_cierre').value = this._isoADatetimeLocal(r.fechaCierre);
     document.getElementById('f_reporta_nombre').value = r.reportaNombre || '';
@@ -3390,7 +3403,20 @@ const app = {
     if (this._enviandoReporte) return;
     const r = this.leerFormulario();
     if (!r.narrativa || !r.direccion || !r.comandanteNombre || !r.fechaLlamada) {
-      this.toast('Faltan: fecha llamada, narrativa, dirección y comandante', 'error');
+      // v1.42: se MARCA y SACUDE cada campo que falta y la app te LLEVA al primero.
+      const faltantes = [
+        ['f_fecha_llamada', !r.fechaLlamada, 'la fecha de la llamada'],
+        ['f_direccion', !r.direccion, 'la dirección'],
+        ['f_narrativa', !r.narrativa, 'la narrativa inicial'],
+        ['f_comandante_nombre', !r.comandanteNombre, 'el comandante en el lugar']
+      ].filter(x => x[1]);
+      faltantes.forEach(x => this._marcarCampoFalta(x[0]));
+      const primero = document.getElementById(faltantes[0][0]);
+      if (primero) {
+        try { primero.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+        setTimeout(() => { try { primero.focus(); } catch (e) {} }, 300);
+      }
+      this.toast('Falta ' + faltantes[0][2] + (faltantes.length > 1 ? ' (y ' + (faltantes.length - 1) + ' más marcados en rojo)' : ''), 'error');
       return;
     }
     // v5.63 (BUG anti-tontos): nombres que no están en la base → confirmar
@@ -3406,7 +3432,7 @@ const app = {
       }
     } catch(eV) { /* validación nunca debe romper el envío */ }
     this._enviandoReporte = true;
-    if (btn) { btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-app"></span> Enviando...'; }
+    if (btn) { btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="ld-sirena"></span> Enviando...'; }
     try {
       await this._enviarReporteInterno(r);
     } finally {
@@ -3695,8 +3721,8 @@ const app = {
           return `
             <tr>
               <td style="padding:6px;font-size:12px;">${fecha}</td>
-              <td style="padding:6px;font-size:12px;color:#999;text-decoration:line-through;">${p.consecutivoAnterior}</td>
-              <td style="padding:6px;font-size:12px;color:#15803d;font-weight:700;">→ ${p.consecutivoNuevo}</td>
+              <td style="padding:6px;font-size:12px;color:#999;text-decoration:line-through;">${app._esc(p.consecutivoAnterior)}</td>
+              <td style="padding:6px;font-size:12px;color:#15803d;font-weight:700;">→ ${app._esc(p.consecutivoNuevo)}</td>
             </tr>`;
         }).join('');
 
@@ -4175,6 +4201,19 @@ const app = {
   /* Vehículos que se pueden elegir HOY: los de baja o fuera de servicio no se
      ofrecen (no tiene sentido despachar una máquina varada), pero SIGUEN en la
      hoja para que los reportes viejos que los nombran se entiendan. */
+  /* v1.47 (PLAN-20260915-01): el PDF saca CLASE y PLACA del catálogo (hoja Vehiculos) por indicativo —
+     dato maestro, no se vuelve a digitar en cada reporte. Cruce exacto y, si no, por prefijo
+     ("Móvil 3 — máquina extintora" → "Móvil 3"; NO confunde Móvil 1 con Móvil 10 porque exige espacio
+     tras el indicativo). Sin flota cargada (sin señal) devuelve null: el PDF nunca se bloquea. */
+  _vehiculoDeRecurso(nombre) {
+    const n = String(nombre || '').trim().toUpperCase();
+    if (!n) return null;
+    const flota = this._flota || [];
+    const exacto = flota.find(v => String(v.indicativo || '').trim().toUpperCase() === n);
+    if (exacto) return exacto;
+    return flota.find(v => { const ind = String(v.indicativo || '').trim().toUpperCase(); return ind && n.indexOf(ind + ' ') === 0; }) || null;
+  },
+
   _flotaDisponible() {
     return (this._flota || []).filter(v => v.estado !== 'DE BAJA' && v.estado !== 'FUERA DE SERVICIO');
   },
@@ -5065,7 +5104,7 @@ const app = {
 
     cont.innerHTML = reportes.map(r => `
       <div class="reporte-card" style="margin-bottom:10px;padding:12px;border-left:4px solid var(--rojo);background:#fff;border-radius:6px;">
-        <div style="font-weight:bold;color:var(--rojo);font-size:15px;">${r.consecutivo || '(sin consecutivo)'}</div>
+        <div style="font-weight:bold;color:var(--rojo);font-size:15px;">${app._esc(r.consecutivo || '(sin consecutivo)')}</div>
         <div style="font-size:13px;color:#333;margin-top:2px;">${app._esc(r.direccion || 'Sin dirección')}</div>
         <div style="font-size:11px;color:#888;margin-top:4px;">
           ${r.operadorEmail || ''} · ${(r.clasificacion || []).join(', ') || 'Sin clasificar'}
@@ -5160,7 +5199,7 @@ const app = {
     document.getElementById('panelAdminViendo').style.display = 'block';
     this._animarEntrada(document.getElementById('panelAdminViendo'));
     const cont = document.getElementById('panelAdminViendoContenido');
-    cont.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Cargando reporte completo desde el servidor...</div>';
+    cont.innerHTML = app._cargador('Cargando el reporte completo…');
 
     // Descargar reporte completo. v5.94: si la descarga falla (auth intermitente
     // o red caída) NO mostramos el stub pobre del mapa como si fuera
@@ -5264,6 +5303,7 @@ const app = {
       ${card('🕐 Fechas y reportante', `
         ${fila('Creación', fecha(r.fechaCreacion))}
         ${fila('Llamada', fecha(r.fechaLlamada))}
+        ${fila('Salida de la estación', fecha(r.fechaSalida))}
         ${fila('Llegada', fecha(r.fechaLlegada))}
         ${fila('Cierre', fecha(r.fechaCierre))}
         ${fila('Reporta nombre', r.reportaNombre)}
@@ -5557,7 +5597,7 @@ const app = {
         barra.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:var(--rojo);color:#fff;padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;z-index:50;box-shadow:0 -2px 8px rgba(0,0,0,0.25);';
         barra.innerHTML = `
           <div style="flex:1 1 100%;font-size:13px;font-weight:700;margin-bottom:4px;">
-            🛡️ Editando como administrador — ${ (r && r.consecutivo) || '' }
+            🛡️ Editando como administrador — ${ app._esc((r && r.consecutivo) || '') }
           </div>
           <div style="flex:1 1 100%;margin-bottom:6px;font-size:11px;opacity:0.85;">
             📍 Para corregir coordenadas GPS, edítalas en la sección <strong>3 — Ubicación del Incidente</strong> arriba.
@@ -5631,6 +5671,7 @@ const app = {
     // Construir payload de cambios (todos los campos del reporte)
     const cambios = {
       fechaLlamada: r.fechaLlamada || '',
+      fechaSalida: r.fechaSalida || '',
       fechaLlegada: r.fechaLlegada || '',
       fechaCierre: r.fechaCierre || '',
       reportaNombre: r.reportaNombre || '',
@@ -6008,14 +6049,15 @@ const app = {
     const recursosHTML = (r.recursos || []).map(rec => {
       const personalStr = (rec.personal && rec.personal.length)
         ? `<br><small>👥 ${app._esc(rec.personal.join(', '))}</small>` : '';
-      return `<li><strong>${app._esc(rec.recurso)}</strong> (cant: ${rec.cantidad}) ${rec.codigo ? '— ' + app._esc(rec.codigo) : ''} ${rec.responsable ? '— ' + app._esc(rec.responsable) : ''}${personalStr}</li>`;
+      const cantStr = rec.cantidad && String(rec.cantidad) !== '1' ? ` (x${app._esc(rec.cantidad)})` : '';
+      return `<li><strong>${app._esc(rec.recurso)}</strong>${cantStr} ${rec.codigo ? '— ' + app._esc(rec.codigo) : ''} ${rec.responsable ? '— ' + app._esc(rec.responsable) : ''}${personalStr}</li>`;
     }).join('');
 
     cont.innerHTML = `
       <div class="config-card">
-        <h3>${r.consecutivo || 'Sin consecutivo'}</h3>
+        <h3>${this._esc(r.consecutivo || 'Sin consecutivo')}</h3>
         <p style="font-size: 12px; color: var(--gris-texto); margin-bottom: 12px;">
-          <span class="badge ${r.estado}">${this.etiquetaEstado(r.estado)}</span>
+          <span class="badge ${this._esc(r.estado)}">${this.etiquetaEstado(r.estado)}</span>
           ${fecha}
         </p>
         <p><strong>Tipo:</strong> ${app._esc(tipos)}</p>
@@ -6174,14 +6216,16 @@ const app = {
     // ventana.document.write() en una pestaña del MISMO origen que la app
     // (window.open sin noopener) — sin _esc(), un nombre con <script> o
     // <img onerror=...> se ejecutaba con acceso a window.opener (la app viva).
-    const recursosFilas = (r.recursos || []).map(rec => `
+    const recursosFilas = (r.recursos || []).map(rec => {
+      const veh = app._vehiculoDeRecurso(rec.recurso);
+      return `
       <tr>
         <td>${app._esc(rec.recurso || '')}</td>
-        <td style="text-align:center;">${app._esc(rec.cantidad || '')}</td>
-        <td>${app._esc(rec.codigo || '')}</td>
+        <td>${app._esc((veh && veh.clase) || '')}</td>
+        <td style="text-align:center;">${app._esc((veh && veh.placa) || rec.codigo || '')}</td>
         <td>${app._esc(rec.responsable || '')}${rec.personal && rec.personal.length ? '<br><small>' + app._esc(rec.personal.join(', ')) + '</small>' : ''}</td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
 
     const _resPdf = this.resumenPersonalDeReporte(r);
     const _totalPersPdf = (typeof r.totalPersonal === 'number') ? r.totalPersonal : _resPdf.total;
@@ -6232,7 +6276,7 @@ const app = {
             <img src="${app._logoImpresion()}" alt="">
             <div>
               <strong>CUERPO DE BOMBEROS VOLUNTARIOS</strong><br>
-              <span style="font-size: 9pt;">Anexo fotográfico — Reporte ${r.consecutivo || ''} — Hoja ${etiquetaHoja}/${totalHojas}</span>
+              <span style="font-size: 9pt;">Anexo fotográfico — Reporte ${app._esc(r.consecutivo || '')} — Hoja ${etiquetaHoja}/${totalHojas}</span>
             </div>
           </div>
           <div class="fotos-grid-pdf">
@@ -6257,7 +6301,7 @@ const app = {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${r.consecutivo}</title>
+<title>${app._esc(r.consecutivo || '')}</title>
 <style>
   :root { --logo-watermark: url("${app._logoImpresion()}"); }
   @page { size: A4; margin: 10mm; }
@@ -6406,11 +6450,15 @@ const app = {
       </tr>
       <tr>
         <td class="label">FECHA Y HORA DE LLAMADA:</td><td>${sn(fecha(r.fechaLlamada))}</td>
-        <td class="label">FECHA/HORA DE LLEGADA:</td><td>${sn(fecha(r.fechaLlegada))}</td>
+        <td class="label">FECHA/HORA DE SALIDA:</td><td>${sn(fecha(r.fechaSalida))}</td>
       </tr>
       <tr>
+        <td class="label">FECHA/HORA DE LLEGADA:</td><td>${sn(fecha(r.fechaLlegada))}</td>
         <td class="label">FECHA/HORA DE CIERRE:</td><td>${sn(fecha(r.fechaCierre))}</td>
+      </tr>
+      <tr>
         <td class="label">TURNO / GUARDIA:</td><td>${sn(r.turno)}</td>
+        <td class="label"></td><td></td>
       </tr>
       <tr>
         <td class="label">QUIÉN REPORTA:</td><td>${sn(r.reportaNombre)}</td>
@@ -6463,10 +6511,10 @@ const app = {
     <div class="seccion-titulo">5. RECURSOS DESPLEGADOS</div>
     <table class="tabla-datos">
       <tr>
-        <td class="label" style="width:30%;">RECURSO</td>
-        <td class="label" style="width:15%;">CANTIDAD</td>
-        <td class="label" style="width:25%;">PLACA / CÓDIGO</td>
-        <td class="label" style="width:30%;">RESPONSABLE</td>
+        <td class="label" style="width:28%;">RECURSO</td>
+        <td class="label" style="width:24%;">CLASE (catálogo)</td>
+        <td class="label" style="width:14%;">PLACA</td>
+        <td class="label" style="width:34%;">RESPONSABLE / TRIPULACIÓN</td>
       </tr>
       ${recursosFilas || filaVacia + filaVacia + filaVacia}
     </table>
@@ -6853,6 +6901,53 @@ ${paginaFotos}
     cont._tStagger = setTimeout(() => cont.classList.remove('stagger'), 700);
   },
 
+  /* v1.42: un número que SUBE desde 0 hasta su valor (count-up), con un pop al llegar.
+     Respeta reducir movimiento (pone el valor directo). */
+  _countUp(el, to) {
+    if (!el) return;
+    to = Number(to) || 0;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = to; return; }
+    const dur = 650;
+    let ini = null;
+    const paso = (ts) => {
+      if (ini === null) ini = ts;
+      const p = Math.min((ts - ini) / dur, 1);
+      el.textContent = Math.round(to * (0.5 - Math.cos(p * Math.PI) / 2));
+      if (p < 1) requestAnimationFrame(paso);
+      else { el.textContent = to; this._pop(el); }
+    };
+    requestAnimationFrame(paso);
+  },
+
+  /* v1.42: pop breve de un elemento (para resaltar un número que cambió). */
+  _pop(el) {
+    if (!el) return;
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  },
+
+  /* v1.42: marca un campo obligatorio vacío (rojo + sacudida) y limpia la marca en
+     cuanto el usuario empieza a escribir en él. */
+  _marcarCampoFalta(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('campo-error'); void el.offsetWidth; el.classList.add('campo-error');
+    const limpiar = () => { el.classList.remove('campo-error'); el.removeEventListener('input', limpiar); };
+    el.addEventListener('input', limpiar);
+  },
+
+  /* v1.44: loader "con carácter" para el centro de una pantalla/sección que carga.
+     Reparte SOLO entre sirena / despacho / sincronizando (rota en cada llamada si no
+     se fija el tipo), así distintos puntos de carga muestran loaders distintos. Los
+     skeletons (shimmer) siguen siendo el 4º tipo donde ya se usan. */
+  _cargador(texto, tipo) {
+    const tipos = ['sirena', 'despacho', 'sincro'];
+    if (!tipo) { this._ldSeq = (this._ldSeq || 0) + 1; tipo = tipos[this._ldSeq % 3]; }
+    const graf = tipo === 'sirena' ? '<div class="ld-sirena-g"></div>'
+      : tipo === 'despacho' ? '<div class="ld-despacho-g"><i></i><i></i><i></i></div>'
+      : '<div class="ld-sincro-g"></div>';
+    return '<div class="ld-caja">' + graf + '<div>' + app._esc(texto || 'Cargando…') + '</div></div>';
+  },
+
   escucharConexion() {
     const actualizar = () => {
       const header = document.getElementById('header');
@@ -6897,7 +6992,9 @@ ${paginaFotos}
   async iniciarNuevaActividad() {
     this._actPersonal = [];
     this._actRecursos = [];
-    this._actFotos = { inicio: null, medio: null, fin: null };
+    this._actAtenciones = [];
+    this._actIdCliente = null; // v1.45: nueva actividad = nuevo recibo de idempotencia
+    this._actFotos = { inicio: null, medio: null, fin: null, f4: null, f5: null, f6: null };
     this.irA('pantallaActividades');
     // Acá SÍ se espera la flota: una actividad se registra con calma, no en una
     // emergencia, así que vale la pena que el desplegable salga completo.
@@ -6909,18 +7006,21 @@ ${paginaFotos}
        'actRecursoTipo','actRecursoCodigo','actRecursoResponsable'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value='';
       });
+      const rv = document.querySelector('input[name="actModalidad"][value="Voluntaria"]'); if (rv) rv.checked = true;
       this._renderPersonalActividad();
       this._renderRecursosActividad();   // antes nadie pintaba #actRecursosLista
-      ['prevFotoInicio','prevFotoMedio','prevFotoFin'].forEach(id => {
+      this._renderAtenciones();
+      ['prevFotoInicio','prevFotoMedio','prevFotoFin','prevFotoF4','prevFotoF5','prevFotoF6'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = '<span style="font-size:20px;">📷</span>';
       });
     }, 50);
   },
 
-  _actFotos: { inicio: null, medio: null, fin: null },
+  _actFotos: { inicio: null, medio: null, fin: null, f4: null, f5: null, f6: null },
   _actPersonal: [],
   _actRecursos: [],
+  _actAtenciones: [],
 
   async cargarFotoActividad(tipo, input) {
     const file = input.files[0];
@@ -6938,6 +7038,89 @@ ${paginaFotos}
       if (prev) prev.innerHTML = '<span style="font-size:11px;color:#c00;">Error</span>';
       this.toast('No se pudo procesar la foto', 'error');
     }
+  },
+
+  // ═══ v1.45: ATENCIONES MÚLTIPLES dentro de una actividad ═══
+  // Cada atención lleva datos básicos + hasta 3 fotos propias (aparte de las 6 de la
+  // actividad). Viven en this._actAtenciones y viajan como JSON al backend. Los inputs de
+  // texto actualizan el modelo EN EL SITIO (sin re-render) para no perder el foco al escribir.
+  _actAtencionTipos: ['Primeros auxilios','Traslado a centro médico','Valoración','Otro'],
+
+  agregarAtencion() {
+    if (!Array.isArray(this._actAtenciones)) this._actAtenciones = [];
+    if (this._actAtenciones.length >= 20) { this.toast('Máximo 20 atenciones por actividad', 'error'); return; }
+    this._actAtenciones.push({ tipo: '', paciente: '', documento: '', hora: '', descripcion: '', fotos: [] });
+    this._renderAtenciones();
+  },
+
+  quitarAtencion(i) {
+    if (!this._actAtenciones) return;
+    this._actAtenciones.splice(i, 1);
+    this._renderAtenciones();
+  },
+
+  _setAtencionCampo(i, campo, valor) {
+    if (this._actAtenciones && this._actAtenciones[i]) this._actAtenciones[i][campo] = valor;
+  },
+
+  async cargarFotoAtencion(i, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const at = this._actAtenciones && this._actAtenciones[i];
+    if (!at) return;
+    if (!Array.isArray(at.fotos)) at.fotos = [];
+    if (at.fotos.length >= 3) { this.toast('Máximo 3 fotos por atención', 'error'); input.value = ''; return; }
+    try {
+      const dataUrl = await this.comprimirImagen(file, 1280, 0.7);
+      at.fotos.push(dataUrl);
+      this._renderAtenciones();
+    } catch (e) { this.toast('No se pudo procesar la foto', 'error'); }
+    input.value = '';
+  },
+
+  quitarFotoAtencion(i, j) {
+    const at = this._actAtenciones && this._actAtenciones[i];
+    if (!at || !Array.isArray(at.fotos)) return;
+    at.fotos.splice(j, 1);
+    this._renderAtenciones();
+  },
+
+  _atencionesParaEnviar() {
+    return (this._actAtenciones || []).filter(a => a && (a.tipo || a.paciente || a.documento || a.hora || a.descripcion || (a.fotos && a.fotos.length)));
+  },
+
+  _renderAtenciones() {
+    const cont = document.getElementById('actAtencionesLista');
+    if (!cont) return;
+    const ats = this._actAtenciones || [];
+    if (!ats.length) { cont.innerHTML = ''; return; }
+    cont.innerHTML = ats.map((a, i) => {
+      const ops = this._actAtencionTipos.map(t => `<option${a.tipo===t?' selected':''}>${app._esc(t)}</option>`).join('');
+      const fotos = (a.fotos || []).map((f, j) =>
+        `<div style="position:relative;width:60px;height:60px;">
+           <img src="${f}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">
+           <button type="button" onclick="app.quitarFotoAtencion(${i},${j})" style="position:absolute;top:-6px;right:-6px;background:#c41e3a;color:#fff;border:none;border-radius:50%;width:20px;height:20px;line-height:1;cursor:pointer;font-size:12px;">×</button>
+         </div>`).join('');
+      const btnFoto = (a.fotos || []).length < 3
+        ? `<label style="width:60px;height:60px;background:#f5f5f5;border:2px dashed #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+             <span style="font-size:18px;">📷</span>
+             <input type="file" accept="image/*" style="display:none" onchange="app.cargarFotoAtencion(${i},this)">
+           </label>` : '';
+      return `<div style="border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:10px;background:#fafafa;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <b style="font-size:13px;color:#1a5276;">🩹 Atención ${i+1}</b>
+          <button type="button" onclick="app.quitarAtencion(${i})" style="background:#fdecea;color:#c0392b;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:700;">Quitar</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <select onchange="app._setAtencionCampo(${i},'tipo',this.value)" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;"><option value="">Tipo de atención...</option>${ops}</select>
+          <input type="time" value="${app._esc(a.hora||'')}" onchange="app._setAtencionCampo(${i},'hora',this.value)" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+          <input type="text" value="${app._esc(a.paciente||'')}" placeholder="Nombre del paciente" oninput="app._setAtencionCampo(${i},'paciente',this.value)" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+          <input type="text" value="${app._esc(a.documento||'')}" placeholder="Documento (opcional)" oninput="app._setAtencionCampo(${i},'documento',this.value)" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
+        </div>
+        <textarea rows="2" placeholder="Descripción de la atención" oninput="app._setAtencionCampo(${i},'descripcion',this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;resize:none;margin-bottom:8px;">${app._esc(a.descripcion||'')}</textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${fotos}${btnFoto}</div>
+      </div>`;
+    }).join('');
   },
 
   _buscarTimer: null,
@@ -7124,7 +7307,7 @@ ${paginaFotos}
     if (!this._actPersonal.length) { this.toast('Agrega al menos una persona', 'error'); return; }
     this._guardandoActividad = true;
     let htmlBtn = '';
-    if (btn) { htmlBtn = btn.innerHTML; btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="spinner-app"></span> Guardando actividad...'; }
+    if (btn) { htmlBtn = btn.innerHTML; btn.disabled = true; btn.style.opacity='0.65'; btn.innerHTML='<span class="ld-despacho"><i></i><i></i><i></i></span> Guardando actividad...'; }
     this.toast('⏳ Guardando actividad...', 'info');
     // v5.63: idCliente estable por intento — el backend lo usa para ignorar
     // envíos repetidos del mismo formulario (anti-duplicado de red).
@@ -7143,9 +7326,14 @@ ${paginaFotos}
         registradoPor: this.usuario.nombre,
         emailRegistrador: this.usuario.email,
         comandante: (this._actPersonal.find(p=>p.esEncargado)||{}).nombre || this.usuario.nombre,
+        modalidad: (document.querySelector('input[name="actModalidad"]:checked')||{}).value || 'Voluntaria',
+        atenciones: this._atencionesParaEnviar(),
         fotoInicio: this._actFotos.inicio,
         fotoMedio: this._actFotos.medio,
-        fotoFin: this._actFotos.fin
+        fotoFin: this._actFotos.fin,
+        foto4: this._actFotos.f4,
+        foto5: this._actFotos.f5,
+        foto6: this._actFotos.f6
       };
       const resp = await fetch(URL_BACKEND, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7157,14 +7345,15 @@ ${paginaFotos}
       if (data._diagFotos) {
         const df = data._diagFotos;
         console.log('DIAG FOTOS:', df);
-        const fallo = ['inicio','medio','fin'].some(k => df.recibidas[k] && !df.subidas[k]);
+        const claves = ['inicio','medio','fin','f4','f5','f6'];
+        const fallo = claves.some(k => df.recibidas[k] && !df.subidas[k]);
         if (fallo) {
           const linea = (k) => 'Foto ' + k + ': recibida=' + (df.recibidas[k]?'SÍ':'NO')
             + ' | Drive=' + (df.subidas[k]?'SÍ ✅':'NO ❌')
             + ((df.errores && df.errores[k]) ? (' (' + df.errores[k] + ')') : '');
           // alert() nativo NO se ve en el APK/WebView → modal propio de la app.
           this.confirmar('⚠️ Foto no guardada',
-            'Una foto no se subió al servidor.  ·  ' + linea('inicio') + '  ·  ' + linea('medio') + '  ·  ' + linea('fin'));
+            'Una foto no se subió al servidor.  ·  ' + claves.filter(k => df.recibidas[k]).map(linea).join('  ·  '));
         }
       }
       this.toast('✅ Actividad registrada', 'exito');
@@ -7173,13 +7362,19 @@ ${paginaFotos}
       this._actPersonal = [];
       this._actRecursos = [];   // faltaba: los vehículos quedaban pegados al
                                 // formulario y se repetían en la actividad siguiente
-      this._actFotos = { inicio: null, medio: null, fin: null };
+      this._actAtenciones = [];
+      this._actFotos = { inicio: null, medio: null, fin: null, f4: null, f5: null, f6: null };
       ['actTipo','actDescripcion','actFecha','actLugar','actHoraInicio','actHoraFin','actNovedades',
        'actRecursoTipo','actRecursoCodigo','actRecursoResponsable'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value = '';
       });
+      const rv2 = document.querySelector('input[name="actModalidad"][value="Voluntaria"]'); if (rv2) rv2.checked = true;
+      ['prevFotoInicio','prevFotoMedio','prevFotoFin','prevFotoF4','prevFotoF5','prevFotoF6'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.innerHTML = '<span style="font-size:20px;">📷</span>';
+      });
       this._renderPersonalActividad();
       this._renderRecursosActividad();
+      this._renderAtenciones();
       setTimeout(() => this.irA('pantallaListaActividades'), 1000);
     } catch(e) { this.toast('Error: ' + e.message, 'error'); }
     finally {
@@ -7233,7 +7428,7 @@ ${paginaFotos}
     this._actividadActual = id;
     this.irA('pantallaDetalleActividad');
     const cont = document.getElementById('detalleActividadContenido');
-    cont.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">Cargando...</div>';
+    cont.innerHTML = app._cargador('Cargando…');
     try {
       const resp = await fetch(URL_BACKEND, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7245,7 +7440,11 @@ ${paginaFotos}
       this._detalleActividadData = a;
       cont.innerHTML = `
         <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-          <div style="font-size:18px;font-weight:700;color:#1a5276;margin-bottom:8px;">${a.tipo}</div>
+          <div style="font-size:18px;font-weight:700;color:#1a5276;margin-bottom:8px;">${app._esc(a.tipo)}
+            ${a.modalidad === 'Paga'
+              ? '<span style="font-size:11px;font-weight:700;background:#fef3c7;color:#92600a;border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle;">💵 PAGA</span>'
+              : '<span style="font-size:11px;font-weight:700;background:#e7f3e7;color:#1e6b2f;border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle;">🙋 VOLUNTARIA</span>'}
+          </div>
           <div style="color:#333;margin-bottom:6px;">${app._esc(a.descripcion)}</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:#555;">
             <div>📅 ${app._esc(a.fecha)}</div><div>📍 ${app._esc(a.lugar||'-')}</div>
@@ -7259,16 +7458,48 @@ ${paginaFotos}
             <strong>${app._esc(p.nombre)}</strong> — ${app._esc(p.rango)}<div style="font-size:12px;color:#666;">CC: ${app._esc(p.cedula)}</div>
           </div>`).join('')}
         </div>
-        ${(a.fotoInicio||a.fotoMedio||a.fotoFin) ? `
+        ${(a.fotoInicio||a.fotoMedio||a.fotoFin||a.fotoF4||a.fotoF5||a.fotoF6) ? `
         <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
           <div style="font-weight:700;margin-bottom:8px;">📸 Fotos</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-            ${a.fotoInicio ? `<div><div style="font-size:11px;color:#666;text-align:center;">Inicio</div><img src="${app._esc(this._imgDrive(a.fotoInicio))}" style="width:100%;border-radius:6px;"></div>` : ''}
-            ${a.fotoMedio ? `<div><div style="font-size:11px;color:#666;text-align:center;">Intermedio</div><img src="${app._esc(this._imgDrive(a.fotoMedio))}" style="width:100%;border-radius:6px;"></div>` : ''}
-            ${a.fotoFin ? `<div><div style="font-size:11px;color:#666;text-align:center;">Final</div><img src="${app._esc(this._imgDrive(a.fotoFin))}" style="width:100%;border-radius:6px;"></div>` : ''}
+            ${[a.fotoInicio,a.fotoMedio,a.fotoFin,a.fotoF4,a.fotoF5,a.fotoF6].map((f,idx) => f ? `<div><div style="font-size:11px;color:#666;text-align:center;">Foto ${idx+1}</div><img src="${app._esc(this._imgDrive(f))}" style="width:100%;border-radius:6px;"></div>` : '').join('')}
           </div>
-        </div>` : ''}`;
+        </div>` : ''}
+        ${this._atencionesDetalleHTML(a.atenciones)}`;
     } catch(e) { cont.innerHTML = `<div style="color:#c00;padding:20px;">Error: ${e.message}</div>`; }
+  },
+
+  // v1.45: tarjetas de atenciones para el detalle en pantalla (fotos como URL de Drive).
+  _atencionesDetalleHTML(ats) {
+    if (!Array.isArray(ats) || !ats.length) return '';
+    const cards = ats.map((a, i) => {
+      const fotos = (a.fotos || []).map(f => `<img src="${app._esc(this._imgDrive(f))}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">`).join('');
+      const meta = [a.paciente ? '👤 ' + app._esc(a.paciente) : '', a.documento ? 'CC ' + app._esc(a.documento) : '', a.hora ? '🕐 ' + app._esc(a.hora) : ''].filter(Boolean).join(' · ');
+      return `<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;">
+        <div style="font-weight:700;color:#1a5276;font-size:13px;">🩹 Atención ${i+1}${a.tipo ? ' — ' + app._esc(a.tipo) : ''}</div>
+        ${meta ? `<div style="font-size:12px;color:#555;margin-top:2px;">${meta}</div>` : ''}
+        ${a.descripcion ? `<div style="font-size:13px;color:#333;margin-top:4px;">${app._esc(a.descripcion)}</div>` : ''}
+        ${fotos ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">${fotos}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="font-weight:700;margin-bottom:8px;">🩹 Atenciones (${ats.length})</div>${cards}</div>`;
+  },
+
+  // v1.45: atenciones para el PDF oficial.
+  _atencionesPDFHTML(ats) {
+    if (!Array.isArray(ats) || !ats.length) return '';
+    const bloques = ats.map((a, i) => {
+      const fotos = (a.fotos || []).map(f => `<img src="${app._esc(this._imgDrive(f))}" style="width:120px;height:120px;object-fit:cover;margin:2px;border:1px solid #ccc;">`).join('');
+      const meta = [a.paciente ? 'Paciente: ' + app._esc(a.paciente) : '', a.documento ? 'Doc: ' + app._esc(a.documento) : '', a.hora ? 'Hora: ' + app._esc(a.hora) : ''].filter(Boolean).join(' | ');
+      return `<div style="margin-bottom:8px;border:1px solid #ddd;border-radius:4px;padding:8px;">
+        <p style="margin:0;font-weight:700;">Atención ${i+1}${a.tipo ? ' — ' + app._esc(a.tipo) : ''}</p>
+        ${meta ? `<p style="margin:2px 0;font-size:10pt;">${meta}</p>` : ''}
+        ${a.descripcion ? `<p style="margin:2px 0;font-size:10pt;">${app._esc(a.descripcion)}</p>` : ''}
+        ${fotos ? `<div>${fotos}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<h2 class="sec">Atenciones durante la actividad (${ats.length})</h2>${bloques}`;
   },
 
   imprimirActividad() {
@@ -7313,7 +7544,7 @@ ${paginaFotos}
       <div class="titulo">REGISTRO OFICIAL DE ACTIVIDAD</div>
       <div class="lema">${app._esc(app._inst().lema || '')}</div>
 
-      <h2 class="sec">${a.tipo}</h2>
+      <h2 class="sec">${app._esc(a.tipo)} <span style="font-size:10pt;font-weight:700;">· ${a.modalidad === 'Paga' ? 'PAGA (contratada)' : 'VOLUNTARIA'}</span></h2>
       <p><strong>Descripción:</strong> ${app._esc(a.descripcion)}</p>
       <table><tr><th>Fecha</th><th>Lugar</th><th>Hora inicio</th><th>Hora fin</th><th>Duración</th></tr>
       <tr><td>${app._esc(String(a.fecha||'').substring(0,10))}</td><td>${app._esc(a.lugar||'-')}</td><td>${app._esc(a.horaInicio||'-')}</td><td>${app._esc(a.horaFin||'-')}</td><td>${app._esc(a.duracion)}h</td></tr></table>
@@ -7324,11 +7555,11 @@ ${paginaFotos}
       ${a.personal.map((p,i) => `<tr><td>${i+1}</td><td>${app._esc(p.nombre)}</td><td>${app._esc(p.cedula)}</td><td>${app._esc(p.rango)}</td><td>${app._esc(p.horas)}h</td></tr>`).join('')}
       </table>
 
-      ${(a.fotoInicio||a.fotoMedio||a.fotoFin) ? `<h2 class="sec">Registro fotográfico</h2><div class="fotos">
-        ${a.fotoInicio ? `<div><p style="text-align:center;font-weight:700;font-size:9pt;">Inicio</p><img src="${app._esc(this._imgDrive(a.fotoInicio))}"></div>` : ''}
-        ${a.fotoMedio ? `<div><p style="text-align:center;font-weight:700;font-size:9pt;">Intermedio</p><img src="${app._esc(this._imgDrive(a.fotoMedio))}"></div>` : ''}
-        ${a.fotoFin ? `<div><p style="text-align:center;font-weight:700;font-size:9pt;">Final</p><img src="${app._esc(this._imgDrive(a.fotoFin))}"></div>` : ''}
+      ${(a.fotoInicio||a.fotoMedio||a.fotoFin||a.fotoF4||a.fotoF5||a.fotoF6) ? `<h2 class="sec">Registro fotográfico</h2><div class="fotos">
+        ${[a.fotoInicio,a.fotoMedio,a.fotoFin,a.fotoF4,a.fotoF5,a.fotoF6].map((f,idx) => f ? `<div><p style="text-align:center;font-weight:700;font-size:9pt;">Foto ${idx+1}</p><img src="${app._esc(this._imgDrive(f))}"></div>` : '').join('')}
       </div>` : ''}
+
+      ${this._atencionesPDFHTML(a.atenciones)}
 
       <div class="pie">
         Registrado por: ${a.registradoPor||'-'}<br>
@@ -7474,12 +7705,12 @@ ${paginaFotos}
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:28px;font-weight:700;color:#1a5276;">${totalPersonas}</div>
+          <div class="op-cifra" style="font-size:28px;font-weight:700;color:#1a5276;">${totalPersonas}</div>
           <div style="font-size:12px;color:#666;">Unidades con registros</div>
           ${this._operStats && this._operStats.unidadesBase !== undefined ? '<div style="font-size:11px;color:#999;margin-top:2px;">Base activa: '+this._operStats.unidadesBase+'</div>' : ''}
         </div>
         <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:28px;font-weight:700;color:#c0392b;">${this._operStats ? this._operStats.totalEmergenciasUnicas : totalEmerg}</div>
+          <div class="op-cifra" style="font-size:28px;font-weight:700;color:#c0392b;">${this._operStats ? this._operStats.totalEmergenciasUnicas : totalEmerg}</div>
           <div style="font-size:12px;color:#666;">Emergencias únicas</div>
         </div>
         <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
@@ -7498,6 +7729,8 @@ ${paginaFotos}
         ${rankList(topActiv,'rk_activ',p=>this._r1(p.horasActividades)+'h','activ.','#1e8449')}
       </div>
       <button onclick="app._imprimirReporteGeneral()" style="background:#6e2fa0;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;">🖨️ Imprimir Informe General</button>`;
+    // v1.43: las cifras de las tarjetas SUBEN desde 0.
+    cont.querySelectorAll('.op-cifra').forEach(el => this._countUp(el, el.textContent));
   },
 
   _renderPorUnidad() {
@@ -7557,7 +7790,7 @@ ${paginaFotos}
     if (!cont) return;
     if (cont.style.display!=='none' && cont.dataset.tipo===tipo) { cont.style.display='none'; return; }
     cont.style.display='block'; cont.dataset.tipo=tipo;
-    cont.innerHTML='<div style="font-size:12px;color:#999;padding:6px;">Cargando...</div>';
+    cont.innerHTML = app._cargador('Cargando…');
     const accion = tipo==='emerg'?'obtenerEmergenciasPersona':'obtenerActividadesPersona';
     try {
       const resp=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -7635,7 +7868,7 @@ ${paginaFotos}
         ocupado = true;
         const htmlPrev = btnOk.innerHTML;
         btnOk.disabled = true; btnOk.style.opacity = '0.65';
-        btnOk.innerHTML = '<span class="spinner-app"></span> Verificando...';
+        btnOk.innerHTML = '<span class="ld-sincro"></span> Verificando...';
         err.style.display = 'none';
         try {
           const r = await fetch(URL_BACKEND, { method: 'POST',
@@ -7969,7 +8202,7 @@ ${paginaFotos}
         if (!ced) { mostrarErr('Toca tu nombre en la lista que aparece al escribir.'); return; }
         if (!/^\d{4}$/.test(p)) { mostrarErr('El PIN son 4 dígitos.'); return; }
         // v1.40: spinner girando en "Verificando..." (igual que _pedirPwdAdmin).
-        btn.disabled = true; btn.style.opacity = '0.65'; btn.innerHTML = '<span class="spinner-app"></span> Verificando...';
+        btn.disabled = true; btn.style.opacity = '0.65'; btn.innerHTML = '<span class="ld-sincro"></span> Verificando...';
         try {
           // Se valida ANTES de aceptar la firma, para avisar en el momento y no
           // dejar que la guardia opere creyendo que quedó firmada cuando no.
@@ -8191,7 +8424,7 @@ ${paginaFotos}
       + '<path d="M15 0C6.7 0 0 6.7 0 15c0 11.2 15 25 15 25s15-13.8 15-25C30 6.7 23.3 0 15 0z" fill="'+regla.color+'" stroke="#fff" stroke-width="2"/>'
       + '<circle cx="15" cy="15" r="10" fill="#fff"/>'
       + '</svg>';
-    const html = '<div style="position:relative;width:30px;height:40px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">' + svg
+    const html = '<div class="pin-cae" style="position:relative;width:30px;height:40px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">' + svg
       + '<span style="position:absolute;top:5px;left:0;width:30px;text-align:center;font-size:13px;line-height:20px;">' + regla.emoji + '</span></div>';
     return L.divIcon({ html: html, className: '', iconSize: [30,40], iconAnchor: [15,40], popupAnchor: [0,-36] });
   },
@@ -8659,9 +8892,9 @@ ${paginaFotos}
       this._eaId = id;
       this._eaPersonal = (a.personal||[]).map(p => ({ nombre:p.nombre, cedula:p.cedula||'', rango:p.rango||'BOMBERO', telefono:p.telefono||'', esEncargado:!!p.esEncargado }));
       this._eaRecursos = (a.recursos||[]).map(r => ({ tipo:r.tipo||'', codigo:r.codigo||'', responsable:r.responsable||'', responsableCedula:r.responsableCedula||'' }));
-      this._eaFotosNuevas = { inicio:null, medio:null, fin:null };  // null = no cambiada
-      this._eaFotosActuales = { inicio:a.fotoInicio||'', medio:a.fotoMedio||'', fin:a.fotoFin||'' };
-      const tipos = ['Acompañamiento','Capacitación','Entrenamiento','Simulacro','Inspección','Jornada comunitaria','Bomberitos Junior','Arreglos / Reparaciones (institución)','Mantenimiento','Otra'];
+      this._eaFotosNuevas = { inicio:null, medio:null, fin:null, f4:null, f5:null, f6:null };  // null = no cambiada
+      this._eaFotosActuales = { inicio:a.fotoInicio||'', medio:a.fotoMedio||'', fin:a.fotoFin||'', f4:a.fotoF4||'', f5:a.fotoF5||'', f6:a.fotoF6||'' };
+      const tipos = ['Acompañamiento','Capacitación','Entrenamiento','Simulacro','Inspección','Jornada comunitaria','Pernotar','Bomberitos Junior','Arreglos / Reparaciones (institución)','Mantenimiento','Otra'];
       const esc = (s) => app._esc(s);
       const fotoSlot = (k, lbl, src) =>
         '<div style="text-align:center;">'
@@ -8691,8 +8924,13 @@ ${paginaFotos}
         +'</div>'
         +'<label style="font-size:12px;font-weight:700;">Lugar</label>'
         +'<input type="text" id="_eaL" value="'+esc(a.lugar)+'" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">'
+        +'<label style="font-size:12px;font-weight:700;">Modalidad</label>'
+        +'<select id="_eaMod" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">'
+        +  '<option value="Voluntaria"'+(a.modalidad!=='Paga'?' selected':'')+'>🙋 Voluntaria</option>'
+        +  '<option value="Paga"'+(a.modalidad==='Paga'?' selected':'')+'>💵 Paga (contratada)</option>'
+        +'</select>'
         +'<label style="font-size:12px;font-weight:700;">Novedades</label>'
-        +'<textarea id="_eaN" rows="2" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">'+(a.novedades||"")+'</textarea>'
+        +'<textarea id="_eaN" rows="2" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">'+esc(a.novedades||"")+'</textarea>'
         // ── PERSONAL ──
         +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">👥 Personal asistente</div>'
         +'<div id="_eaPersonalLista" style="margin-bottom:6px;"></div>'
@@ -8701,11 +8939,14 @@ ${paginaFotos}
         +'<div id="_eaSugerencias" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.15);max-height:180px;overflow-y:auto;"></div>'
         +'</div>'
         // ── FOTOS ──
-        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">📸 Fotos</div>'
-        +'<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:space-around;">'
-        + fotoSlot('inicio','Inicio',a.fotoInicio||'')
-        + fotoSlot('medio','Intermedio',a.fotoMedio||'')
-        + fotoSlot('fin','Final',a.fotoFin||'')
+        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">📸 Fotos (hasta 6)</div>'
+        +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center;">'
+        + fotoSlot('inicio','Foto 1',a.fotoInicio||'')
+        + fotoSlot('medio','Foto 2',a.fotoMedio||'')
+        + fotoSlot('fin','Foto 3',a.fotoFin||'')
+        + fotoSlot('f4','Foto 4',a.fotoF4||'')
+        + fotoSlot('f5','Foto 5',a.fotoF5||'')
+        + fotoSlot('f6','Foto 6',a.fotoF6||'')
         +'</div>'
         // ── RECURSOS ──
         +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">🚒 Recursos / Vehículos</div>'
@@ -8745,6 +8986,7 @@ ${paginaFotos}
             horaFin:document.getElementById('_eaHF').value,
             lugar:document.getElementById('_eaL').value,
             novedades:document.getElementById('_eaN').value,
+            modalidad:document.getElementById('_eaMod').value,
             personal:this._eaPersonal,
             recursos:this._eaRecursos,
             adminEmail:this.usuario.email, adminPassword:this._adminPwdSession };
@@ -8752,6 +8994,9 @@ ${paginaFotos}
           if (this._eaFotosNuevas.inicio) payload.fotoInicioNueva = this._eaFotosNuevas.inicio;
           if (this._eaFotosNuevas.medio)  payload.fotoMedioNueva  = this._eaFotosNuevas.medio;
           if (this._eaFotosNuevas.fin)    payload.fotoFinNueva    = this._eaFotosNuevas.fin;
+          if (this._eaFotosNuevas.f4)     payload.fotoF4Nueva     = this._eaFotosNuevas.f4;
+          if (this._eaFotosNuevas.f5)     payload.fotoF5Nueva     = this._eaFotosNuevas.f5;
+          if (this._eaFotosNuevas.f6)     payload.fotoF6Nueva     = this._eaFotosNuevas.f6;
           const r=await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
           const d=await r.json();
           if(!d.ok)throw new Error(d.error);
@@ -8893,6 +9138,24 @@ document.addEventListener('click', (e) => {
 });
 
 window.addEventListener('DOMContentLoaded', () => app.init());
+
+/* v1.42: RIPPLE global — una onda en el punto del toque sobre CUALQUIER botón.
+   Delegado en captura. No toca la lógica: solo agrega/quita un <span> decorativo. */
+document.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest && e.target.closest('button');
+  if (!b || b.disabled) return;
+  try {
+    const r = b.getBoundingClientRect();
+    const s = document.createElement('span');
+    s.className = 'ripple';
+    const size = Math.max(r.width, r.height);
+    s.style.width = s.style.height = size + 'px';
+    s.style.left = (e.clientX - r.left - size / 2) + 'px';
+    s.style.top = (e.clientY - r.top - size / 2) + 'px';
+    b.appendChild(s);
+    setTimeout(() => { try { s.remove(); } catch (er) {} }, 560);
+  } catch (er) {}
+}, true);
 
 document.addEventListener('input', (e) => {
   if (e.target.closest('#pantallaForm')) { app.actualizarProgreso(); app._programarAutoguardado(); }
