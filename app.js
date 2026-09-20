@@ -2,7 +2,7 @@
    REPORTES DE BOMBEROS — App de gestión operativa multi-cuerpo
    Login con Google · Panel de administrador · GPS · offline-first
 
-   © 2026 Jeferson Jeancarlos Rangel Gil. Todos los derechos reservados.
+    2026 Jeferson Jeancarlos Rangel Gil. Todos los derechos reservados.
    Prohibida la reproducción o distribución de este código sin autorización
    escrita del autor.
    ============================================================ */
@@ -13,7 +13,7 @@
 const URL_TUTORIAL_VIDEO = '';
 
 // ==================== CONFIGURACIÓN ====================
-/* ⚠️⚠️ ACOPLAMIENTO PENDIENTE DE ROMPER — ya es el Client ID del producto.
+/*  ACOPLAMIENTO PENDIENTE DE ROMPER — ya es el Client ID del producto.
    Un solo Client ID = un solo proyecto de Google Cloud = una sola cuota y un solo
    estado de verificación. Si el producto genera tráfico sospechoso en pruebas, o
    toca el tope de ~100 usuarios sin verificar (ver T7 en ESTADO_PRODUCTO.md),
@@ -24,7 +24,7 @@ const URL_TUTORIAL_VIDEO = '';
    a cualquier cuerpo externo. NO desplegar a un cliente real con este ID. */
 const GOOGLE_CLIENT_ID = '938285517928-k50ohvdskleg4vt8hkklnc7ul2bi2044.apps.googleusercontent.com';
 
-/* ⚠️ T1 — VACÍO A PROPÓSITO. Antes acá vivían los 4 correos de administrador de
+/*  T1 — VACÍO A PROPÓSITO. Antes acá vivían los 4 correos de administrador de
    de una estación, QUEMADOS EN EL FRONTEND, que se publica abierto en GitHub Pages.
    Mandar el producto así le daba privilegio de admin a 4 personas ajenas sobre
    los datos de cualquier cuerpo que lo instalara.
@@ -43,7 +43,7 @@ const ADMIN_PASSWORD = ''; // La contraseña NO está en el código — el admin
 let TELEFONO_ESTACION = '';
 let NOMBRE_ESTACION = '';
 
-/* ⚠️⚠️ URL DEL BACKEND — VACÍA A PROPÓSITO, Y ES LO MÁS IMPORTANTE DE ESTE ARCHIVO.
+/*  URL DEL BACKEND — VACÍA A PROPÓSITO, Y ES LO MÁS IMPORTANTE DE ESTE ARCHIVO.
    Antes apuntaba al Apps Script de la estación de origen. Si el producto saliera así, CADA cuerpo
    que lo instalara estaría escribiendo dentro de la base de datos de otro cuerpo:
    sus emergencias, su personal y sus sanciones mezclados con los de otra institución.
@@ -59,9 +59,9 @@ let NOMBRE_ESTACION = '';
    QUIEN ENTRA, así que la hoja de cálculo se crea en el Drive de cada cuerpo y
    no en el de nadie más. Ese ajuste es el que sostiene el modelo entero.
 
-   🔴 DESDE HOY ESTA URL TIENE EL MISMO ESTATUS QUE LA DE LA ESTACIÓN DE ORIGEN (invariante I1):
+    DESDE HOY ESTA URL TIENE EL MISMO ESTATUS QUE LA DE LA ESTACIÓN DE ORIGEN (invariante I1):
    NO se cambia. Para publicar un backend nuevo: Implementar → Administrar
-   implementaciones → ✏️ Editar → Nueva versión, SOBRE LA MISMA implementación.
+   implementaciones →  Editar → Nueva versión, SOBRE LA MISMA implementación.
    Crear una implementación nueva genera otra URL y deja ciega a toda app ya
    instalada — que para entonces será la de otro cuerpo de bomberos, no la tuya. */
 const URL_BACKEND = 'https://script.google.com/macros/s/AKfycbz2jTdG0iDudW1phC8IyEMOyWmzkZs7kgOx3zCMxgqE7IlRn5y1IaGVhx8h_mGufg4/exec';
@@ -82,53 +82,66 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.48';
+const APP_VERSION = '1.61';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
-  'v1.48: 🧭 Reportar un incidente ahora es más fácil de recorrer: las 13 secciones están agrupadas en tres fases (aviso, respuesta y cierre), la sección abierta se distingue mejor y las filas, fotos, firmas y botones son más cómodos en el celular. No cambia tus datos ni la forma de guardarlos.',
-  'v1.47: 🧾 Formulario más simple: en Recursos ya no se piden "Cantidad" ni "Placa" — la placa y la clase del vehículo salen del catálogo del cuerpo y van al PDF solas. Se aclaró quién es el afectado que firma y quiénes son las víctimas. Tus reportes anteriores no cambian.',
-  'v1.46: 🛡️ Blindaje de seguridad. El prefijo del consecutivo (Configuración) ahora solo acepta letras y números, y todos los números de reporte se muestran de forma segura en la app y en el PDF. No cambia cómo trabajas ni tus datos.',
-  'v1.45: 🆕 Más completo el registro. En un INCIDENTE se agregó la “Fecha y hora de salida de la estación” (entre la llamada y la llegada). En una ACTIVIDAD ahora se puede: marcar si fue VOLUNTARIA o PAGA (contratada), elegir el tipo “Pernotar” (servicio nocturno, cuyas horas cuentan aunque el turno cruce la medianoche), adjuntar hasta 6 fotos, y registrar VARIAS ATENCIONES (primeros auxilios, traslados, etc.), cada una con sus datos y hasta 3 fotos propias. Todo se ve en el detalle y en el PDF. Las columnas nuevas van al final de las hojas: los datos viejos no se tocan.',
-  'v1.44: 🚨 Cargas con carácter. Los “girando…” genéricos se reemplazaron por animaciones del oficio, repartidas por toda la app: una SIRENA que parpadea, un DESPACHO de puntos que rebotan y una barra de SINCRONIZANDO. Se ven al enviar un reporte, al verificar el PIN, al guardar una actividad y al abrir cualquier lista que carga. Livianas y respetan el modo “reducir movimiento”. No cambian datos ni cómo funciona.',
-  'v1.43: ✨ Cierre de las animaciones. Los pines del Mapa de Emergencias ahora CAEN al aparecer, y las cifras de la pantalla de Operatividad (unidades, emergencias) SUBEN desde 0 al abrir. Todo respeta el modo "reducir movimiento".',
-  'v1.42: ✨ Animaciones que SE NOTAN. Ahora CADA botón, al tocarlo, hace una onda (ripple) que confirma el toque. Los números del Inicio (total, pendientes, enviados) SUBEN desde 0 al abrir. Y al enviar un reporte con un campo obligatorio vacío, ese campo se MARCA EN ROJO, se SACUDE, y la app te LLEVA directo a él. Todo respeta el modo "reducir movimiento".',
-  'v1.41: ✨ Movimiento en el Panel de Administrador. Antes el Panel entraba sin animación; ahora las listas de reportes, de personal pendiente y de Operatividad entran escalonadas (una tarjeta tras otra) al abrirlas. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
-  'v1.40: ✨ Más movimiento (Fase 2). Ahora TODAS las ventanas emergentes se cierran con una animación suave (antes algunas desaparecían de golpe), el PIN muestra una rueda girando mientras verifica y SACUDE si te equivocás, el aviso verde de nueva versión baja y sube suave, y en el reporte la foto recién tomada y cada vehículo/víctima que agregás entran con una pequeña animación. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
-  'v1.39: ✨ La app se siente más viva. Se agregó movimiento en las piezas que se usan en todos lados: las ventanas de confirmación y el menú ahora también se cierran con una animación suave (antes desaparecían de golpe), los avisos suben al aparecer, las listas de reportes y actividades entran escalonadas, los botones "ocupados" se atenúan suave, y los campos muestran mejor cuál está activo. Todo liviano para que no trabe, y respeta el modo "reducir movimiento" del celular. No cambia ningún dato ni cómo funciona: solo cómo se ve.',
-  'v1.38: 🛟 Menos riesgo de perder trabajo. (1) Al salir de una Actividad que estabas registrando sin haber guardado, la app ahora avisa antes de descartar lo que cargaste (antes se perdía de un toque). (2) El reporte que estás llenando se autoguarda solo: si el celular cierra la app de golpe, no pierdes lo dictado. (3) Los reportes que quedaron "pendientes" por falta de señal ahora se envían solos al reabrir la app con internet, sin forzarlos a mano. Además, un ajuste interno de seguridad al mostrar fotos y firmas.',
-  'v1.37: 🪪 Ajustes reportados en producción. Al entrar al Panel de Administrador, ahora pregunta "qué administrador entra" (antes decía "quién está de guardia", que ahí no aplicaba — los guardias no llegan a ese modal). En sanciones, asistencia y demás sigue preguntando por la guardia, sin cambios. Además, "🚒 Vehículos del cuerpo" ahora distingue un error de carga (revise su conexión) de una flota genuinamente vacía, para no mostrar un mensaje que confunda a otro administrador.',
-  'v1.36: 📋 Vista RUE más completa y más exacta. Nuevo bloque "Recursos desplegados" que cruza los vehículos del incidente con la clase que pide el RUE. Además, "Quien Reporta" ahora muestra el nombre completo de quien avisó (antes solo mostraba la relación), y se corrigió un caso donde un incidente con varias clasificaciones podía dejar mal marcado ese tipo en informes futuros.',
-  'v1.35: 👥 Unidades vinculadas. En el Panel de Administrador → "Unidades vinculadas" (solo el administrador principal), vea todo correo que ya usa la app y cuándo entró por última vez, y bloquéele el acceso a quien haga falta — sin borrar sus datos, y siempre reversible. Además: el tour explica dónde vive su base de datos (el Google Sheets del cuerpo), la explicación de "Quién opera" en el Panel Admin ahora habla de qué administrador firma (no de guardia, que ahí no aplica), y se corrigieron un par de palabras ambiguas ("emergencia" → "incidente", "cobertura" → "señal").',
-  'v1.34: 🧭 Tour más completo. El de unidades (antes "para bomberos") ahora también recorre su perfil en Configuración. El de administrador creció bastante: ahora explica el escudo/logo del cuerpo, el relevo de guardia, invitar unidades e importar personal por separado, y el ranking y el mapa con más detalle.',
-  'v1.33: 🧭 Tour interactivo renovado. El recorrido de ayuda ya no es una tarjeta de texto: ahora se mueve de verdad por la app y señala cada botón real. Hay uno para bomberos y otro, distinto, para administradores (Panel Admin, Operatividad, Mapa, Zona Administrador). Se abre desde ℹ️ Acerca de.',
-  'v1.32: 🌈 Los emojis vuelven a color. Se probó ponerlos en gris/silueta, pero se ven mejor a color. El resto del nuevo diseño se mantiene.',
-  'v1.31: 🩶 Emojis más legibles. Algunos quedaban como cuadrado negro o no se veían sobre los botones de color. Ahora van en escala de grises: conservan su forma y se ven bien en todos lados.',
-  'v1.30: 🖼️ Panel de administrador y ventanas al estilo "Acta Oficial". Las tarjetas del panel pasan a fondo blanco con una franja de color a la izquierda (aire de documento) y las ventanas de confirmación llevan borde dorado y título de imprenta. Solo cambia el aspecto.',
-  'v1.29: 🎯 Emojis en monocromo. Los emojis de colores se convierten en siluetas tipo ícono (oscuras sobre fondo claro, blancas sobre el rojo) para que peguen con el diseño institucional y no se vean como "stickers". Solo cambia el aspecto.',
-  'v1.28: 🎨 Rediseño visual "Acta Oficial". Tipografía de imprenta (Oswald + Barlow), el rojo institucional usado con disciplina y un dorado de seguridad como acento. La app se ve como un instrumento oficial de bomberos, no una plantilla genérica. Cambia solo el aspecto: la lógica, la estructura y tus datos NO cambian.',
-  'v1.27: ✅ Aprobación de ingreso. Ahora, cuando alguien abre el link o el QR, NO entra solo: queda como una SOLICITUD (con su nombre y una descripción de quién es). Cualquier administrador la aprueba o la descarta desde el Panel → "📥 Solicitudes de ingreso", y queda registrado quién decidió. Así, si a una unidad se le filtra el link a un tercero, ese tercero no entra sin permiso.',
-  'v1.26: 📷 Código QR para invitar. Al generar el link de invitación ahora sale también un QR: tus unidades lo escanean con la cámara del celular y entran, sin copiar ni pegar nada. Y cuando una unidad se une, ve un aviso claro de a qué cuerpo pertenece.',
-  'v1.25: 🔗 Invitar unidades por link. En el Panel de Administrador → "🔗 Invitar unidades", generás un link y lo compartís con tus bomberos: al abrirlo y entrar con Google quedan enlazados a tu cuerpo, sin configurar nada. Si un link se filtra, generás uno nuevo (invalida los anteriores).',
-  'v1.24: ⭕ Los pines del mapa ahora se AGRUPAN cuando están amontonados: en vez de muchos marcadores encimados, ves un círculo con el número, y al acercar el zoom se abren. La estación (🚒) y el mapa de calor no se agrupan.',
-  'v1.23: 🔥 Mapa de calor. En ⚙️ Herramientas → ✨ Vistas, el botón "Mapa de calor" pinta en rojo las zonas donde más se repiten los incidentes. Respeta el filtro que tengas puesto (tipo y fecha).',
-  'v1.22: 🚒 Estación en el mapa. En ⚙️ Herramientas → "Fijar estación (mi ubicación)" guardás dónde queda la estación de su cuerpo (parado ahí, una sola vez). Después el mapa muestra un 🚒 y, en cada reporte, a cuántos km está de la estación.',
-  'v1.21: 🗺️ Mapa más ordenado: los controles ahora se despliegan en dos menús — "⚙️ Herramientas" (fechas y acciones) y "🏷️ Tipos" (la leyenda) — para no saturar la pantalla. Además, filtros rápidos de fecha: Últimos 30 días, Este mes, Este año.',
-  'v1.20: 🗺️ Ajustes al mapa: la capa 🛰️ Satélite ahora deja acercar más (antes salía "sin datos" al hacer zoom, según la zona), y el botón 📍 Mi ubicación dibuja un círculo con la precisión — en el celular con GPS es exacta; en el computador es aproximada (no tiene GPS).',
-  'v1.19: 🗺️ Mapa de Incidentes mejorado. Botones "✓ Todos" y "✕ Ninguno", y un "solo" en cada tipo para ver únicamente ese de un toque (antes había que apagar los demás uno por uno). Nueva capa 🛰️ Satélite (además de calles) y botón 📍 Mi ubicación.',
-  'v1.18: 📥 Importar personal, más robusto: reconoce cuando el nombre y el apellido vienen en columnas separadas (los une en el nombre completo) y detecta la cédula aunque el título diga "Cédula (CC)", "Documento" u otras variantes. Antes esas columnas se perdían.',
-  'v1.17: ⚡ Nuevo tipo "Incendio en red eléctrica" (transformadores, loncheras, cables y redes del servicio público; en el RUE es FALLA ELÉCTRICA), separado de "Incendio de interfaz", que queda para el fuego en la franja donde el monte se junta con el pueblo.',
-  'v1.16: 🖨️ Se depuró el pie de página de los informes impresos: ya no incluye datos de contacto del autor.',
-  'v1.15: 🖨️ Arreglada la impresión: antes el botón abría una pestaña EN BLANCO. Ahora el informe se genera y sale listo para imprimir o guardar como PDF. Además, el escudo que usted sube en el Panel de Administrador ya aparece en el encabezado y como marca de agua de los informes; si no subió ninguno, se usa la cruz de bombero por defecto.',
-  'v1.05: 🔑 El asistente de instalación ahora le pide su contraseña de administrador. Con eso el fundador queda habilitado para NOMBRAR Y QUITAR administradores, que antes era imposible: la app exigía una contraseña que ninguna pantalla creaba, y quien instalaba quedaba como único admin para siempre.',
-  'v1.04: 🧹 Se retiró del servidor todo lo que quedó del módulo dominical: 54 funciones y 14 rutas. Las rutas importan aunque no se vean: la dirección del servidor es pública, así que una ruta abierta se puede llamar desde afuera aunque ninguna pantalla la use. Nada cambia en el uso diario.',
-  'v1.03: 🧹 Se terminó de sacar todo lo que ataba la app a una sola estación: ícono propio (cruz de Malta, el símbolo del bombero en todo el mundo), nombres internos, comentarios y datos de personas. El Manual, Cómo funciona y Bases legales se reescribieron: ahora describen la app que usted tiene y citan solo norma nacional. Y se retiró el código muerto del módulo dominical: 1.480 líneas menos.',
-  'v1.02: 🧹 La app dejó de hablar como una estación y empezó a hablar como el gremio. Salen la asistencia de domingos y las sanciones por horas: son el régimen interno de UN cuerpo, no una norma nacional, y no tenían por qué venir puestas. El vocabulario pasa a INCIDENTE (Sistema Comando de Incidentes, Res. 358/2014). Y se corrigió el fallo que impedía iniciar sesión: el servidor rechazaba TODAS las credenciales.',
-  'v1.01: 🔌 La app ya se comunica con su servidor. Con esto se puede crear la base de datos del cuerpo, iniciar sesión y guardar información. Antes la pantalla cargaba pero no podía guardar nada.',
-  'v1.00: 🚒 Primera versión. La app arranca vacía: al entrar por primera vez, quien lo haga queda como administrador y se crea la base de datos en su propio Google Drive. Nadie más ve esos datos.',
+  'v1.61: Nuevo diseño Campo: alto contraste para leer a pleno sol. Se elige en el menú del avatar o en Configuración → Tema.',
+  'v1.60: Cada tipo de incidente estrena un pictograma del oficio en el mapa, la leyenda, el Inicio y el detalle. El texto siempre permanece visible.',
+  'v1.59: El aviso de error al cargar la flota vuelve a verse en rojo; la lista sin vehículos conserva su mensaje en verde en ambos temas.',
+  'v1.58: Nuevas ilustraciones del oficio en listas vacías: reportes, actividades, personal, vehículos y búsquedas. Los mensajes y las acciones siguen iguales; también funcionan sin señal.',
+  'v1.57: Refuerzo interno de la sincronización de personal por incidente (auto-repara registros a medias). Nada cambia para ti.',
+  'v1.56: Refuerzo de seguridad interno tras la auditoría. No cambia cómo trabajas ni tus datos.',
+  'v1.55: Ajuste técnico del arranque: el color de la barra del sistema ahora coincide exactamente con la identidad visual del Producto. No cambia funciones ni datos.',
+  'v1.54: Nuevo icono de la aplicación y arranque con identidad de bomberos. El emblema adaptable se mantiene legible en las distintas formas de icono de Android y el inicio usa un fondo azul noche sin destello blanco. No cambia funciones ni datos.',
+  'v1.53: ◇ La interfaz estrena un sistema propio de iconos SVG: más nítido, consistente y legible en distintos teléfonos, sin descargar recursos externos.',
+  'v1.52: Los botones de las ventanas de confirmación tienen un área táctil mínima de 44 px para facilitar su uso en el teléfono.',
+  'v1.51: Si falta un dato obligatorio en una sección cerrada del formulario, la app la abre y muestra el campo que debe completar. Sus datos y las demás funciones no cambian.',
+  'v1.50: La última tanda visual convierte acceso, ayuda, configuración y administración en un puesto de mando más claro. Los vacíos, errores, cargas y ventanas tienen señales operativas consistentes; los cuatro accesos de ayuda ahora funcionan correctamente con teclado. No cambia datos, permisos ni servidor.',
+  'v1.49: Mesa de operaciones más clara. Las actividades se leen como una bitácora; los detalles parecen expedientes; Operatividad organiza mejor filtros, cifras y rankings; y el mapa reúne sus controles en un panel más limpio. También se ampliaron a 44 px los botones pequeños de firma. No cambia datos ni permisos.',
+  'v1.48: Reportar un incidente ahora es más fácil de recorrer: las 13 secciones están agrupadas en tres fases (aviso, respuesta y cierre), la sección abierta se distingue mejor y las filas, fotos, firmas y botones son más cómodos en el celular. No cambia tus datos ni la forma de guardarlos.',
+  'v1.47: Formulario más simple: en Recursos ya no se piden "Cantidad" ni "Placa" — la placa y la clase del vehículo salen del catálogo del cuerpo y van al PDF solas. Se aclaró quién es el afectado que firma y quiénes son las víctimas. Tus reportes anteriores no cambian.',
+  'v1.46: Blindaje de seguridad. El prefijo del consecutivo (Configuración) ahora solo acepta letras y números, y todos los números de reporte se muestran de forma segura en la app y en el PDF. No cambia cómo trabajas ni tus datos.',
+  'v1.45: Más completo el registro. En un INCIDENTE se agregó la “Fecha y hora de salida de la estación” (entre la llamada y la llegada). En una ACTIVIDAD ahora se puede: marcar si fue VOLUNTARIA o PAGA (contratada), elegir el tipo “Pernotar” (servicio nocturno, cuyas horas cuentan aunque el turno cruce la medianoche), adjuntar hasta 6 fotos, y registrar VARIAS ATENCIONES (primeros auxilios, traslados, etc.), cada una con sus datos y hasta 3 fotos propias. Todo se ve en el detalle y en el PDF. Las columnas nuevas van al final de las hojas: los datos viejos no se tocan.',
+  'v1.44: Cargas con carácter. Los “girando…” genéricos se reemplazaron por animaciones del oficio, repartidas por toda la app: una SIRENA que parpadea, un DESPACHO de puntos que rebotan y una barra de SINCRONIZANDO. Se ven al enviar un reporte, al verificar el PIN, al guardar una actividad y al abrir cualquier lista que carga. Livianas y respetan el modo “reducir movimiento”. No cambian datos ni cómo funciona.',
+  'v1.43: Cierre de las animaciones. Los pines del Mapa de Emergencias ahora CAEN al aparecer, y las cifras de la pantalla de Operatividad (unidades, emergencias) SUBEN desde 0 al abrir. Todo respeta el modo "reducir movimiento".',
+  'v1.42: Animaciones que SE NOTAN. Ahora CADA botón, al tocarlo, hace una onda (ripple) que confirma el toque. Los números del Inicio (total, pendientes, enviados) SUBEN desde 0 al abrir. Y al enviar un reporte con un campo obligatorio vacío, ese campo se MARCA EN ROJO, se SACUDE, y la app te LLEVA directo a él. Todo respeta el modo "reducir movimiento".',
+  'v1.41: Movimiento en el Panel de Administrador. Antes el Panel entraba sin animación; ahora las listas de reportes, de personal pendiente y de Operatividad entran escalonadas (una tarjeta tras otra) al abrirlas. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
+  'v1.40: Más movimiento (Fase 2). Ahora TODAS las ventanas emergentes se cierran con una animación suave (antes algunas desaparecían de golpe), el PIN muestra una rueda girando mientras verifica y SACUDE si te equivocás, el aviso verde de nueva versión baja y sube suave, y en el reporte la foto recién tomada y cada vehículo/víctima que agregás entran con una pequeña animación. Todo liviano y respeta el modo "reducir movimiento". No cambia datos ni cómo funciona.',
+  'v1.39: La app se siente más viva. Se agregó movimiento en las piezas que se usan en todos lados: las ventanas de confirmación y el menú ahora también se cierran con una animación suave (antes desaparecían de golpe), los avisos suben al aparecer, las listas de reportes y actividades entran escalonadas, los botones "ocupados" se atenúan suave, y los campos muestran mejor cuál está activo. Todo liviano para que no trabe, y respeta el modo "reducir movimiento" del celular. No cambia ningún dato ni cómo funciona: solo cómo se ve.',
+  'v1.38: Menos riesgo de perder trabajo. (1) Al salir de una Actividad que estabas registrando sin haber guardado, la app ahora avisa antes de descartar lo que cargaste (antes se perdía de un toque). (2) El reporte que estás llenando se autoguarda solo: si el celular cierra la app de golpe, no pierdes lo dictado. (3) Los reportes que quedaron "pendientes" por falta de señal ahora se envían solos al reabrir la app con internet, sin forzarlos a mano. Además, un ajuste interno de seguridad al mostrar fotos y firmas.',
+  'v1.37: Ajustes reportados en producción. Al entrar al Panel de Administrador, ahora pregunta "qué administrador entra" (antes decía "quién está de guardia", que ahí no aplicaba — los guardias no llegan a ese modal). En sanciones, asistencia y demás sigue preguntando por la guardia, sin cambios. Además, "🚒 Vehículos del cuerpo" ahora distingue un error de carga (revise su conexión) de una flota genuinamente vacía, para no mostrar un mensaje que confunda a otro administrador.',
+  'v1.36: Vista RUE más completa y más exacta. Nuevo bloque "Recursos desplegados" que cruza los vehículos del incidente con la clase que pide el RUE. Además, "Quien Reporta" ahora muestra el nombre completo de quien avisó (antes solo mostraba la relación), y se corrigió un caso donde un incidente con varias clasificaciones podía dejar mal marcado ese tipo en informes futuros.',
+  'v1.35: Unidades vinculadas. En el Panel de Administrador → "Unidades vinculadas" (solo el administrador principal), vea todo correo que ya usa la app y cuándo entró por última vez, y bloquéele el acceso a quien haga falta — sin borrar sus datos, y siempre reversible. Además: el tour explica dónde vive su base de datos (el Google Sheets del cuerpo), la explicación de "Quién opera" en el Panel Admin ahora habla de qué administrador firma (no de guardia, que ahí no aplica), y se corrigieron un par de palabras ambiguas ("emergencia" → "incidente", "cobertura" → "señal").',
+  'v1.34: Tour más completo. El de unidades (antes "para bomberos") ahora también recorre su perfil en Configuración. El de administrador creció bastante: ahora explica el escudo/logo del cuerpo, el relevo de guardia, invitar unidades e importar personal por separado, y el ranking y el mapa con más detalle.',
+  'v1.33: Tour interactivo renovado. El recorrido de ayuda ya no es una tarjeta de texto: ahora se mueve de verdad por la app y señala cada botón real. Hay uno para bomberos y otro, distinto, para administradores (Panel Admin, Operatividad, Mapa, Zona Administrador). Se abre desde ℹ️ Acerca de.',
+  'v1.32: Los emojis vuelven a color. Se probó ponerlos en gris/silueta, pero se ven mejor a color. El resto del nuevo diseño se mantiene.',
+  'v1.31: Emojis más legibles. Algunos quedaban como cuadrado negro o no se veían sobre los botones de color. Ahora van en escala de grises: conservan su forma y se ven bien en todos lados.',
+  'v1.30: Panel de administrador y ventanas al estilo "Acta Oficial". Las tarjetas del panel pasan a fondo blanco con una franja de color a la izquierda (aire de documento) y las ventanas de confirmación llevan borde dorado y título de imprenta. Solo cambia el aspecto.',
+  'v1.29: Emojis en monocromo. Los emojis de colores se convierten en siluetas tipo ícono (oscuras sobre fondo claro, blancas sobre el rojo) para que peguen con el diseño institucional y no se vean como "stickers". Solo cambia el aspecto.',
+  'v1.28: Rediseño visual "Acta Oficial". Tipografía de imprenta (Oswald + Barlow), el rojo institucional usado con disciplina y un dorado de seguridad como acento. La app se ve como un instrumento oficial de bomberos, no una plantilla genérica. Cambia solo el aspecto: la lógica, la estructura y tus datos NO cambian.',
+  'v1.27: Aprobación de ingreso. Ahora, cuando alguien abre el link o el QR, NO entra solo: queda como una SOLICITUD (con su nombre y una descripción de quién es). Cualquier administrador la aprueba o la descarta desde el Panel → "📥 Solicitudes de ingreso", y queda registrado quién decidió. Así, si a una unidad se le filtra el link a un tercero, ese tercero no entra sin permiso.',
+  'v1.26: Código QR para invitar. Al generar el link de invitación ahora sale también un QR: tus unidades lo escanean con la cámara del celular y entran, sin copiar ni pegar nada. Y cuando una unidad se une, ve un aviso claro de a qué cuerpo pertenece.',
+  'v1.25: Invitar unidades por link. En el Panel de Administrador → "🔗 Invitar unidades", generás un link y lo compartís con tus bomberos: al abrirlo y entrar con Google quedan enlazados a tu cuerpo, sin configurar nada. Si un link se filtra, generás uno nuevo (invalida los anteriores).',
+  'v1.24: Los pines del mapa ahora se AGRUPAN cuando están amontonados: en vez de muchos marcadores encimados, ves un círculo con el número, y al acercar el zoom se abren. La estación (🚒) y el mapa de calor no se agrupan.',
+  'v1.23: Mapa de calor. En ⚙️ Herramientas → ✨ Vistas, el botón "Mapa de calor" pinta en rojo las zonas donde más se repiten los incidentes. Respeta el filtro que tengas puesto (tipo y fecha).',
+  'v1.22: Estación en el mapa. En ⚙️ Herramientas → "Fijar estación (mi ubicación)" guardás dónde queda la estación de su cuerpo (parado ahí, una sola vez). Después el mapa muestra un 🚒 y, en cada reporte, a cuántos km está de la estación.',
+  'v1.21: Mapa más ordenado: los controles ahora se despliegan en dos menús — "⚙️ Herramientas" (fechas y acciones) y "🏷️ Tipos" (la leyenda) — para no saturar la pantalla. Además, filtros rápidos de fecha: Últimos 30 días, Este mes, Este año.',
+  'v1.20: Ajustes al mapa: la capa 🛰️ Satélite ahora deja acercar más (antes salía "sin datos" al hacer zoom, según la zona), y el botón 📍 Mi ubicación dibuja un círculo con la precisión — en el celular con GPS es exacta; en el computador es aproximada (no tiene GPS).',
+  'v1.19: Mapa de Incidentes mejorado. Botones "✓ Todos" y "✕ Ninguno", y un "solo" en cada tipo para ver únicamente ese de un toque (antes había que apagar los demás uno por uno). Nueva capa 🛰️ Satélite (además de calles) y botón 📍 Mi ubicación.',
+  'v1.18: Importar personal, más robusto: reconoce cuando el nombre y el apellido vienen en columnas separadas (los une en el nombre completo) y detecta la cédula aunque el título diga "Cédula (CC)", "Documento" u otras variantes. Antes esas columnas se perdían.',
+  'v1.17: Nuevo tipo "Incendio en red eléctrica" (transformadores, loncheras, cables y redes del servicio público; en el RUE es FALLA ELÉCTRICA), separado de "Incendio de interfaz", que queda para el fuego en la franja donde el monte se junta con el pueblo.',
+  'v1.16: Se depuró el pie de página de los informes impresos: ya no incluye datos de contacto del autor.',
+  'v1.15: Arreglada la impresión: antes el botón abría una pestaña EN BLANCO. Ahora el informe se genera y sale listo para imprimir o guardar como PDF. Además, el escudo que usted sube en el Panel de Administrador ya aparece en el encabezado y como marca de agua de los informes; si no subió ninguno, se usa la cruz de bombero por defecto.',
+  'v1.05: El asistente de instalación ahora le pide su contraseña de administrador. Con eso el fundador queda habilitado para NOMBRAR Y QUITAR administradores, que antes era imposible: la app exigía una contraseña que ninguna pantalla creaba, y quien instalaba quedaba como único admin para siempre.',
+  'v1.04: Se retiró del servidor todo lo que quedó del módulo dominical: 54 funciones y 14 rutas. Las rutas importan aunque no se vean: la dirección del servidor es pública, así que una ruta abierta se puede llamar desde afuera aunque ninguna pantalla la use. Nada cambia en el uso diario.',
+  'v1.03: Se terminó de sacar todo lo que ataba la app a una sola estación: ícono propio (cruz de Malta, el símbolo del bombero en todo el mundo), nombres internos, comentarios y datos de personas. El Manual, Cómo funciona y Bases legales se reescribieron: ahora describen la app que usted tiene y citan solo norma nacional. Y se retiró el código muerto del módulo dominical: 1.480 líneas menos.',
+  'v1.02: La app dejó de hablar como una estación y empezó a hablar como el gremio. Salen la asistencia de domingos y las sanciones por horas: son el régimen interno de UN cuerpo, no una norma nacional, y no tenían por qué venir puestas. El vocabulario pasa a INCIDENTE (Sistema Comando de Incidentes, Res. 358/2014). Y se corrigió el fallo que impedía iniciar sesión: el servidor rechazaba TODAS las credenciales.',
+  'v1.01: La app ya se comunica con su servidor. Con esto se puede crear la base de datos del cuerpo, iniciar sesión y guardar información. Antes la pantalla cargaba pero no podía guardar nada.',
+  'v1.00: Primera versión. La app arranca vacía: al entrar por primera vez, quien lo haga queda como administrador y se crea la base de datos en su propio Google Drive. Nadie más ve esos datos.',
 ];
 
 // === ROSTER DE BOMBEROS (autocompletar) ===
@@ -449,7 +462,7 @@ const app = {
     cont.style.cssText = 'position:fixed;inset:0;background:#0f172a;z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
     cont.innerHTML =
       '<div style="background:#fff;border-radius:16px;max-width:400px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.4);">'
-      + '<div style="font-size:40px;text-align:center;line-height:1;">🔗</div>'
+      + '<div style="font-size:40px;text-align:center;line-height:1;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg></div>'
       + '<div style="font-size:18px;font-weight:800;color:#1e40af;text-align:center;margin:6px 0 4px;">Solicitar ingreso</div>'
       + '<div style="font-size:12px;color:#64748b;text-align:center;margin-bottom:16px;">Un administrador debe aprobar tu ingreso antes de que puedas usar la app.</div>'
       + '<label style="font-size:12px;font-weight:600;color:#334155;">Tu nombre completo</label>'
@@ -496,7 +509,7 @@ const app = {
     cont.style.cssText = 'position:fixed;inset:0;background:#0f172a;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;';
     cont.innerHTML =
       '<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:28px 22px;box-shadow:0 10px 40px rgba(0,0,0,.4);">'
-      + '<div style="font-size:52px;line-height:1;">' + (esPend ? '⏳' : '🚫') + '</div>'
+      + '<div style="font-size:52px;line-height:1;">' + (esPend ? '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>' : '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg>') + '</div>'
       + '<div style="font-size:19px;font-weight:800;color:' + (esPend ? '#b45309' : '#b91c1c') + ';margin:8px 0;">' + (esPend ? 'Solicitud enviada' : 'Solicitud no aprobada') + '</div>'
       + '<div style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:18px;">'
       +   (esPend
@@ -526,7 +539,7 @@ const app = {
       const lista = d.solicitudes || [];
       const badge = document.getElementById('solicitudesBadge');
       if (badge) badge.innerHTML = lista.length ? '<span style="background:#dc2626;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;">' + lista.length + '</span>' : '';
-      if (!lista.length) { cont.innerHTML = '<div style="font-size:12px;color:#78350f;padding:6px;">No hay solicitudes pendientes.</div>'; return; }
+      if (!lista.length) { cont.innerHTML = '<div class="empty-state empty-compact" style="font-size:12px;color:#78350f;padding:6px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-report" xlink:href="#empty-report" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>No hay solicitudes pendientes.</div>'; return; }
       cont.innerHTML = lista.map(function (s) {
         const c = encodeURIComponent(s.correo || '');
         const desc = app._esc(s.descripcion || '');
@@ -536,11 +549,11 @@ const app = {
           + (desc ? '<div style="font-size:12px;color:#334155;margin-top:4px;font-style:italic;">“' + desc + '”</div>' : '')
           + (s.fecha ? '<div style="font-size:10px;color:#a16207;margin-top:3px;">' + app._esc(s.fecha) + '</div>' : '')
           + '<div style="display:flex;gap:6px;margin-top:8px;">'
-          +   '<button onclick="app._aprobarSolicitud(this,\'' + c + '\')" style="flex:1;padding:8px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">✅ Aceptar</button>'
-          +   '<button onclick="app._rechazarSolicitud(this,\'' + c + '\')" style="flex:1;padding:8px;background:#e5e7eb;color:#7f1d1d;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">✕ Descartar</button>'
+          +   '<button onclick="app._aprobarSolicitud(this,\'' + c + '\')" style="flex:1;padding:8px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg> Aceptar</button>'
+          +   '<button onclick="app._rechazarSolicitud(this,\'' + c + '\')" style="flex:1;padding:8px;background:#e5e7eb;color:#7f1d1d;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg> Descartar</button>'
           + '</div></div>';
       }).join('');
-    } catch (e) { cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">Sin conexión</div>'; }
+    } catch (e) { cont.innerHTML = '<div class="empty-state empty-compact" style="font-size:12px;color:#c00;padding:8px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-offline" xlink:href="#empty-offline" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin conexión</div>'; }
   },
   async _aprobarSolicitud(btn, correoEnc) {
     const correo = decodeURIComponent(correoEnc || '');
@@ -598,7 +611,7 @@ const app = {
       const qr = qrcode(0, 'M'); qr.addData(String(url || '')); qr.make();
       return '<div style="text-align:center;margin:12px 0 2px;">'
         + '<img alt="Código QR de la invitación" src="' + qr.createDataURL(5, 4) + '" style="max-width:100%;image-rendering:pixelated;background:#fff;border-radius:6px;">'
-        + '<div style="font-size:11px;color:#64748b;margin-top:4px;">📷 Escanéalo con la cámara del celular</div></div>';
+        + '<div style="font-size:11px;color:#64748b;margin-top:4px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg> Escanéalo con la cámara del celular</div></div>';
     } catch (e) { return ''; }
   },
   _mostrarModalInvitacion(url, cuerpo) {
@@ -608,13 +621,13 @@ const app = {
     cont.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px;';
     cont.innerHTML =
       '<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.3);">'
-      + '<div style="font-weight:700;font-size:15px;color:#1e40af;margin-bottom:4px;">🔗 Invitación a ' + app._esc(cuerpo) + '</div>'
+      + '<div style="font-weight:700;font-size:15px;color:#1e40af;margin-bottom:4px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg> Invitación a ' + app._esc(cuerpo) + '</div>'
       + '<div style="font-size:12px;color:#555;margin-bottom:10px;">Compártelo con tus unidades. Al abrirlo y entrar con Google, quedan enlazadas a este cuerpo — sin configurar nada.</div>'
       + this._qrImg(url)
       + '<div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-size:11px;word-break:break-all;">' + app._esc(url) + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'
-      +   '<button onclick="app._copiarInvitacion()" style="flex:1;min-width:110px;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">📋 Copiar link</button>'
-      +   '<button onclick="app._compartirInvitacionNativo()" style="flex:1;min-width:110px;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">📤 Compartir</button>'
+      +   '<button onclick="app._copiarInvitacion()" style="flex:1;min-width:110px;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h8M8 18h5"/></svg> Copiar link</button>'
+      +   '<button onclick="app._compartirInvitacionNativo()" style="flex:1;min-width:110px;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 16V3M7 8l5-5 5 5M4 14v7h16v-7"/></svg> Compartir</button>'
       + '</div>'
       + '<button onclick="app.compartirInvitacion(this,true)" style="width:100%;margin-top:8px;padding:8px;background:#fff;color:#b45309;border:1px dashed #fbbf24;border-radius:8px;font-weight:600;cursor:pointer;font-size:11px;">↻ Generar link nuevo (invalida los anteriores)</button>'
       + '<button onclick="app._cerrarModalInvitacion()" style="width:100%;margin-top:8px;padding:10px;background:#e5e7eb;color:#111;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;">Cerrar</button>'
@@ -635,7 +648,7 @@ const app = {
     cont.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10002;display:flex;align-items:center;justify-content:center;padding:20px;';
     cont.innerHTML =
       '<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35);">'
-      + '<div style="font-size:52px;line-height:1;margin-bottom:6px;">✅</div>'
+      + '<div style="font-size:52px;line-height:1;margin-bottom:6px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg></div>'
       + '<div style="font-size:14px;color:#475569;font-weight:600;">Ya perteneces a</div>'
       + '<div style="font-size:22px;font-weight:800;color:#166534;margin:4px 0 12px;line-height:1.15;">' + app._esc(cuerpo) + '</div>'
       + '<div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:16px;">Tus reportes, actividades y asistencias quedan registrados en este cuerpo. Lo ves siempre en la parte de arriba, junto al nombre de la app.</div>'
@@ -647,7 +660,7 @@ const app = {
   _copiarInvitacion() {
     const url = this._invUrlActual || '';
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(() => this.toast('📋 Link copiado', 'exito')); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(() => this.toast('<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h8M8 18h5"/></svg> Link copiado', 'exito')); return; }
     } catch (e) {}
     try { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); this.toast('📋 Link copiado', 'exito'); }
     catch (e) { this.toast('Copia el link a mano', 'info'); }
@@ -986,7 +999,7 @@ const app = {
       // fundador (un miembro nuevo NO debe caer en la pantalla de instalación).
       if (await this._manejarIngreso()) return; // v1.27: solicitud/pendiente/rechazado toma la pantalla
 
-      /* ⚠️ EL ASISTENTE VA PRIMERO QUE TODO. Sin base de datos configurada no hay
+      /*  EL ASISTENTE VA PRIMERO QUE TODO. Sin base de datos configurada no hay
          dónde guardar el registro del bombero, así que mandarlo a completar sus
          datos antes de instalar lo dejaría escribiendo contra el vacío. */
       if (this._instalacionConfigurada === false) {
@@ -1296,12 +1309,13 @@ const app = {
   // pantalla, flujo ni dato se toca. Riesgo funcional: cero.
   _temaGuardado() {
     try {
-      return localStorage.getItem('app_tema') === 'apple' ? 'apple' : 'original';
+      const t = localStorage.getItem('app_tema');
+      return (t === 'apple' || t === 'campo') ? t : 'original';
     } catch (e) { return 'original'; }
   },
 
   aplicarTema(tema, silencioso = false) {
-    const t = (tema === 'apple') ? 'apple' : 'original';
+    const t = (tema === 'apple' || tema === 'campo') ? tema : 'original';
     try { localStorage.setItem('app_tema', t); } catch (e) {}
     document.documentElement.setAttribute('data-theme', t);
     // Color de la barra de estado del teléfono acorde al tema activo
@@ -1309,7 +1323,7 @@ const app = {
     if (metaTema) metaTema.setAttribute('content', t === 'apple' ? '#f5f5f7' : '#7a1010');
     this._sincronizarUITema();
     if (!silencioso) {
-      this.toast(t === 'apple' ? '🍎 Diseño Minimalista activado' : '🚒 Diseño Original activado', 'exito');
+      this.toast(t === 'apple' ? '🍎 Diseño Minimalista activado' : (t === 'campo' ? '☀️ Diseño Campo activado' : '🚒 Diseño Original activado'), 'exito');
     }
   },
 
@@ -1648,12 +1662,12 @@ const app = {
     m.className = 'modal-js';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(26,21,18,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
     m.innerHTML = '<div style="background:#fff;border-radius:var(--radio-lg);padding:24px;max-width:340px;width:100%;text-align:center;box-shadow:var(--sombra-fuerte);border-top:4px solid var(--oro);">'
-      + '<div style="font-size:38px;">' + (esAdm ? '🛡️' : '🚒') + '</div>'
+      + '<div style="font-size:38px;">' + (esAdm ? '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 4 6v6c0 5 3 8 8 10 5-2 8-5 8-10V6z"/><path d="m8 12 3 3 5-6"/></svg>' : '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg>') + '</div>'
       + '<div style="font-family:var(--disp);font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:var(--rojo);margin:8px 0 4px;">¡Bienvenido' + (esAdm ? ', administrador' : '') + '!</div>'
       + '<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:18px;">¿Quiere un recorrido interactivo por la app' + (esAdm ? ', enfocado en lo que solo usted administra' : '') + '? Se mueve por las pantallas reales y lo puede saltar cuando quiera.</div>'
-      + '<button id="_tourVer" style="width:100%;background:var(--rojo);color:#fff;border:none;border-radius:var(--radio);padding:13px;font-weight:700;cursor:pointer;font-size:15px;margin-bottom:8px;font-family:var(--disp);text-transform:uppercase;letter-spacing:.02em;">▶️ Ver recorrido</button>'
+      + '<button id="_tourVer" style="width:100%;background:var(--rojo);color:#fff;border:none;border-radius:var(--radio);padding:13px;font-weight:700;cursor:pointer;font-size:15px;margin-bottom:8px;font-family:var(--disp);text-transform:uppercase;letter-spacing:.02em;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/></svg> Ver recorrido</button>'
       + '<button id="_tourNo" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:var(--radio);padding:11px;font-weight:700;cursor:pointer;font-size:13px;">Omitir</button>'
-      + '<div style="font-size:11px;color:#999;margin-top:12px;">Siempre puede verlo de nuevo en <b>ℹ️ Acerca de</b>.</div>'
+      + '<div style="font-size:11px;color:#999;margin-top:12px;">Siempre puede verlo de nuevo en <b><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg> Acerca de</b>.</div>'
       + '</div>';
     document.body.appendChild(m);
     const cerrar = () => { try { app._cerrarModalJS(m); } catch (e) {} };
@@ -1831,12 +1845,12 @@ const app = {
       + '<div class="tour-texto">' + this._esc(paso.texto) + '</div>'
       + '<div class="tour-progreso-track"><div class="tour-progreso-fill" style="width:' + Math.round(((i + 1) / total) * 100) + '%;"></div></div>'
       + '<div class="tour-acciones">'
-      + (i > 0 ? '<button class="tour-btn tour-btn-atras" id="_tAtras">← Atrás</button>' : '')
-      + '<button class="tour-btn tour-btn-siguiente" id="_tSiguiente">' + (ultimo ? '¡Listo! ✔' : 'Siguiente →') + '</button>'
+      + (i > 0 ? '<button class="tour-btn tour-btn-atras" id="_tAtras"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m15 5-7 7 7 7"/></svg> Atrás</button>' : '')
+      + '<button class="tour-btn tour-btn-siguiente" id="_tSiguiente">' + (ultimo ? '¡Listo! ✔' : 'Siguiente <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m9 5 7 7-7 7"/></svg>') + '</button>'
       + '</div>'
       + '<div class="tour-fila-cierre">'
       + '<button class="tour-saltar" id="_tSaltar">Saltar recorrido</button>'
-      + '<button class="tour-cerrar" id="_tCerrar" aria-label="Cerrar recorrido">✕</button>'
+      + '<button class="tour-cerrar" id="_tCerrar" aria-label="Cerrar recorrido"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>'
       + '</div>'
       + '</div>';
     const bAtras = document.getElementById('_tAtras');
@@ -2012,8 +2026,8 @@ const app = {
     const lista = document.getElementById('listaReportes');
     if (reportes.length === 0) {
       lista.innerHTML = `
-        <div class="vacio-estado">
-          <div class="icono">📋</div>
+        <div class="vacio-estado empty-state">
+          <div class="icono"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-report" xlink:href="#empty-report" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg></div>
           <div>No hay informes aún</div>
           <div style="font-size: 12px; margin-top: 4px;">Toque "Nuevo incidente" para empezar</div>
         </div>`;
@@ -2031,7 +2045,7 @@ const app = {
         <div class="reporte-item ${this._esc(r.estado)}" data-id="${app._esc(r.id)}" onclick="app.verDetalle(this.dataset.id)">
           <div class="info">
             <div class="consec">${this._esc(r.consecutivo || 'Sin asignar')}</div>
-            <div class="desc">${this._esc(tipos)}</div>
+            <div class="desc">${this._pictoSvg(r.clasificacion)} ${this._esc(tipos)}</div>
             <div class="fecha">${fecha}</div>
           </div>
           <span class="badge ${this._esc(r.estado)}">${this.etiquetaEstado(r.estado)}</span>
@@ -2157,7 +2171,7 @@ const app = {
     document.getElementById('f_municipio').value = this._municipioPorDefecto();
     document.getElementById('f_comandante_estacion').value = NOMBRE_ESTACION;
     document.querySelectorAll('.foto-slot').forEach((slot, i) => {
-      slot.innerHTML = `<span class="icono">📷</span><span>Foto ${i+1}</span>`;
+      slot.innerHTML = `<span class="icono"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span><span>Foto ${i+1}</span>`;
       slot.classList.remove('con-foto');
     });
     this.limpiarFirma('firmaAfectado');
@@ -2339,7 +2353,7 @@ const app = {
     if (c.latOk && c.lngOk) {
       const gms = `${this.decimalAGMS(c.lat, true)} ${this.decimalAGMS(c.lng, false)}`;
       box.className = 'gps-preview ok';
-      box.innerHTML = '📍 <b>Así se guardará el pin:</b><br>' +
+      box.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg> <b>Así se guardará el pin:</b><br>' +
         `🌐 <span class="val">${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}</span><br>` +
         `📐 <span class="val">${gms}</span>`;
     } else {
@@ -2350,7 +2364,7 @@ const app = {
       } else {
         msg = 'Aún no se entienden. Escriba con coma o punto decimal (ej: 3,8650 y -67,9239).';
       }
-      box.innerHTML = `⚠️ ${msg}`;
+      box.innerHTML = `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> ${msg}`;
     }
   },
 
@@ -2403,12 +2417,12 @@ const app = {
         if (detalles) {
           detalles.style.display = 'block';
           detalles.innerHTML = `
-            <div class="gps-fila"><span class="gps-etiq">📍 Coords GMS:</span><span class="gps-val">${gmsTexto}</span></div>
+            <div class="gps-fila"><span class="gps-etiq"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg> Coords GMS:</span><span class="gps-val">${gmsTexto}</span></div>
             <div class="gps-fila"><span class="gps-etiq">🌐 Decimal:</span><span class="gps-val">${lat.toFixed(6)}, ${lng.toFixed(6)}</span></div>
-            <div class="gps-fila"><span class="gps-etiq">🎯 Precisión:</span><span class="gps-val">±${Math.round(acc)} m</span></div>
+            <div class="gps-fila"><span class="gps-etiq"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Precisión:</span><span class="gps-val">±${Math.round(acc)} m</span></div>
             ${altitude !== null && altitude !== undefined ? `<div class="gps-fila"><span class="gps-etiq">⛰️ Altitud:</span><span class="gps-val">${altitude.toFixed(1)} msnm</span></div>` : ''}
             ${speedKmh !== null && speedKmh !== undefined ? `<div class="gps-fila"><span class="gps-etiq">💨 Velocidad:</span><span class="gps-val">${speedKmh.toFixed(1)} km/h</span></div>` : ''}
-            ${headingTxt ? `<div class="gps-fila"><span class="gps-etiq">🧭 Orientación:</span><span class="gps-val">${headingTxt}</span></div>` : '<div class="gps-fila"><span class="gps-etiq">🧭 Orientación:</span><button onclick="app.activarBrujula()" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;">Activar brújula</button></div>'}
+            ${headingTxt ? `<div class="gps-fila"><span class="gps-etiq">🧭 Orientación:</span><span class="gps-val">${headingTxt}</span></div>` : '<div class="gps-fila"><span class="gps-etiq"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 4-4 2 2-4z"/></svg> Orientación:</span><button onclick="app.activarBrujula()" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;">Activar brújula</button></div>'}
             <div class="gps-fila"><span class="gps-etiq">🕒 Capturado:</span><span class="gps-val">${new Date().toLocaleString('es-CO')}</span></div>
           `;
         }
@@ -2538,16 +2552,16 @@ const app = {
       const aviso = document.getElementById('autoCompletarInfo');
       if (huboCambio) {
         aviso.classList.add('visible');
-        aviso.innerHTML = '✅ Datos detectados automáticamente. Puede editar abajo si necesita corregir.';
+        aviso.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg> Datos detectados automáticamente. Puede editar abajo si necesita corregir.';
       } else {
         aviso.classList.add('visible');
-        aviso.innerHTML = '⚠️ El GPS detectó la zona pero <strong>no tiene la dirección detallada</strong> registrada. Por favor escriba la dirección manualmente abajo. Las coordenadas SÍ quedaron guardadas.';
+        aviso.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> El GPS detectó la zona pero <strong>no tiene la dirección detallada</strong> registrada. Por favor escriba la dirección manualmente abajo. Las coordenadas SÍ quedaron guardadas.';
       }
     } catch (err) {
       console.log('No se pudo auto-completar dirección:', err);
       const aviso = document.getElementById('autoCompletarInfo');
       aviso.classList.add('visible');
-      aviso.innerHTML = '⚠️ Sin internet o falló auto-completado. Escriba la dirección manualmente. Las coordenadas SÍ quedaron guardadas.';
+      aviso.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> Sin internet o falló auto-completado. Escriba la dirección manualmente. Las coordenadas SÍ quedaron guardadas.';
     }
   },
 
@@ -2563,7 +2577,7 @@ const app = {
       const slotEl = document.querySelector(`.foto-slot[data-foto="${slot}"]`);
       slotEl.innerHTML = `
         <img src="${dataUrl}" alt="">
-        <button class="quitar" onclick="event.stopPropagation(); app.quitarFoto(${slot})">×</button>
+        <button class="quitar" onclick="event.stopPropagation(); app.quitarFoto(${slot})"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       `;
       slotEl.classList.add('con-foto');
       e.target.value = '';
@@ -2595,7 +2609,7 @@ const app = {
   quitarFoto(slot) {
     this.fotosTemp[slot] = null;
     const slotEl = document.querySelector(`.foto-slot[data-foto="${slot}"]`);
-    slotEl.innerHTML = `<span class="icono">📷</span><span>Foto ${slot+1}</span>`;
+    slotEl.innerHTML = `<span class="icono"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span><span>Foto ${slot+1}</span>`;
     slotEl.classList.remove('con-foto');
     this.actualizarProgreso();
   },
@@ -2739,7 +2753,7 @@ const app = {
     const div = document.createElement('div');
     div.className = 'fila';
     div.innerHTML = `
-      <button class="quitar-fila" onclick="this.parentElement.remove()">×</button>
+      <button class="quitar-fila" onclick="this.parentElement.remove()"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       <div class="campo">
         <label>Recurso</label>
         <select data-campo="recurso" onchange="app.cambioTipoRecurso(this)">
@@ -2752,7 +2766,7 @@ const app = {
         <label>Responsable / Maquinista</label>
         <div class="nombre-con-ci">
           <input type="text" data-campo="responsable" list="rosterBomberos" placeholder="Nombre del bombero a cargo (escriba inicial)" oninput="app.recalcularPersonal()">
-          <button type="button" class="btn-ci" title="Marcar como Comandante de Incidente (quien dirigió en el lugar)" onclick="app.marcarComandante(this)">⭐</button>
+          <button type="button" class="btn-ci" title="Marcar como Comandante de Incidente (quien dirigió en el lugar)" onclick="app.marcarComandante(this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
         </div>
       </div>
       <div class="campo personal-bloque">
@@ -2812,8 +2826,8 @@ const app = {
     item.className = 'item-personal';
     item.innerHTML = `
       <input type="text" list="rosterBomberos" placeholder="Nombre del tripulante (escriba inicial)" value="${app._esc(String(nombre || ''))}" oninput="app.recalcularPersonal()">
-      <button type="button" class="btn-ci" title="Marcar como Comandante de Incidente (quien dirigió en el lugar)" onclick="app.marcarComandante(this)">⭐</button>
-      <button type="button" class="quitar-personal" onclick="this.parentElement.remove(); app.recalcularPersonal();">×</button>
+      <button type="button" class="btn-ci" title="Marcar como Comandante de Incidente (quien dirigió en el lugar)" onclick="app.marcarComandante(this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></button>
+      <button type="button" class="quitar-personal" onclick="this.parentElement.remove(); app.recalcularPersonal();"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     `;
     lista.appendChild(item);
     this.recalcularPersonal();
@@ -2873,7 +2887,7 @@ const app = {
     if (!dl) return;
     const lista = this._rosterVigente();
     dl.innerHTML = lista
-      .map(n => `<option value="${String(n).replace(/"/g, '&quot;')}"></option>`).join('');
+      .map(n => `<option value="${app._esc(n)}"></option>`).join('');
   },
 
   // v5.95: se eliminó una definición duplicada (débil, sin quitar tildes) de
@@ -3027,7 +3041,7 @@ const app = {
     const div = document.createElement('div');
     div.className = 'fila';
     div.innerHTML = `
-      <button class="quitar-fila" onclick="this.parentElement.remove()">×</button>
+      <button class="quitar-fila" onclick="this.parentElement.remove()"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       <div class="campo-fila">
         <div class="campo"><label>Nombre</label><input type="text" data-campo="nombre" placeholder="Nombre de la víctima"></div>
         <div class="campo"><label>Edad</label><input type="number" data-campo="edad" min="0"></div>
@@ -3055,7 +3069,7 @@ const app = {
     const div = document.createElement('div');
     div.className = 'fila';
     div.innerHTML = `
-      <button class="quitar-fila" onclick="this.parentElement.remove()">×</button>
+      <button class="quitar-fila" onclick="this.parentElement.remove()"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       <div class="campo"><label>Entidad / Persona</label><input type="text" data-campo="entidad" placeholder="Ej. Policía Nacional, Defensa Civil"></div>
       <div class="campo"><label>Rol / Función</label><input type="text" data-campo="rol" placeholder="Ej. Acordonamiento, traslado de heridos"></div>
       <div class="campo"><label>Contacto</label><input type="text" data-campo="contacto" placeholder="Nombre y teléfono"></div>
@@ -3259,7 +3273,7 @@ const app = {
     // tengan foto), si no quedan visibles las del reporte anterior.
     this.fotosTemp = [null, null, null, null, null, null];
     document.querySelectorAll('.foto-slot').forEach((slot, i) => {
-      slot.innerHTML = `<span class="icono">📷</span><span>Foto ${i+1}</span>`;
+      slot.innerHTML = `<span class="icono"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span><span>Foto ${i+1}</span>`;
       slot.classList.remove('con-foto');
     });
     (r.fotos || []).forEach((f, i) => {
@@ -3269,7 +3283,7 @@ const app = {
         if (slotEl) {
           slotEl.innerHTML = `
             <img src="${app._esc(this._imgDrive(f))}" alt="">
-            <button class="quitar" onclick="event.stopPropagation(); app.quitarFoto(${i})">×</button>
+            <button class="quitar" onclick="event.stopPropagation(); app.quitarFoto(${i})"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
           `;
           slotEl.classList.add('con-foto');
         }
@@ -3437,7 +3451,7 @@ const app = {
       await this._enviarReporteInterno(r);
     } finally {
       this._enviandoReporte = false;
-      if (btn) { btn.disabled = false; btn.style.opacity=''; btn.innerHTML='📤 Enviar'; }
+      if (btn) { btn.disabled = false; btn.style.opacity=''; btn.innerHTML='<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 16V3M7 8l5-5 5 5M4 14v7h16v-7"/></svg> Enviar'; }
     }
   },
 
@@ -3586,7 +3600,7 @@ const app = {
   },
 
 
-  // ========== 🆕 v5.3: CIERRE DE MES POR FECHA DE LLAMADA ==========
+  // ==========  v5.3: CIERRE DE MES POR FECHA DE LLAMADA ==========
   // Renumera SOLO los reportes de un mes específico, ordenándolos
   // cronológicamente por fecha de llamada.
   async abrirCierreMes() {
@@ -3618,7 +3632,7 @@ const app = {
 
     const html = `
       <div style="padding: 20px;">
-        <h3 style="color: var(--rojo); margin-bottom: 12px;">📅 Cierre de mes y renumeración</h3>
+        <h3 style="color: var(--rojo); margin-bottom: 12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg> Cierre de mes y renumeración</h3>
         <p style="font-size: 14px; color: #555; margin-bottom: 16px; line-height: 1.5;">
           Esta acción reorganizará los consecutivos del mes seleccionado en <strong>orden cronológico por fecha de llamada</strong>.
           Los reportes de otros meses NO se tocan.
@@ -3638,7 +3652,7 @@ const app = {
         <div id="cierre_previsualizacion" style="margin-top: 12px;"></div>
         <div style="display: flex; gap: 8px; margin-top: 20px;">
           <button class="btn btn-secundario" onclick="app.cerrarModalCierreMes()" style="flex: 1;">Cancelar</button>
-          <button class="btn" onclick="app.previsualizarCierreMes()" style="flex: 1; background: #f59e0b; color: #fff;">👁️ Previsualizar</button>
+          <button class="btn" onclick="app.previsualizarCierreMes()" style="flex: 1; background: #f59e0b; color: #fff;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> Previsualizar</button>
         </div>
         <button id="btn_aplicar_cierre" class="btn btn-completo" onclick="app.aplicarCierreMes()" style="display: none; margin-top: 8px; background: var(--rojo); color: #fff;">
           ✅ Aplicar cambios definitivamente
@@ -3675,7 +3689,7 @@ const app = {
     const mes = parseInt(document.getElementById('cierre_mes').value, 10);
     const anio = parseInt(document.getElementById('cierre_anio').value, 10);
     const cont = document.getElementById('cierre_previsualizacion');
-    cont.innerHTML = '<p style="text-align:center;padding:12px;">⏳ Consultando servidor...</p>';
+    cont.innerHTML = '<p style="text-align:center;padding:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg> Consultando servidor...</p>';
 
     try {
       const resp = await fetch(this.config.urlBackend, {
@@ -3697,7 +3711,7 @@ const app = {
       }
 
       if (data.totalReportesMes === 0) {
-        cont.innerHTML = `<div style="background:#f0f0f0;padding:12px;border-radius:8px;">ℹ️ No hay reportes en ${data.nombreMes} ${data.anio}</div>`;
+        cont.innerHTML = `<div class="empty-state" style="background:#f0f0f0;padding:12px;border-radius:8px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-search" xlink:href="#empty-search" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg> No hay reportes en ${data.nombreMes} ${data.anio}</div>`;
         document.getElementById('btn_aplicar_cierre').style.display = 'none';
         return;
       }
@@ -3722,7 +3736,7 @@ const app = {
             <tr>
               <td style="padding:6px;font-size:12px;">${fecha}</td>
               <td style="padding:6px;font-size:12px;color:#999;text-decoration:line-through;">${app._esc(p.consecutivoAnterior)}</td>
-              <td style="padding:6px;font-size:12px;color:#15803d;font-weight:700;">→ ${app._esc(p.consecutivoNuevo)}</td>
+              <td style="padding:6px;font-size:12px;color:#15803d;font-weight:700;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m9 5 7 7-7 7"/></svg> ${app._esc(p.consecutivoNuevo)}</td>
             </tr>`;
         }).join('');
 
@@ -3899,7 +3913,7 @@ const app = {
      Se llama con datos (tras login, y los guarda) o sin datos (al arrancar, y los
      lee del caché).
 
-     ⚠️ Usa `textContent`, NUNCA `innerHTML`: el nombre del cuerpo es texto libre
+      Usa `textContent`, NUNCA `innerHTML`: el nombre del cuerpo es texto libre
      que escribe el admin. Con innerHTML sería una vía de inyección (invariante I5). */
   /* T1b — municipio por defecto del formulario de emergencia.
      ANTES estaba escrito el municipio a mano en DOS sitios del código, así que aunque
@@ -3929,7 +3943,7 @@ const app = {
      un botón de copiar por campo. Quien llena el RUE baja por esta pantalla en
      paralelo a la otra, sin buscar en papeles ni saltar de un lado a otro.
 
-     ⚠️ NO automatiza el RUE. Se llena a mano, registro por registro (Oracle APEX,
+      NO automatiza el RUE. Se llena a mano, registro por registro (Oracle APEX,
      verificado en la plataforma real el 30/07). Lo que se elimina es la búsqueda
      y el error de transcripción, no el tecleo. Prometer más sería mentirle al
      comandante, y eso se paga con el primer cliente. */
@@ -4108,7 +4122,7 @@ const app = {
 
     if (d.faltantes && d.faltantes.length) {
       h += '<div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px;">'
-         + '<b>⚠️ Faltan datos que el RUE exige:</b><ul style="margin:6px 0 0 18px;">'
+         + '<b><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> Faltan datos que el RUE exige:</b><ul style="margin:6px 0 0 18px;">'
          + d.faltantes.map((f) => '<li>' + esc(f) + '</li>').join('') + '</ul></div>';
     }
 
@@ -4119,7 +4133,7 @@ const app = {
       let s = '<div style="font-weight:700;margin:14px 0 6px;">' + esc(titulo) + '</div>';
       campos.forEach((c) => {
         const alerta = c.aproximado
-          ? '<div style="color:#92400e;font-size:11px;margin-top:3px;">⚠️ ' + esc(c.nota || 'Verifique este dato.') + '</div>'
+          ? '<div style="color:#92400e;font-size:11px;margin-top:3px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> ' + esc(c.nota || 'Verifique este dato.') + '</div>'
           : (c.nota ? '<div style="color:#666;font-size:11px;margin-top:3px;">' + esc(c.nota) + '</div>' : '');
         s += '<div style="display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #eee;">'
            + '<div style="flex:0 0 40%;font-size:12px;color:#444;">' + esc(c.campo)
@@ -4145,7 +4159,7 @@ const app = {
 
   _copiarCampoRUE(btn) {
     const txt = btn.getAttribute('data-copiar') || '';
-    const listo = () => { const o = btn.textContent; btn.textContent = '✓ Copiado'; setTimeout(() => { btn.textContent = o; }, 1200); };
+    const listo = () => { const o = btn.textContent; btn.textContent = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg> Copiado'; setTimeout(() => { btn.textContent = o; }, 1200); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(listo).catch(() => this.toast('No se pudo copiar', 'error'));
     } else {
@@ -4183,7 +4197,7 @@ const app = {
       } else {
         /* v1.37 (deuda portada de la app de referencia): el servidor respondió
            pero sin la lista — NO es lo mismo que "de verdad no hay vehículos".
-           Antes esto se confundía con la flota vacía y "🚒 Vehículos del
+           Antes esto se confundía con la flota vacía y " Vehículos del
            cuerpo" decía "Todavía no hay vehículos" aunque sí los hubiera. */
         this._flotaError = true;
         this._flota = this._flota || [];
@@ -4292,8 +4306,8 @@ const app = {
       // v1.37: distingue "no se pudo cargar" de "de verdad no hay vehículos"
       // (ver _cargarFlota) — antes las dos se veían igual.
       cont.innerHTML = this._flotaError
-        ? '<div style="color:#c00;font-size:12px;text-align:center;padding:10px;">⚠️ No se pudo cargar la flota. Revise su conexión y toque "🔄 Actualizar".</div>'
-        : '<div style="color:#166534;font-size:12px;text-align:center;padding:10px;opacity:.8;">'
+        ? '<div class="empty-state empty-error" style="color:#c00;font-size:12px;text-align:center;padding:10px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-offline" xlink:href="#empty-offline" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg> No se pudo cargar la flota. Revise su conexión y toque "🔄 Actualizar".</div>'
+        : '<div class="empty-state empty-ok" style="color:#166534;font-size:12px;text-align:center;padding:10px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-vehicle" xlink:href="#empty-vehicle" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>'
           + 'Todavía no hay vehículos. Agregue el primero para que aparezca al reportar.</div>';
       return;
     }
@@ -4607,7 +4621,7 @@ const app = {
   },
 
   // v6.07: `btn` opcional, mismo criterio que cargarEstadoPins — el botón
-  // 🔄 Actualizar tiene que dar señal de que se tocó.
+  //  Actualizar tiene que dar señal de que se tocó.
   async cargarAdministradores(btn) {
     const cont = document.getElementById('listaAdmins');
     if (!cont) return;
@@ -4701,7 +4715,7 @@ const app = {
       const d = await resp.json();
       if (!d.ok) { cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">'+app._esc(d.error||'Error')+'</div>'; return; }
       if (!d.unidades || !d.unidades.length) {
-        cont.innerHTML = '<div style="font-size:11px;color:#999;padding:8px;">Todavía no hay nadie vinculado a este cuerpo.</div>';
+        cont.innerHTML = '<div class="empty-state" style="font-size:11px;color:#999;padding:8px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-personnel" xlink:href="#empty-personnel" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Todavía no hay nadie vinculado a este cuerpo.</div>';
         return;
       }
       const miCorreo = String((this.usuario&&this.usuario.email)||'').toLowerCase().trim();
@@ -4808,7 +4822,7 @@ const app = {
      su hash, así que desde acá no hay forma de averiguar el de nadie: se puede
      reemplazar, no leer. Los que NO tienen PIN salen primero, porque son los que
      todavía no pueden firmar. */
-  // v6.07: `btn` es opcional. Cuando viene (lo manda el botón 🔄 Actualizar) se
+  // v6.07: `btn` es opcional. Cuando viene (lo manda el botón  Actualizar) se
   // usa _conBloqueo para que el botón muestre el spinner: hasta v6.06 tocarlo no
   // producía NINGUNA señal visible, porque desde v6.05 la lista ya venía cargada
   // al abrir el Panel. Se sentía muerto (lo reportó Jeferson).
@@ -4823,7 +4837,7 @@ const app = {
           body: JSON.stringify({ accion:'listarEstadoPins', adminEmail:this.usuario.email, adminPassword:this._adminPwdSession||'' }) });
         const d = await resp.json();
         if (!d.ok) { this._pinsData = null; cont.innerHTML = '<div style="font-size:12px;color:#c00;padding:8px;">'+app._esc(d.error||'Error')+'</div>'; return; }
-        if (!d.personal || !d.personal.length) { this._pinsData = null; cont.innerHTML = '<div style="font-size:12px;color:#999;padding:8px;">Sin personal activo.</div>'; return; }
+        if (!d.personal || !d.personal.length) { this._pinsData = null; cont.innerHTML = '<div class="empty-state empty-compact" style="font-size:12px;color:#999;padding:8px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-personnel" xlink:href="#empty-personnel" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin personal activo.</div>'; return; }
         // Se guarda en memoria para poder filtrar SIN volver a pedirle al servidor:
         // con enlaces lentos cada consulta de más se paga en segundos de espera.
         this._pinsData = d;
@@ -4870,8 +4884,8 @@ const app = {
       const ced = app._esc(p.cedula||'');
       const nom = app._esc(p.nombre||'(sin nombre)');
       const badge = p.tienePin
-        ? '<span style="font-size:10px;color:#065f46;font-weight:700;">✅ con PIN' + (p.desde ? ' · ' + app._esc(p.desde) : '') + '</span>'
-        : '<span style="font-size:10px;color:#b45309;font-weight:700;">⚠️ sin PIN</span>';
+        ? '<span style="font-size:10px;color:#065f46;font-weight:700;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg> con PIN' + (p.desde ? ' · ' + app._esc(p.desde) : '') + '</span>'
+        : '<span style="font-size:10px;color:#b45309;font-weight:700;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> sin PIN</span>';
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;">'
         + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;color:#1f2937;">'+nom+'</div>'
         // Contraste subido de #94a3b8 a #475569: la línea de la cédula era
@@ -4968,7 +4982,7 @@ const app = {
            saliendo en Operatividad, marcada como "no cruza con la base"). Si el
            nombre estaba mal escrito o la persona no debía estar, hay que ir a la
            actividad y corregirla: este botón te lleva directo. */
-        const verAct = p.idActividad ? `<button data-act="${app._esc(p.idActividad)}" onclick="app.verDetalleActividad(this.dataset.act)" style="width:100%;margin-top:6px;padding:7px;background:#fff;color:#92400e;border:1px solid #f59e0b;border-radius:6px;font-weight:600;cursor:pointer;font-size:12px;">📋 Ver la actividad donde apareció</button>` : '';
+        const verAct = p.idActividad ? `<button data-act="${app._esc(p.idActividad)}" onclick="app.verDetalleActividad(this.dataset.act)" style="width:100%;margin-top:6px;padding:7px;background:#fff;color:#92400e;border:1px solid #f59e0b;border-radius:6px;font-weight:600;cursor:pointer;font-size:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h8M8 18h5"/></svg> Ver la actividad donde apareció</button>` : '';
         return `
           <div style="background:#fff;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:8px;">
             <div style="font-weight:700;font-size:14px;color:#1f2937;">${nom}</div>
@@ -4977,10 +4991,10 @@ const app = {
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
               <button data-ced="${ced}" data-nom="${nom}"
                       onclick="app.aprobarPendienteRoster(this, this.dataset.ced, this.dataset.nom)"
-                      style="flex:1;min-width:110px;padding:9px;background:#065f46;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;">✅ Aprobar</button>
+                      style="flex:1;min-width:110px;padding:9px;background:#065f46;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg> Aprobar</button>
               <button data-ced="${ced}" data-nom="${nom}"
                       onclick="app.descartarPendienteRoster(this, this.dataset.ced, this.dataset.nom)"
-                      style="flex:1;min-width:110px;padding:9px;background:#991b1b;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;">🗑️ Descartar</button>
+                      style="flex:1;min-width:110px;padding:9px;background:#991b1b;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg> Descartar</button>
             </div>
             ${verAct}
           </div>`;
@@ -5098,7 +5112,7 @@ const app = {
       .sort((a, b) => (b.consecutivo || '').localeCompare(a.consecutivo || ''));
 
     if (reportes.length === 0) {
-      cont.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">No hay reportes</div>';
+      cont.innerHTML = '<div class="empty-state" style="padding:20px;text-align:center;color:#666;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-report" xlink:href="#empty-report" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>No hay reportes</div>';
       return;
     }
 
@@ -5107,7 +5121,7 @@ const app = {
         <div style="font-weight:bold;color:var(--rojo);font-size:15px;">${app._esc(r.consecutivo || '(sin consecutivo)')}</div>
         <div style="font-size:13px;color:#333;margin-top:2px;">${app._esc(r.direccion || 'Sin dirección')}</div>
         <div style="font-size:11px;color:#888;margin-top:4px;">
-          ${r.operadorEmail || ''} · ${(r.clasificacion || []).join(', ') || 'Sin clasificar'}
+          ${app._esc(r.operadorEmail || '')} · ${app._esc((r.clasificacion || []).join(', ') || 'Sin clasificar')}
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
           <button data-id="${app._esc(r.id)}" onclick="app.verReporteAdmin(this.dataset.id)"
@@ -5209,10 +5223,10 @@ const app = {
     if (!rCompleto) {
       const _cid = String(idReporte).replace(/"/g, '&quot;');
       cont.innerHTML = '<div style="padding:24px;text-align:center;color:#c00;">'
-        + '<div style="font-size:40px;">⚠️</div>'
+        + '<div style="font-size:40px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg></div>'
         + '<div style="margin-top:8px;font-weight:700;">No se pudo cargar el reporte completo</div>'
         + '<div style="font-size:13px;color:#666;margin-top:6px;">Puede ser la conexión o que la sesión de administrador expiró. Intenta de nuevo.</div>'
-        + '<button data-id="' + _cid + '" onclick="app.verReporteAdmin(this.dataset.id)" style="margin-top:14px;padding:10px 18px;background:#6e2fa0;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🔄 Reintentar</button>'
+        + '<button data-id="' + _cid + '" onclick="app.verReporteAdmin(this.dataset.id)" style="margin-top:14px;padding:10px 18px;background:#6e2fa0;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 7v5h-5M4 17v-5h5M6 8a7 7 0 0 1 12-2l2 2M18 16a7 7 0 0 1-12 2l-2-2"/></svg> Reintentar</button>'
         + '</div>';
       this._reporteAdminViendo = null;
       return;
@@ -5259,7 +5273,7 @@ const app = {
               <img src="${app._esc(url)}" alt="Foto ${i+1}"
                    style="width:100%;height:120px;object-fit:cover;background:#f0f0f0;display:block;"
                    onerror="this.style.display='none';this.parentNode.innerHTML+='<div style=&quot;padding:8px;color:#c00;font-size:11px;&quot;>No se pudo cargar la foto ${i+1}</div>';">
-              <div style="padding:4px;font-size:11px;text-align:center;background:#f8f8f8;color:#333;">📷 Foto ${i+1}</div>
+              <div style="padding:4px;font-size:11px;text-align:center;background:#f8f8f8;color:#333;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg> Foto ${i+1}</div>
             </a>
           `).join('')
         }</div>`;
@@ -5295,7 +5309,7 @@ const app = {
     const fila = (label, valor) => `<div><strong>${label}:</strong> ${fmt(valor)}</div>`;
 
     return `
-      <h3 style="color:var(--rojo);margin:0 0 12px 0;">📄 ${app._esc(r.consecutivo || '(sin consecutivo)')}</h3>
+      <h3 style="color:var(--rojo);margin:0 0 12px 0;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M9 17h6"/></svg> ${app._esc(r.consecutivo || '(sin consecutivo)')}</h3>
       <div style="font-size:12px;color:#666;margin-bottom:12px;">
         ID: <code>${app._esc(r.id)}</code> · Estación: ${fmt(r.estacion)}
       </div>
@@ -5443,7 +5457,7 @@ const app = {
             <button data-id="${app._esc(idReporte)}" data-nombre="${app._esc(nombre)}"
                     onclick="app.quitarBomberoBonifAdmin(this, this.dataset.id, this.dataset.nombre)"
                     title="Quitar"
-                    style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:14px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;">×</button>`;
+                    style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:14px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>`;
         return `
           <span style="display:inline-flex;align-items:center;gap:6px;background:#065f46;color:#fff;padding:5px ${esVistaReadOnly ? '10px' : '8px'} 5px 10px;border-radius:14px;font-size:12px;font-weight:600;">
             ${app._esc(nombre)}${btnQuitar}
@@ -6048,7 +6062,7 @@ const app = {
 
     const recursosHTML = (r.recursos || []).map(rec => {
       const personalStr = (rec.personal && rec.personal.length)
-        ? `<br><small>👥 ${app._esc(rec.personal.join(', '))}</small>` : '';
+        ? `<br><small><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.7-4 3-6 6-6s5.3 2 6 6M15 15c3 0 5 2 5.5 5"/></svg> ${app._esc(rec.personal.join(', '))}</small>` : '';
       const cantStr = rec.cantidad && String(rec.cantidad) !== '1' ? ` (x${app._esc(rec.cantidad)})` : '';
       return `<li><strong>${app._esc(rec.recurso)}</strong>${cantStr} ${rec.codigo ? '— ' + app._esc(rec.codigo) : ''} ${rec.responsable ? '— ' + app._esc(rec.responsable) : ''}${personalStr}</li>`;
     }).join('');
@@ -6060,7 +6074,7 @@ const app = {
           <span class="badge ${this._esc(r.estado)}">${this.etiquetaEstado(r.estado)}</span>
           ${fecha}
         </p>
-        <p><strong>Tipo:</strong> ${app._esc(tipos)}</p>
+        <p><strong>Tipo:</strong> ${app._pictoSvg(r.clasificacion)} ${app._esc(tipos)}</p>
         <p><strong>Dirección:</strong> ${app._esc(r.direccion || '—')}</p>
         <p><strong>Barrio:</strong> ${app._esc(r.barrio || '—')}</p>
         ${r.gps ? `<p><strong>GPS:</strong> ${r.gps.lat.toFixed(6)}, ${r.gps.lng.toFixed(6)} ${r.gpsManual ? '(manual)' : ''}</p>` : ''}
@@ -6114,7 +6128,7 @@ const app = {
       const banner = document.createElement('div');
       banner.style.cssText = 'margin:0 0 12px 0;padding:12px 14px;background:#fff3cd;border:1px solid #f0b800;border-left:4px solid #f0b800;border-radius:6px;color:#5a4500;font-size:13px;line-height:1.5;';
       banner.innerHTML = `
-        <strong>🔒 Reporte protegido (más de 24 horas)</strong><br>
+        <strong><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Reporte protegido (más de 24 horas)</strong><br>
         Este reporte ya no puede ser modificado ni eliminado por usted.
         Si necesita corregir información, <strong>comuníquese con el administrador</strong>
         del Cuerpo de Bomberos para que realice el cambio desde el Panel Admin.
@@ -6125,7 +6139,7 @@ const app = {
       const horasRest = (24 - puede.horas).toFixed(1);
       const banner = document.createElement('div');
       banner.style.cssText = 'margin:0 0 12px 0;padding:10px 12px;background:#fef3c7;border-left:4px solid #f0b800;border-radius:6px;color:#5a4500;font-size:12px;';
-      banner.innerHTML = `⏳ <strong>Quedan ~${horasRest} horas</strong> para editar este reporte. Después solo el administrador podrá modificarlo.`;
+      banner.innerHTML = `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg> <strong>Quedan ~${horasRest} horas</strong> para editar este reporte. Después solo el administrador podrá modificarlo.`;
       cont.insertBefore(banner, cont.firstChild);
     }
 
@@ -6578,7 +6592,7 @@ const app = {
         <td>${r.firmas?.afectado ? `<img src="${app._esc(this._imgDrive(r.firmas.afectado))}" class="firma-img">` : '&nbsp;'}</td>
       </tr>
     </table>
-    <div class="aviso">⚠ Aviso Ley 1581 de 2012 (Habeas Data): Los datos personales recolectados serán tratados exclusivamente para la gestión y estadística de emergencias del ${app._esc(app._inst().nombre || 'cuerpo de bomberos')}, conforme a la Ley 1575 de 2012. El titular puede conocer, actualizar y rectificar sus datos ante ${app._esc(app._inst().nombre || 'el cuerpo de bomberos')}.</div>
+    <div class="aviso"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> Aviso Ley 1581 de 2012 (Habeas Data): Los datos personales recolectados serán tratados exclusivamente para la gestión y estadística de emergencias del ${app._esc(app._inst().nombre || 'cuerpo de bomberos')}, conforme a la Ley 1575 de 2012. El titular puede conocer, actualizar y rectificar sus datos ante ${app._esc(app._inst().nombre || 'el cuerpo de bomberos')}.</div>
   </div>
 </div>
 
@@ -6930,6 +6944,7 @@ ${paginaFotos}
   _marcarCampoFalta(id) {
     const el = document.getElementById(id);
     if (!el) return;
+    const sec = el.closest('.seccion-form'); if (sec && sec.classList.contains('colapsada')) sec.classList.remove('colapsada');
     el.classList.remove('campo-error'); void el.offsetWidth; el.classList.add('campo-error');
     const limpiar = () => { el.classList.remove('campo-error'); el.removeEventListener('input', limpiar); };
     el.addEventListener('input', limpiar);
@@ -7012,7 +7027,7 @@ ${paginaFotos}
       this._renderAtenciones();
       ['prevFotoInicio','prevFotoMedio','prevFotoFin','prevFotoF4','prevFotoF5','prevFotoF6'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.innerHTML = '<span style="font-size:20px;">📷</span>';
+        if(el) el.innerHTML = '<span style="font-size:20px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span>';
       });
     }, 50);
   },
@@ -7099,16 +7114,16 @@ ${paginaFotos}
       const fotos = (a.fotos || []).map((f, j) =>
         `<div style="position:relative;width:60px;height:60px;">
            <img src="${f}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">
-           <button type="button" onclick="app.quitarFotoAtencion(${i},${j})" style="position:absolute;top:-6px;right:-6px;background:#c41e3a;color:#fff;border:none;border-radius:50%;width:20px;height:20px;line-height:1;cursor:pointer;font-size:12px;">×</button>
+           <button type="button" onclick="app.quitarFotoAtencion(${i},${j})" style="position:absolute;top:-6px;right:-6px;background:#c41e3a;color:#fff;border:none;border-radius:50%;width:20px;height:20px;line-height:1;cursor:pointer;font-size:12px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
          </div>`).join('');
       const btnFoto = (a.fotos || []).length < 3
         ? `<label style="width:60px;height:60px;background:#f5f5f5;border:2px dashed #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-             <span style="font-size:18px;">📷</span>
+             <span style="font-size:18px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span>
              <input type="file" accept="image/*" style="display:none" onchange="app.cargarFotoAtencion(${i},this)">
            </label>` : '';
       return `<div style="border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:10px;background:#fafafa;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <b style="font-size:13px;color:#1a5276;">🩹 Atención ${i+1}</b>
+          <b style="font-size:13px;color:#1a5276;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg> Atención ${i+1}</b>
           <button type="button" onclick="app.quitarAtencion(${i})" style="background:#fdecea;color:#c0392b;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:700;">Quitar</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -7142,7 +7157,7 @@ ${paginaFotos}
       });
       const data = await resp.json();
       if (!data.ok || !data.resultados.length) {
-        sug.innerHTML = '<div style="padding:10px;color:#999;font-size:13px;">Sin resultados — usa el botón de persona nueva</div>';
+        sug.innerHTML = '<div class="empty-state empty-compact" style="padding:10px;color:#999;font-size:13px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-search" xlink:href="#empty-search" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin resultados — usa el botón de persona nueva</div>';
         return;
       }
       // v5.63 (BUG duplicados): red de seguridad — si el backend devuelve la
@@ -7181,7 +7196,7 @@ ${paginaFotos}
     if (yaExiste) { this.toast(p.nombre + ' ya está en la lista', 'error'); return; }
     this._actPersonal.push(p);
     this._renderPersonalActividad();
-    this.toast('✅ ' + p.nombre + ' agregado', 'exito');
+    this.toast(' ' + p.nombre + ' agregado', 'exito');
   },
 
   agregarPersonalNuevoActividad() {
@@ -7197,12 +7212,12 @@ ${paginaFotos}
     document.getElementById('actNuevoCedula').value = '';
     document.getElementById('actNuevoTel').value = '';
     document.getElementById('actFormNuevo').style.display = 'none';
-    this.toast('✅ ' + nombre + ' agregado', 'exito');
+    this.toast(' ' + nombre + ' agregado', 'exito');
   },
 
   _renderPersonalActividad() {
     const cont = document.getElementById('actPersonalLista');
-    if (!this._actPersonal.length) { cont.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:10px;">Sin personal aún</div>'; return; }
+    if (!this._actPersonal.length) { cont.innerHTML = '<div class="empty-state empty-compact" style="color:#999;font-size:13px;text-align:center;padding:10px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-personnel" xlink:href="#empty-personnel" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin personal aún</div>'; return; }
     cont.innerHTML=this._actPersonal.map((p,i)=>{
       const enc=!!p.esEncargado;
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:'+(enc?'#fff8e1':'#f8f8f8')+';border-radius:8px;margin-bottom:6px;">'
@@ -7232,7 +7247,7 @@ ${paginaFotos}
      #actRecursoResponsable, #actRecursoSug, #actRecursosLista) pero NINGUNO
      de esos cinco elementos se leía nunca desde app.js, y `_actRecursos` se
      declaraba, se reseteaba y se enviaba al backend sin recibir jamás un
-     push. Encima el botón "➕ Agregar vehículo" llamaba a `agregarRecurso()`,
+     push. Encima el botón " Agregar vehículo" llamaba a `agregarRecurso()`,
      que pertenece al formulario de EMERGENCIA y escribe en #tablaRecursos:
      la fila se agregaba a otra pantalla, invisible desde acá.
      Consecuencia real: TODO vehículo y maquinista anotado en una actividad se
@@ -7279,13 +7294,13 @@ ${paginaFotos}
   _renderRecursosActividad() {
     const cont = document.getElementById('actRecursosLista');
     if (!cont) return;
-    if (!this._actRecursos.length) { cont.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:10px;">Sin vehículos aún</div>'; return; }
+    if (!this._actRecursos.length) { cont.innerHTML = '<div class="empty-state empty-compact" style="color:#999;font-size:13px;text-align:center;padding:10px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-vehicle" xlink:href="#empty-vehicle" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin vehículos aún</div>'; return; }
     // I5: todo a innerHTML pasa por _esc. I10: data-* en vez de meter el índice
     // dentro de una cadena con comillas.
     cont.innerHTML = this._actRecursos.map((r,i) =>
       '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8f8f8;border-radius:8px;margin-bottom:6px;">'
       +'<div><strong style="font-size:14px;">'+app._esc(r.tipo||'(sin tipo)')+'</strong>'+(r.codigo?' <span style="color:#666;font-size:12px;">('+app._esc(r.codigo)+')</span>':'')
-      +'<div style="font-size:12px;color:#666;">'+(r.responsable ? '👤 '+app._esc(r.responsable)+(r.responsableCedula?' · CC: '+app._esc(r.responsableCedula):'') : '<span style="color:#b98;">sin maquinista</span>')+'</div></div>'
+      +'<div style="font-size:12px;color:#666;">'+(r.responsable ? '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg> '+app._esc(r.responsable)+(r.responsableCedula?' · CC: '+app._esc(r.responsableCedula):'') : '<span style="color:#b98;">sin maquinista</span>')+'</div></div>'
       +'<button data-i="'+i+'" onclick="app._quitarRecursoActividad(+this.dataset.i)" style="background:none;border:none;color:#c00;font-size:18px;cursor:pointer;">&#x2715;</button>'
       +'</div>'
     ).join('');
@@ -7370,7 +7385,7 @@ ${paginaFotos}
       });
       const rv2 = document.querySelector('input[name="actModalidad"][value="Voluntaria"]'); if (rv2) rv2.checked = true;
       ['prevFotoInicio','prevFotoMedio','prevFotoFin','prevFotoF4','prevFotoF5','prevFotoF6'].forEach(id => {
-        const el = document.getElementById(id); if(el) el.innerHTML = '<span style="font-size:20px;">📷</span>';
+        const el = document.getElementById(id); if(el) el.innerHTML = '<span style="font-size:20px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span>';
       });
       this._renderPersonalActividad();
       this._renderRecursosActividad();
@@ -7400,7 +7415,7 @@ ${paginaFotos}
       if (data.ok && data.actividades && data.actividades.length) {
         this._listaActividades = data.actividades;
         htmlAct = data.actividades.map((a) =>
-          '<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #1a5276;">'
+          '<div class="ops-log-item ops-log-activity" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #1a5276;">'
           +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
           +'<div style="flex:1;cursor:pointer;" data-actid="'+a.id+'" onclick="app.verDetalleActividad(this.dataset.actid)">'
           +'<div style="font-weight:700;color:#1a5276;">'+app._esc(a.tipo)+' - '+app._esc(String(a.descripcion||'').substring(0,50))+'</div>'
@@ -7411,7 +7426,7 @@ ${paginaFotos}
           +'</div></div>'
         ).join('');
       } else {
-        htmlAct = '<div style="text-align:center;padding:20px;color:#999;">No hay actividades registradas</div>';
+        htmlAct = '<div class="empty-state" style="text-align:center;padding:20px;color:#999;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-activity" xlink:href="#empty-activity" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>No hay actividades registradas</div>';
       }
     } catch(e) { htmlAct = '<div style="color:#c00;padding:14px;">Error cargando actividades</div>'; }
 
@@ -7421,7 +7436,7 @@ ${paginaFotos}
        esa sección en su app. Salió con el módulo completo. */
 
     cont.innerHTML =
-      '<div style="font-size:13px;font-weight:700;color:#1a5276;margin:4px 0 8px;letter-spacing:.5px;">📋 ACTIVIDADES</div>' + htmlAct;
+      '<div class="ops-section-label" style="font-size:13px;font-weight:700;color:#1a5276;margin:4px 0 8px;letter-spacing:.5px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h8M8 18h5"/></svg> Actividades</div>' + htmlAct;
   },
 
   async verDetalleActividad(id) {
@@ -7439,34 +7454,34 @@ ${paginaFotos}
       const a = data.actividad;
       this._detalleActividadData = a;
       cont.innerHTML = `
-        <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-          <div style="font-size:18px;font-weight:700;color:#1a5276;margin-bottom:8px;">${app._esc(a.tipo)}
+        <div class="ops-dossier-card" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
+          <div class="ops-dossier-title" style="font-size:18px;font-weight:700;color:#1a5276;margin-bottom:8px;">${app._esc(a.tipo)}
             ${a.modalidad === 'Paga'
               ? '<span style="font-size:11px;font-weight:700;background:#fef3c7;color:#92600a;border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle;">💵 PAGA</span>'
               : '<span style="font-size:11px;font-weight:700;background:#e7f3e7;color:#1e6b2f;border-radius:10px;padding:2px 8px;margin-left:6px;vertical-align:middle;">🙋 VOLUNTARIA</span>'}
           </div>
           <div style="color:#333;margin-bottom:6px;">${app._esc(a.descripcion)}</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:#555;">
-            <div>📅 ${app._esc(a.fecha)}</div><div>📍 ${app._esc(a.lugar||'-')}</div>
-            <div>🕐 ${a.horaInicio||'-'} → ${a.horaFin||'-'}</div><div>⏱️ ${a.duracion}h</div>
+            <div><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg> ${app._esc(a.fecha)}</div><div><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg> ${app._esc(a.lugar||'-')}</div>
+            <div>🕐 ${a.horaInicio||'-'} <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m9 5 7 7-7 7"/></svg> ${a.horaFin||'-'}</div><div>⏱️ ${a.duracion}h</div>
           </div>
           ${a.novedades ? `<div style="margin-top:8px;padding:8px;background:#f5f5f5;border-radius:6px;font-size:13px;">${app._esc(a.novedades)}</div>` : ''}
         </div>
-        <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-          <div style="font-weight:700;margin-bottom:8px;">👥 Personal (${a.personal.length})</div>
+        <div class="ops-dossier-card" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
+          <div style="font-weight:700;margin-bottom:8px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.7-4 3-6 6-6s5.3 2 6 6M15 15c3 0 5 2 5.5 5"/></svg> Personal (${a.personal.length})</div>
           ${a.personal.map(p => `<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:14px;">
             <strong>${app._esc(p.nombre)}</strong> — ${app._esc(p.rango)}<div style="font-size:12px;color:#666;">CC: ${app._esc(p.cedula)}</div>
           </div>`).join('')}
         </div>
         ${(a.fotoInicio||a.fotoMedio||a.fotoFin||a.fotoF4||a.fotoF5||a.fotoF6) ? `
-        <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
+        <div class="ops-dossier-card" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
           <div style="font-weight:700;margin-bottom:8px;">📸 Fotos</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
             ${[a.fotoInicio,a.fotoMedio,a.fotoFin,a.fotoF4,a.fotoF5,a.fotoF6].map((f,idx) => f ? `<div><div style="font-size:11px;color:#666;text-align:center;">Foto ${idx+1}</div><img src="${app._esc(this._imgDrive(f))}" style="width:100%;border-radius:6px;"></div>` : '').join('')}
           </div>
         </div>` : ''}
         ${this._atencionesDetalleHTML(a.atenciones)}`;
-    } catch(e) { cont.innerHTML = `<div style="color:#c00;padding:20px;">Error: ${e.message}</div>`; }
+    } catch(e) { cont.innerHTML = `<div style="color:#c00;padding:20px;">Error: ${app._esc(e.message)}</div>`; }
   },
 
   // v1.45: tarjetas de atenciones para el detalle en pantalla (fotos como URL de Drive).
@@ -7476,14 +7491,14 @@ ${paginaFotos}
       const fotos = (a.fotos || []).map(f => `<img src="${app._esc(this._imgDrive(f))}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">`).join('');
       const meta = [a.paciente ? '👤 ' + app._esc(a.paciente) : '', a.documento ? 'CC ' + app._esc(a.documento) : '', a.hora ? '🕐 ' + app._esc(a.hora) : ''].filter(Boolean).join(' · ');
       return `<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;">
-        <div style="font-weight:700;color:#1a5276;font-size:13px;">🩹 Atención ${i+1}${a.tipo ? ' — ' + app._esc(a.tipo) : ''}</div>
+        <div style="font-weight:700;color:#1a5276;font-size:13px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg> Atención ${i+1}${a.tipo ? ' — ' + app._esc(a.tipo) : ''}</div>
         ${meta ? `<div style="font-size:12px;color:#555;margin-top:2px;">${meta}</div>` : ''}
         ${a.descripcion ? `<div style="font-size:13px;color:#333;margin-top:4px;">${app._esc(a.descripcion)}</div>` : ''}
         ${fotos ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">${fotos}</div>` : ''}
       </div>`;
     }).join('');
-    return `<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
-      <div style="font-weight:700;margin-bottom:8px;">🩹 Atenciones (${ats.length})</div>${cards}</div>`;
+    return `<div class="ops-dossier-card" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="font-weight:700;margin-bottom:8px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg> Atenciones (${ats.length})</div>${cards}</div>`;
   },
 
   // v1.45: atenciones para el PDF oficial.
@@ -7586,7 +7601,7 @@ ${paginaFotos}
     const cont = document.getElementById('operatividadContenido');
     if (!cont) return;
     if (!this.esAdmin()) {
-      cont.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:40px;">🔒</div><div style="color:#999;margin-top:10px;">Solo administradores pueden ver la operatividad</div></div>';
+      cont.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:40px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><div style="color:#999;margin-top:10px;">Solo administradores pueden ver la operatividad</div></div>';
       return;
     }
     cont.innerHTML = this._skeleton(1) + this._skeleton(4, 'linea');
@@ -7605,7 +7620,7 @@ ${paginaFotos}
       this._operStats = data.stats || null;
       this._renderOperatividad();
       this._animarEntradaLista(document.getElementById('operatividadContenido'));   // v1.41: entra escalonado
-    } catch(e) { cont.innerHTML = `<div style="color:#c00;padding:20px;">Error: ${e.message}</div>`; }
+    } catch(e) { cont.innerHTML = `<div style="color:#c00;padding:20px;">Error: ${app._esc(e.message)}</div>`; }
   }
 
 ,
@@ -7622,14 +7637,14 @@ ${paginaFotos}
     // NO resetear _operMes — '' significa "Todo el año"
     if (!this._operAnio) this._operAnio = anioActual;
     const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const filtros = '<div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;">'
+    const filtros = '<div class="ops-filterbar" style="background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;">'
       + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
-      + '<button onclick="app._operVista=\'general\';app.cargarOperatividad()" style="flex:1;padding:8px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:'+(this._operVista!=='unidad'?'#6e2fa0':'#f0f0f0')+';color:'+(this._operVista!=='unidad'?'#fff':'#333')+';">📊 General</button>'
-      + '<button onclick="app._operVista=\'unidad\';app.cargarOperatividad()" style="flex:1;padding:8px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:'+(this._operVista==='unidad'?'#6e2fa0':'#f0f0f0')+';color:'+(this._operVista==='unidad'?'#fff':'#333')+';">👤 Por Unidad</button>'
+      + '<button onclick="app._operVista=\'general\';app.cargarOperatividad()" style="flex:1;padding:8px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:'+(this._operVista!=='unidad'?'#6e2fa0':'#f0f0f0')+';color:'+(this._operVista!=='unidad'?'#fff':'#333')+';"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg> General</button>'
+      + '<button onclick="app._operVista=\'unidad\';app.cargarOperatividad()" style="flex:1;padding:8px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:'+(this._operVista==='unidad'?'#6e2fa0':'#f0f0f0')+';color:'+(this._operVista==='unidad'?'#fff':'#333')+';"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg> Por Unidad</button>'
       + '</div>'
       + '<div style="display:flex;gap:8px;">'
       + '<select onchange="app._operMes=this.value;app.cargarOperatividad()" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;">'
-      + '<option value=""'+(!this._operMes?' selected':'')+'>📅 Todo el año</option>'
+      + '<option value=""'+(!this._operMes?' selected':'')+'><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg> Todo el año</option>'
       + meses.map((m,i)=>{ const v=String(i+1).padStart(2,'0'); return '<option value="'+v+'"'+(this._operMes===v?' selected':'')+'>'+m+'</option>'; }).join('')
       + '</select>'
       + '<select onchange="app._operAnio=this.value;app.cargarOperatividad()" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;">'
@@ -7640,9 +7655,9 @@ ${paginaFotos}
     if (!this._operData.length) {
       const mesesN = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       const mesNom0 = this._operMes ? mesesN[parseInt(this._operMes)-1] : 'Todo el año';
-      const card0 = (n,lbl,col) => '<div style="background:#fff;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:28px;font-weight:700;color:'+col+';">'+n+'</div><div style="font-size:12px;color:#666;">'+lbl+'</div></div>';
+      const card0 = (n,lbl,col) => '<div class="ops-metric" style="background:#fff;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:28px;font-weight:700;color:'+col+';">'+n+'</div><div style="font-size:12px;color:#666;">'+lbl+'</div></div>';
       cont.innerHTML = filtros
-        + '<div style="background:#6e2fa0;color:#fff;border-radius:12px;padding:16px;margin-bottom:10px;">'
+        + '<div class="ops-period" style="background:#6e2fa0;color:#fff;border-radius:12px;padding:16px;margin-bottom:10px;">'
         + '<div style="font-size:13px;opacity:.8;">Período</div>'
         + '<div style="font-size:18px;font-weight:700;">'+mesNom0+' '+this._operAnio+'</div>'
         + '<div style="font-size:12px;opacity:.7;margin-top:2px;">' + app._esc(app._inst().nombre || '') + '</div></div>'
@@ -7650,7 +7665,7 @@ ${paginaFotos}
         + card0(0,'Unidades con registros','#1a5276') + card0(0,'Emergencias únicas','#c0392b')
         + card0('0h','Horas en actividades','#1e8449')
         + '</div>'
-        + '<div style="text-align:center;padding:20px;color:#999;background:#fff;border-radius:12px;">Sin registros en este período</div>';
+        + '<div class="empty-state" style="text-align:center;padding:20px;color:#999;background:#fff;border-radius:12px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-search" xlink:href="#empty-search" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin registros en este período</div>';
       return;
     }
     cont.innerHTML = filtros + '<div id="operContenidoFiltrado"></div>';
@@ -7685,7 +7700,7 @@ ${paginaFotos}
       + '<strong style="margin-left:6px;font-size:13px;">'+app._esc(p.nombre||'')+'</strong></div>'
       + '<span style="font-weight:700;color:#6e2fa0;">'+val+' '+lbl+'</span></div>';
     const rankList = (lista, getId, getVal, lbl, color) => {
-      if(!lista.length) return '<div style="color:#999;font-size:13px;text-align:center;padding:8px;">Sin datos en este período</div>';
+      if(!lista.length) return '<div class="empty-state" style="color:#999;font-size:13px;text-align:center;padding:8px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-search" xlink:href="#empty-search" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin datos en este período</div>';
       const top3 = lista.slice(0,3).map((p,i)=>rankRow(p,i,getVal(p),lbl)).join('');
       const resto = lista.slice(3);
       if(!resto.length) return top3;
@@ -7693,42 +7708,42 @@ ${paginaFotos}
       return top3
         + '<div id="'+masId+'" style="display:none;">'+resto.map((p,i)=>rankRow(p,i+3,getVal(p),lbl)).join('')+'</div>'
         + '<button data-id="'+masId+'" onclick="var e=document.getElementById(this.dataset.id);var v=e.style.display!==\'none\';e.style.display=v?\'none\':\'block\';this.textContent=v?\'▼ Ver más ('+resto.length+')\':\'▲ Ver menos\';" '
-        + 'style="width:100%;padding:6px;margin-top:4px;background:#f5f5f5;border:none;border-radius:6px;cursor:pointer;font-size:12px;color:'+color+';">▼ Ver más ('+resto.length+')</button>';
+        + 'style="width:100%;padding:6px;margin-top:4px;background:#f5f5f5;border:none;border-radius:6px;cursor:pointer;font-size:12px;color:'+color+';"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 9 7 7 7-7"/></svg> Ver más ('+resto.length+')</button>';
     };
 
     cont.innerHTML = `
-      <div style="background:#6e2fa0;color:#fff;border-radius:12px;padding:16px;margin-bottom:10px;">
+      <div class="ops-period" style="background:#6e2fa0;color:#fff;border-radius:12px;padding:16px;margin-bottom:10px;">
         <div style="font-size:13px;opacity:.8;">Período</div>
         <div style="font-size:18px;font-weight:700;">${mesNombre} ${this._operAnio}</div>
         <div style="font-size:12px;opacity:.7;margin-top:2px;">${app._esc(app._inst().nombre || '')}</div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-        <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
+        <div class="ops-metric" style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
           <div class="op-cifra" style="font-size:28px;font-weight:700;color:#1a5276;">${totalPersonas}</div>
           <div style="font-size:12px;color:#666;">Unidades con registros</div>
           ${this._operStats && this._operStats.unidadesBase !== undefined ? '<div style="font-size:11px;color:#999;margin-top:2px;">Base activa: '+this._operStats.unidadesBase+'</div>' : ''}
         </div>
-        <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
+        <div class="ops-metric" style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
           <div class="op-cifra" style="font-size:28px;font-weight:700;color:#c0392b;">${this._operStats ? this._operStats.totalEmergenciasUnicas : totalEmerg}</div>
           <div style="font-size:12px;color:#666;">Emergencias únicas</div>
         </div>
-        <div style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
+        <div class="ops-metric" style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:28px;font-weight:700;color:#1e8449;">${this._r1((this._operStats && this._operStats.totalHorasActividades !== undefined) ? this._operStats.totalHorasActividades : totalHoras)}h</div>
           <div style="font-size:12px;color:#666;">Horas en actividades</div>
         </div>
       </div>
       ${this._operStats && this._operStats.sinCruce > 0 ? '<div style="background:#fff8e1;border-radius:10px;padding:12px;margin-bottom:10px;border-left:4px solid #f9a825;"><div style="font-weight:700;color:#8d6e00;font-size:13px;">⚠️ '+this._operStats.sinCruce+' registro(s) no cruzan con la base de personal</div><div style="font-size:12px;color:#8d6e00;margin-top:2px;">Son nombres o cédulas escritos distinto en los registros (por eso hay más tarjetas que unidades reales). Búscalos en "Por Unidad": están marcados en ámbar — corrige la escritura en la hoja para que se fusionen.</div></div>' : ''}
 
-      <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
-        <div style="font-weight:700;color:#c0392b;margin-bottom:8px;">🚨 Ranking Emergencias</div>
+      <div class="ops-rank ops-rank-emergency" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
+        <div style="font-weight:700;color:#c0392b;margin-bottom:8px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M6 17h12l-1-8a5 5 0 0 0-10 0zM4 20h16M12 2v2M3 8l2 1M21 8l-2 1"/></svg> Ranking Emergencias</div>
         ${rankList(topEmerg,'rk_emerg',p=>p.emergencias,'emerg.','#c0392b')}
       </div>
-      <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
-        <div style="font-weight:700;color:#1e8449;margin-bottom:8px;">🎯 Ranking Actividades</div>
+      <div class="ops-rank ops-rank-activity" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;">
+        <div style="font-weight:700;color:#1e8449;margin-bottom:8px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Ranking Actividades</div>
         ${rankList(topActiv,'rk_activ',p=>this._r1(p.horasActividades)+'h','activ.','#1e8449')}
       </div>
-      <button onclick="app._imprimirReporteGeneral()" style="background:#6e2fa0;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;">🖨️ Imprimir Informe General</button>`;
+      <button onclick="app._imprimirReporteGeneral()" style="background:#6e2fa0;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg> Imprimir Informe General</button>`;
     // v1.43: las cifras de las tarjetas SUBEN desde 0.
     cont.querySelectorAll('.op-cifra').forEach(el => this._countUp(el, el.textContent));
   },
@@ -7749,8 +7764,8 @@ ${paginaFotos}
       <div id="listaUnidades">
         ${d.map(p => this._cardUnidad(p, mesNombre)).join('')}
       </div>
-      <button onclick="app._imprimirReportePorUnidad()" style="background:#6e2fa0;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-top:8px;margin-bottom:4px;">🖨️ Imprimir Informe por Unidad</button>
-      <button onclick="app._operVista='general';app.cargarOperatividad()" style="background:#f0f0f0;color:#333;border:none;border-radius:12px;padding:12px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;">← Ver Resumen General</button>`;
+      <button onclick="app._imprimirReportePorUnidad()" style="background:#6e2fa0;color:#fff;border:none;border-radius:12px;padding:14px;cursor:pointer;width:100%;font-weight:700;margin-top:8px;margin-bottom:4px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg> Imprimir Informe por Unidad</button>
+      <button onclick="app._operVista='general';app.cargarOperatividad()" style="background:#f0f0f0;color:#333;border:none;border-radius:12px;padding:12px;cursor:pointer;width:100%;font-weight:700;margin-bottom:8px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m15 5-7 7 7 7"/></svg> Ver Resumen General</button>`;
   },
 
   _filtrarUnidades(q) {
@@ -7765,19 +7780,19 @@ ${paginaFotos}
     const pts = this._r1(p.emergencias*2 + p.horasActividades);
     const nom = String(p.nombre||'');
     const uid = 'u_'+nom.replace(/[^a-zA-Z]/g,'').substring(0,12);
-    return '<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #6e2fa0;">'
+    return '<div class="ops-unit" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #6e2fa0;">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
       +'<div><div style="font-weight:700;font-size:15px;">'+app._esc(nom||'(sin nombre)')+'</div>'
       +'<div style="font-size:12px;color:#666;">CC: '+app._esc(p.cedula||'-')+'</div>'
-      +(p.enBase===false?'<div style="font-size:11px;background:#fff8e1;color:#8d6e00;border:1px solid #f9a825;border-radius:6px;padding:2px 6px;margin-top:3px;display:inline-block;">⚠️ No cruza con la base (revisar escritura)</div>':'')
+      +(p.enBase===false?'<div style="font-size:11px;background:#fff8e1;color:#8d6e00;border:1px solid #f9a825;border-radius:6px;padding:2px 6px;margin-top:3px;display:inline-block;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> No cruza con la base (revisar escritura)</div>':'')
       +'</div>'
       +'<div style="text-align:right;"><div style="font-weight:700;color:#6e2fa0;font-size:16px;">'+pts+' pts</div>'
       +'</div></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">'
-      +'<div style="background:#fff5f5;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="emerg" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
+      +'<div class="ops-unit-metric" style="background:#fff5f5;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="emerg" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
       +'<div style="font-size:18px;font-weight:700;color:#c0392b;">'+p.emergencias+'</div>'
       +'<div style="font-size:10px;color:#c0392b;text-decoration:underline;">Ver emerg.</div></div>'
-      +'<div style="background:#f0f8f4;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="activ" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
+      +'<div class="ops-unit-metric" style="background:#f0f8f4;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="activ" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
       +'<div style="font-size:18px;font-weight:700;color:#1e8449;">'+this._r1(p.horasActividades)+'h</div>'
       +'<div style="font-size:10px;color:#1e8449;text-decoration:underline;">Ver activ.</div></div>'
       +'</div>'
@@ -7801,16 +7816,16 @@ ${paginaFotos}
       let html='<div style="background:#fafafa;border-radius:8px;padding:8px;border-top:2px solid '+borderColor+'">';
       if(tipo==='emerg'){
         const lista=data.emergencias||[];
-        if(!lista.length){html+='<div style="font-size:12px;color:#999;text-align:center;padding:4px;">Sin emergencias en este período</div>';}
+        if(!lista.length){html+='<div class="empty-state" style="font-size:12px;color:#999;text-align:center;padding:4px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-report" xlink:href="#empty-report" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin emergencias en este período</div>';}
         else lista.forEach(e=>{html+='<div style="padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;"><strong style="color:#c0392b;">'+app._esc(e.consecutivo)+'</strong><span style="float:right;font-size:11px;color:#666;">'+app._esc(e.fecha)+'</span><div style="color:#555;">'+app._esc(e.tipo)+'</div></div>';});
       }else if(tipo==='activ'){
         const lista=data.actividades||[];
-        if(!lista.length){html+='<div style="font-size:12px;color:#999;text-align:center;padding:4px;">Sin actividades en este período</div>';}
-        else lista.forEach(a=>{html+='<div style="padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;"><strong style="color:#1e8449;">'+app._esc(a.tipo||'Actividad')+'</strong><span style="float:right;font-weight:700;color:#1e8449;">'+app._esc(a.horas)+'h</span><div style="color:#555;">'+app._esc(String(a.descripcion||'').substring(0,50))+'</div><div style="font-size:11px;color:#999;">📅 '+app._esc(a.fecha)+'</div></div>';});
+        if(!lista.length){html+='<div class="empty-state" style="font-size:12px;color:#999;text-align:center;padding:4px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-activity" xlink:href="#empty-activity" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin actividades en este período</div>';}
+        else lista.forEach(a=>{html+='<div style="padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;"><strong style="color:#1e8449;">'+app._esc(a.tipo||'Actividad')+'</strong><span style="float:right;font-weight:700;color:#1e8449;">'+app._esc(a.horas)+'h</span><div style="color:#555;">'+app._esc(String(a.descripcion||'').substring(0,50))+'</div><div style="font-size:11px;color:#999;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg> '+app._esc(a.fecha)+'</div></div>';});
       }else{
         const lista=data.domingos||[];
-        if(!lista.length){html+='<div style="font-size:12px;color:#999;text-align:center;padding:4px;">Sin domingos en este período</div>';}
-        else lista.forEach(d=>{html+='<div style="padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;"><strong style="color:#e67e22;">📅 '+app._esc(d.fecha)+'</strong>'+(d.tipo?'<span style="float:right;font-size:11px;color:#666;">'+app._esc(d.tipo)+'</span>':'')+(d.tema?'<div style="color:#555;">'+app._esc(d.tema)+'</div>':'')+(d.lugar?'<div style="font-size:11px;color:#999;">📍 '+app._esc(d.lugar)+'</div>':'')+'</div>';});
+        if(!lista.length){html+='<div class="empty-state" style="font-size:12px;color:#999;text-align:center;padding:4px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-activity" xlink:href="#empty-activity" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin domingos en este período</div>';}
+        else lista.forEach(d=>{html+='<div style="padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;"><strong style="color:#e67e22;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg> '+app._esc(d.fecha)+'</strong>'+(d.tipo?'<span style="float:right;font-size:11px;color:#666;">'+app._esc(d.tipo)+'</span>':'')+(d.tema?'<div style="color:#555;">'+app._esc(d.tema)+'</div>':'')+(d.lugar?'<div style="font-size:11px;color:#999;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg> '+app._esc(d.lugar)+'</div>':'')+'</div>';});
       }
       html+='</div>'; cont.innerHTML=html;
     }catch(e){cont.innerHTML='<div style="font-size:12px;color:#c00;padding:4px;">Error de red</div>';}
@@ -7825,7 +7840,7 @@ ${paginaFotos}
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
       modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div id="_pwdAdmCaja" style="background:#fff;border-radius:16px;padding:24px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.3);">'
-        + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:12px;text-align:center;">'+(mensaje||'🔐 Contraseña de administrador')+'</div>'
+        + '<div style="font-size:15px;font-weight:700;color:#333;margin-bottom:12px;text-align:center;">'+(mensaje||'<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Contraseña de administrador')+'</div>'
         + '<input id="_pwdAdmInput" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;margin-bottom:8px;" placeholder="Contraseña">'
         // acá se escribe el motivo exacto del rechazo. Nace oculto y su texto se
         // pone con textContent, nunca con innerHTML (I5).
@@ -8180,7 +8195,7 @@ ${paginaFotos}
         + '<button id="_operOk" style="flex:1;padding:12px;background:#1e8449;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Firmar</button>'
         + '</div>'
         + '<div style="font-size:10px;color:#999;margin-top:12px;text-align:center;line-height:1.5;">Sin PIN no puedes hacer acciones de administrador.<br>¿No tienes PIN o lo olvidaste? Pídeselo al administrador principal.</div>'
-        + '<div style="text-align:center;margin-top:10px;"><span id="_operLlave" style="font-size:11px;color:#92400e;text-decoration:underline;cursor:pointer;">🎖️ Usar llave de comandancia</span></div>'
+        + '<div style="text-align:center;margin-top:10px;"><span id="_operLlave" style="font-size:11px;color:#92400e;text-decoration:underline;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="9" r="6"/><path d="m8 14-2 8 6-3 6 3-2-8"/></svg> Usar llave de comandancia</span></div>'
         + '</div>';
       document.body.appendChild(modal);
       const inp = modal.querySelector('#_operInput');
@@ -8304,14 +8319,14 @@ ${paginaFotos}
         footer{margin-top:20px;font-size:9pt;color:#999;text-align:center;}
         @media print{body{margin:8mm;}}
       </style></head><body>
-      <h1>📊 Informe de Operatividad Institucional</h1>
+      <h1><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg> Informe de Operatividad Institucional</h1>
       <p style="color:#666;margin:0 0 12px;">Período: <strong>${mesNombre} ${this._operAnio}</strong> | ${app._esc(app._inst().nombre || '')}</p>
       <div class="stats">
         <div class="stat"><div class="num">${d.length}</div><div class="lbl">Unidades con registros</div></div>
         <div class="stat"><div class="num">${this._operStats ? this._operStats.totalEmergenciasUnicas : d.reduce((s,p)=>s+p.emergencias,0)}</div><div class="lbl">Emergencias únicas</div></div>
         <div class="stat"><div class="num">${this._r1(this._operStats && this._operStats.totalHorasActividades !== undefined ? this._operStats.totalHorasActividades : d.reduce((s,p)=>s+p.horasActividades,0))}h</div><div class="lbl">Horas en actividades</div></div>
       </div>
-      <h2>🏆 Ranking General</h2>
+      <h2><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="9" r="6"/><path d="m8 14-2 8 6-3 6 3-2-8"/></svg> Ranking General</h2>
       <table><tr><th>#</th><th>Nombre</th><th>Incidentes</th><th>Horas Act.</th><th>Puntos</th></tr>
       ${top.map((p,i)=>{
         const pts=this._r1(p.emergencias*2+p.horasActividades);
@@ -8348,7 +8363,7 @@ ${paginaFotos}
         footer{margin-top:20px;font-size:9pt;color:#999;text-align:center;}
         @media print{body{margin:8mm;}.ficha{page-break-inside:avoid;}}
       </style></head><body>
-      <h1>👤 Informe de Operatividad por Unidad</h1>
+      <h1><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg> Informe de Operatividad por Unidad</h1>
       <p style="color:#666;">Período: <strong>${mesNombre} ${this._operAnio}</strong> | ${app._esc(app._inst().nombre || '')}</p>
       ${d.map(p=>{
         const pts=this._r1(p.emergencias*2+p.horasActividades);
@@ -8385,9 +8400,40 @@ ${paginaFotos}
   // Un reporte puede tener varias clasificaciones marcadas — se usa la
   // PRIMERA que coincida en este orden de prioridad para pintar el pin.
   // v5.94: se suman los tipos nuevos con pin propio (incendio de interfaz,
-  // búsqueda y rescate, traslado, abejas/avispas 🐝, árbol caído). El orden ES
+  // búsqueda y rescate, traslado, abejas/avispas , árbol caído). El orden ES
   // la prioridad de color del pin cuando un reporte tiene varias casillas
   // marcadas — gana la primera que coincida.
+  // JEF-04: pictograma por clasificación. El id del símbolo sale SOLO de esta tabla (nunca del texto del reporte).
+  _PICTOS: {
+    'Incendio estructural': 'clas-incendio-estructural',
+    'Incendio forestal': 'clas-incendio-forestal',
+    'Incendio de interfaz': 'clas-incendio-interfaz',
+    'Incendio vehicular': 'clas-incendio-vehicular',
+    'Incendio en red eléctrica': 'clas-red-electrica',
+    'Rescate vehicular': 'clas-rescate-vehicular',
+    'Rescate en altura': 'clas-rescate-altura',
+    'Rescate acuático': 'clas-rescate-acuatico',
+    'Búsqueda y rescate': 'clas-busqueda-rescate',
+    'Primeros auxilios': 'clas-primeros-auxilios',
+    'Traslado': 'clas-traslado',
+    'Materiales peligrosos (MATPEL)': 'clas-matpel',
+    'Atención de árbol caído': 'clas-arbol-caido',
+    'Atención de abejas / avispas': 'clas-abejas',
+    'Rescate animal': 'clas-rescate-animal',
+    'Inundación / desastre natural': 'clas-inundacion',
+    'Colapso estructural': 'clas-colapso',
+    'Otra': 'clas-otra'
+  },
+  _pictoId(clasificacionArr) {
+    const arr = Array.isArray(clasificacionArr) ? clasificacionArr : [];
+    for (const t of arr) { if (typeof t === 'string' && Object.prototype.hasOwnProperty.call(this._PICTOS, t)) return this._PICTOS[t]; }
+    return 'clas-sin';
+  },
+  _pictoSvg(clasificacionArr) {
+    const id = this._pictoId(clasificacionArr);
+    return '<svg class="clas-art" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#' + id + '" xlink:href="#' + id + '"></use></svg>';
+  },
+
   _MAPA_COLORES: [
     { tipo: 'Incendio estructural',              color: '#e65100', emoji: '🔥', etiqueta: 'Incendio' },
     { tipo: 'Incendio forestal',                 color: '#e65100', emoji: '🔥', etiqueta: 'Incendio' },
@@ -8420,12 +8466,12 @@ ${paginaFotos}
 
   // v5.82: pin más grande, con sombra y el emoji del tipo adentro.
   _iconoMapa(regla) {
-    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">'
+    const svg = '<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">'
       + '<path d="M15 0C6.7 0 0 6.7 0 15c0 11.2 15 25 15 25s15-13.8 15-25C30 6.7 23.3 0 15 0z" fill="'+regla.color+'" stroke="#fff" stroke-width="2"/>'
       + '<circle cx="15" cy="15" r="10" fill="#fff"/>'
       + '</svg>';
     const html = '<div class="pin-cae" style="position:relative;width:30px;height:40px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">' + svg
-      + '<span style="position:absolute;top:5px;left:0;width:30px;text-align:center;font-size:13px;line-height:20px;">' + regla.emoji + '</span></div>';
+      + '<span style="position:absolute;top:7px;left:7px;width:16px;height:16px;color:' + regla.color + ';line-height:16px;">' + this._pictoSvg([regla.tipo]) + '</span></div>';
     return L.divIcon({ html: html, className: '', iconSize: [30,40], iconAnchor: [15,40], popupAnchor: [0,-36] });
   },
 
@@ -8444,8 +8490,8 @@ ${paginaFotos}
       estado.style.display = 'block';
       // v5.87: antes era texto muerto — la señal va y viene, así
       // que el error ahora trae botón de reintento (recarga solo esta pantalla).
-      estado.innerHTML = '⚠️ No se pudo cargar el mapa (revisa tu conexión a internet).'
-        + '<br><button onclick="app.cargarPantallaMapa()" style="margin-top:10px;padding:10px 18px;background:#1a7a5e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🔄 Reintentar</button>';
+      estado.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg> No se pudo cargar el mapa (revisa tu conexión a internet).'
+        + '<br><button onclick="app.cargarPantallaMapa()" style="margin-top:10px;padding:10px 18px;background:#1a7a5e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 7v5h-5M4 17v-5h5M6 8a7 7 0 0 1 12-2l2 2M18 16a7 7 0 0 1-12 2l-2-2"/></svg> Reintentar</button>';
       cont.style.display = 'none';
       return;
     }
@@ -8480,16 +8526,16 @@ ${paginaFotos}
         const estiloSel = 'padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;background:#fff;';
         const estiloTog = 'padding:6px 10px;border:1px solid #b9c6d0;border-radius:8px;background:#eef0f2;color:#1a5276;font-size:12px;font-weight:700;cursor:pointer;';
         const estiloChip = 'padding:5px 9px;border:1px solid #cfd6dc;border-radius:12px;background:#fff;font-size:11px;cursor:pointer;';
-        // v1.21: barra compacta; lo demás vive en menús que se despliegan (⚙️/🏷️) para no
+        // v1.21: barra compacta; lo demás vive en menús que se despliegan (/) para no
         // saturar la pantalla — antes eran ~6 botones + 16 chips siempre a la vista.
         filtros.innerHTML =
           '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'
           + '<span id="mapaContador" style="font-size:12px;color:#555;font-weight:700;margin-right:2px;"></span>'
-          + '<button id="mapaBtnHerr" onclick="app._mapaTogglePanel(\'herr\')" style="'+estiloTog+'">⚙️ Herramientas ▾</button>'
-          + '<button id="mapaBtnTipos" onclick="app._mapaTogglePanel(\'tipos\')" style="'+estiloTog+'">🏷️ Tipos ▾</button>'
+          + '<button id="mapaBtnHerr" onclick="app._mapaTogglePanel(\'herr\')" style="'+estiloTog+'"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg> Herramientas ▾</button>'
+          + '<button id="mapaBtnTipos" onclick="app._mapaTogglePanel(\'tipos\')" style="'+estiloTog+'"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 4h8l10 10-7 7L4 11z"/><circle cx="8" cy="8" r="1"/></svg> Tipos ▾</button>'
           + '</div>'
           + '<div id="mapaPanelHerr" style="display:none;margin-top:6px;background:#f7f9fa;border:1px solid #e6eaed;border-radius:10px;padding:9px;">'
-          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin-bottom:5px;">📅 Fechas</div>'
+          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin-bottom:5px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></svg> Fechas</div>'
           +   '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">'
           +     '<select id="mapaFiltroAnio" onchange="app._mapaSelectFecha()" style="'+estiloSel+'">'
           +       '<option value="">Todos los años</option>'
@@ -8504,21 +8550,21 @@ ${paginaFotos}
           +     '<button onclick="app._mapaFechaRapida(\'anio\')" style="'+estiloChip+'">Este año</button>'
           +     '<button onclick="app._mapaFechaRapida(\'todo\')" style="'+estiloChip+'">Todo</button>'
           +   '</div>'
-          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin-bottom:5px;">🧭 Acciones</div>'
+          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin-bottom:5px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 4-4 2 2-4z"/></svg> Acciones</div>'
           +   '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
-          +     '<button onclick="app._centrarMapaTodos()" style="padding:6px 10px;border:none;border-radius:8px;background:#1a7a5e;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">🎯 Ver todas</button>'
-          +     '<button onclick="app._mapaMiUbicacion()" style="padding:6px 10px;border:none;border-radius:8px;background:#1565c0;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">📍 Mi ubicación</button>'
+          +     '<button onclick="app._centrarMapaTodos()" style="padding:6px 10px;border:none;border-radius:8px;background:#1a7a5e;color:#fff;font-size:12px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Ver todas</button>'
+          +     '<button onclick="app._mapaMiUbicacion()" style="padding:6px 10px;border:none;border-radius:8px;background:#1565c0;color:#fff;font-size:12px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg> Mi ubicación</button>'
           +     '<button id="mapaBtnFullscreen" onclick="app._toggleMapaFullscreen()" style="padding:6px 10px;border:none;border-radius:8px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">⛶ Pantalla completa</button>'
           +   '</div>'
-          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin:9px 0 5px;">🚒 Estación</div>'
+          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin:9px 0 5px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg> Estación</div>'
           +   '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
           +     (estCoord
-                  ? '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'">🚒 Cambiar</button><button onclick="app._mapaQuitarEstacion()" style="'+estiloChip+'">Quitar</button>'
-                  : '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'">🚒 Fijar estación (mi ubicación)</button>')
+                  ? '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg> Cambiar</button><button onclick="app._mapaQuitarEstacion()" style="'+estiloChip+'">Quitar</button>'
+                  : '<button onclick="app._mapaFijarEstacion()" style="'+estiloChip+'"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg> Fijar estación (mi ubicación)</button>')
           +   '</div>'
-          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin:9px 0 5px;">✨ Vistas</div>'
+          +   '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#7a8891;font-weight:700;margin:9px 0 5px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m12 2 2 7 7 3-7 2-2 8-2-8-7-2 7-3z"/></svg> Vistas</div>'
           +   '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
-          +     '<button id="mapaBtnCalor" onclick="app._mapaToggleCalor()" style="'+estiloChip+'">🔥 Mapa de calor</button>'
+          +     '<button id="mapaBtnCalor" onclick="app._mapaToggleCalor()" style="'+estiloChip+'"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M13 2c2 5-2 6 1 9 1-2 3-3 4-4 2 3 3 6 1 10-3 6-12 5-14 0-2-5 2-9 5-12 0 4 1 5 3 6 2-3 0-5 0-9z"/></svg> Mapa de calor</button>'
           +   '</div>'
           + '</div>';
       }
@@ -8562,10 +8608,10 @@ ${paginaFotos}
         // _esc() y el id del reporte viaja en data-id (antes iba concatenado
         // dentro del onclick y sin escapar).
         const popupHtml = '<div style="font-size:13px;min-width:190px;">'
-          + '<div style="font-weight:700;color:'+regla.color+';">'+regla.emoji+' ' + app._esc(String(r.consecutivo || r.id)) + '</div>'
+          + '<div style="font-weight:700;color:'+regla.color+';">'+this._pictoSvg([regla.tipo])+' ' + app._esc(String(r.consecutivo || r.id)) + '</div>'
           + '<div style="margin-top:4px;"><b>Fecha:</b> ' + app._esc(f.substring(0,10) || '-') + '</div>'
           + '<div><b>Dirección:</b> ' + app._esc(r.direccion || '-') + '</div>'
-          + (estCoord && r.lat && r.lng ? '<div><b>🚒 A la estación:</b> ~' + this._distanciaKm(estCoord[0], estCoord[1], r.lat, r.lng).toFixed(1) + ' km</div>' : '')
+          + (estCoord && r.lat && r.lng ? '<div><b><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg> A la estación:</b> ~' + this._distanciaKm(estCoord[0], estCoord[1], r.lat, r.lng).toFixed(1) + ' km</div>' : '')
           + '<div><b>Clasificación:</b> ' + app._esc(clas) + '</div>'
           + '<button data-id="' + String(r.id||'').replace(/"/g,'&quot;') + '" onclick="app._verReporteDesdeMapa(this.dataset.id)" style="margin-top:8px;background:#6e2fa0;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;width:100%;">Ver reporte completo</button>'
           + '</div>';
@@ -8577,7 +8623,7 @@ ${paginaFotos}
       // v1.22: marcador fijo de la estación (si está configurada).
       if (this._mapaMarcadorEstacion) { try { this._leafletMapa.removeLayer(this._mapaMarcadorEstacion); } catch (e) {} this._mapaMarcadorEstacion = null; }
       if (estCoord) {
-        this._mapaMarcadorEstacion = L.marker(estCoord, { icon: L.divIcon({ html: '<div style="font-size:26px;line-height:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));">🚒</div>', className: '', iconSize: [26, 26], iconAnchor: [13, 13] }) })
+        this._mapaMarcadorEstacion = L.marker(estCoord, { icon: L.divIcon({ html: '<div style="font-size:26px;line-height:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg></div>', className: '', iconSize: [26, 26], iconAnchor: [13, 13] }) })
           .bindPopup('🚒 Estación de bomberos').addTo(this._leafletMapa);
       }
       this._pintarLeyendaMapa();
@@ -8588,7 +8634,7 @@ ${paginaFotos}
       // v5.87: error con reintento (red intermitente) — e.message
       // pasa por _esc porque va a innerHTML.
       estado.innerHTML = 'Error: ' + app._esc(e.message)
-        + '<br><button onclick="app.cargarPantallaMapa()" style="margin-top:10px;padding:10px 18px;background:#1a7a5e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🔄 Reintentar</button>';
+        + '<br><button onclick="app.cargarPantallaMapa()" style="margin-top:10px;padding:10px 18px;background:#1a7a5e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 7v5h-5M4 17v-5h5M6 8a7 7 0 0 1 12-2l2 2M18 16a7 7 0 0 1-12 2l-2-2"/></svg> Reintentar</button>';
     }
   },
 
@@ -8607,8 +8653,8 @@ ${paginaFotos}
     // v1.19: botonera de acciones rápidas. Antes, para ver un SOLO tipo había que
     // apagar todos los demás uno por uno. Ahora "Todos"/"Ninguno" y "solo" por chip.
     const botonera = '<div style="display:flex;gap:6px;margin-bottom:6px;">'
-      + '<button onclick="app._mapaMostrarTodos()" style="flex:1;padding:5px 8px;border:1px solid #1a7a5e;background:#1a7a5e;color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✓ Todos</button>'
-      + '<button onclick="app._mapaOcultarTodos()" style="flex:1;padding:5px 8px;border:1px solid #bbb;background:#fff;color:#555;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✕ Ninguno</button>'
+      + '<button onclick="app._mapaMostrarTodos()" style="flex:1;padding:5px 8px;border:1px solid #1a7a5e;background:#1a7a5e;color:#fff;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg> Todos</button>'
+      + '<button onclick="app._mapaOcultarTodos()" style="flex:1;padding:5px 8px;border:1px solid #bbb;background:#fff;color:#555;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m6 6 12 12M18 6 6 18"/></svg> Ninguno</button>'
       + '</div>';
     leyenda.innerHTML = botonera
       + '<div style="font-size:11px;color:#666;margin:2px 0 4px;">👆 Toca un tipo para ocultar/mostrar · toca <b>solo</b> para ver únicamente ese:</div>'
@@ -8618,7 +8664,7 @@ ${paginaFotos}
         return '<span data-e="' + e + '" onclick="app._toggleFiltroMapa(this.dataset.e)" '
           + 'style="display:inline-flex;align-items:center;gap:4px;background:' + (off ? '#f0f0f0' : '#fff') + ';border-radius:12px;padding:3px 9px;margin:2px;font-size:11px;border:1.5px solid ' + (off ? '#ddd' : r.color) + ';cursor:pointer;' + (off ? 'opacity:.5;' : '') + '">'
           + '<span style="width:10px;height:10px;border-radius:50%;background:' + r.color + ';display:inline-block;' + (off ? 'opacity:.4;' : '') + '"></span>'
-          + '<span' + (off ? ' style="text-decoration:line-through;"' : '') + '>' + r.emoji + ' ' + r.etiqueta + ' (' + (conteo[r.etiqueta] || 0) + ')</span>'
+          + '<span' + (off ? ' style="text-decoration:line-through;"' : '') + '>' + this._pictoSvg([r.tipo]) + ' ' + r.etiqueta + ' (' + (conteo[r.etiqueta] || 0) + ')</span>'
           + '<span data-e="' + e + '" onclick="event.stopPropagation();app._mapaSoloEtiqueta(this.dataset.e)" title="Ver solo este tipo" style="margin-left:2px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.08);font-size:9px;font-weight:700;color:#333;">solo</span>'
           + '</span>';
       }).join('');
@@ -8676,7 +8722,7 @@ ${paginaFotos}
       // Encuadrar para que se vea todo el círculo; maxZoom evita acercarse de más.
       if (this._mapaPrecisionYo) this._leafletMapa.fitBounds(this._mapaPrecisionYo.getBounds(), { padding: [40, 40], maxZoom: 16 });
       else this._leafletMapa.setView([lat, lng], 15);
-      if (prec > 150) this.toast('📍 Ubicación aproximada (±' + prec + ' m). En el celular con GPS es más precisa.', 'info');
+      if (prec > 150) this.toast('<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg> Ubicación aproximada (±' + prec + ' m). En el celular con GPS es más precisa.', 'info');
     }, () => { this.toast('No se pudo obtener tu ubicación (revisa el permiso)', 'error'); },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
   },
@@ -8739,7 +8785,7 @@ ${paginaFotos}
   },
 
   // v1.22: estación de bomberos en el mapa. Se fija con el GPS (parado EN la estación)
-  // y se guarda en el dispositivo (localStorage). Con eso el mapa muestra un 🚒 y, en
+  // y se guarda en el dispositivo (localStorage). Con eso el mapa muestra un  y, en
   // cada reporte, a cuántos km está de la estación. Cada cuerpo guarda la suya.
   _EST_KEY: 'mapa_estacion_coord',
   _estacionCoord() {
@@ -8900,7 +8946,7 @@ ${paginaFotos}
         '<div style="text-align:center;">'
         + '<div style="font-size:10px;color:#666;">'+lbl+'</div>'
         + '<div id="_eaFotoPrev'+k+'" style="width:90px;height:90px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5 center/cover no-repeat;display:flex;align-items:center;justify-content:center;overflow:hidden;">'
-        + (src ? '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;">' : '<span style="font-size:22px;">📷</span>')
+        + (src ? '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;">' : '<span style="font-size:22px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg></span>')
         + '</div>'
         + '<label style="display:block;margin-top:4px;font-size:11px;color:#1a5276;cursor:pointer;text-decoration:underline;">Cambiar'
         +   '<input type="file" accept="image/*" style="display:none;" onchange="app._eaCargarFoto(\''+k+'\',this)"></label>'
@@ -8911,7 +8957,7 @@ ${paginaFotos}
       modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;overflow-y:auto;padding:16px;';
       modal.className = 'modal-js';   // sin esto ninguna regla CSS lo alcanza
       modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:440px;margin:auto;">'
-        +'<div style="font-weight:700;font-size:16px;color:#1a5276;margin-bottom:14px;">✏️ Editar Actividad</div>'
+        +'<div style="font-weight:700;font-size:16px;color:#1a5276;margin-bottom:14px;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m4 20 4-1 11-11-3-3L5 16zM14 7l3 3"/></svg> Editar Actividad</div>'
         +'<label style="font-size:12px;font-weight:700;">Tipo</label>'
         +'<select id="_eaT" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">'+tipos.map(t=>'<option value="'+t+'"'+(a.tipo===t?' selected':'')+'>'+t+'</option>').join('')+'</select>'
         +'<label style="font-size:12px;font-weight:700;">Descripción</label>'
@@ -8926,20 +8972,20 @@ ${paginaFotos}
         +'<input type="text" id="_eaL" value="'+esc(a.lugar)+'" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">'
         +'<label style="font-size:12px;font-weight:700;">Modalidad</label>'
         +'<select id="_eaMod" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">'
-        +  '<option value="Voluntaria"'+(a.modalidad!=='Paga'?' selected':'')+'>🙋 Voluntaria</option>'
-        +  '<option value="Paga"'+(a.modalidad==='Paga'?' selected':'')+'>💵 Paga (contratada)</option>'
+        +  '<option value="Voluntaria"'+(a.modalidad!=='Paga'?' selected':'')+'> Voluntaria</option>'
+        +  '<option value="Paga"'+(a.modalidad==='Paga'?' selected':'')+'> Paga (contratada)</option>'
         +'</select>'
         +'<label style="font-size:12px;font-weight:700;">Novedades</label>'
         +'<textarea id="_eaN" rows="2" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">'+esc(a.novedades||"")+'</textarea>'
         // ── PERSONAL ──
-        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">👥 Personal asistente</div>'
+        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.7-4 3-6 6-6s5.3 2 6 6M15 15c3 0 5 2 5.5 5"/></svg> Personal asistente</div>'
         +'<div id="_eaPersonalLista" style="margin-bottom:6px;"></div>'
         +'<div style="position:relative;margin-bottom:14px;">'
         +'<input type="text" id="_eaBuscarPersonal" placeholder="Escribir nombre para agregar..." autocomplete="off" oninput="app._eaBuscarPersonal(this.value)" style="width:100%;padding:9px;border:1px solid #1e8449;border-radius:8px;font-size:14px;box-sizing:border-box;">'
         +'<div id="_eaSugerencias" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.15);max-height:180px;overflow-y:auto;"></div>'
         +'</div>'
         // ── FOTOS ──
-        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">📸 Fotos (hasta 6)</div>'
+        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="14" r="4"/></svg> Fotos (hasta 6)</div>'
         +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;justify-content:center;">'
         + fotoSlot('inicio','Foto 1',a.fotoInicio||'')
         + fotoSlot('medio','Foto 2',a.fotoMedio||'')
@@ -8949,7 +8995,7 @@ ${paginaFotos}
         + fotoSlot('f6','Foto 6',a.fotoF6||'')
         +'</div>'
         // ── RECURSOS ──
-        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;">🚒 Recursos / Vehículos</div>'
+        +'<div style="border-top:1px solid #eee;padding-top:10px;margin-bottom:6px;font-weight:700;font-size:13px;color:#1a5276;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7 4h4M9 4v3"/></svg> Recursos / Vehículos</div>'
         +'<div id="_eaRecursosLista" style="margin-bottom:6px;"></div>'
         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
         /* Editar daba un formulario PEOR que crear: acá el vehículo era texto
@@ -8965,7 +9011,7 @@ ${paginaFotos}
         // ── BOTONES ──
         +'<div style="display:flex;gap:10px;">'
         +'<button id="_eaCancel" style="flex:1;padding:12px;background:#f5f5f5;color:#333;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Cancelar</button>'
-        +'<button id="_eaGuard" style="flex:1;padding:12px;background:#1a5276;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">💾 Guardar</button>'
+        +'<button id="_eaGuard" style="flex:1;padding:12px;background:#1a5276;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="M4 3h13l3 3v15H4zM8 3v6h8V3M8 21v-7h8v7"/></svg> Guardar</button>'
         +'</div></div>';
       document.body.appendChild(modal);
       this._eaRenderPersonal();
@@ -9032,7 +9078,7 @@ ${paginaFotos}
   _eaRenderPersonal() {
     const cont = document.getElementById('_eaPersonalLista');
     if (!cont) return;
-    if (!this._eaPersonal.length) { cont.innerHTML = '<div style="color:#999;font-size:12px;text-align:center;padding:6px;">Sin personal</div>'; return; }
+    if (!this._eaPersonal.length) { cont.innerHTML = '<div class="empty-state empty-compact" style="color:#999;font-size:12px;text-align:center;padding:6px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-personnel" xlink:href="#empty-personnel" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin personal</div>'; return; }
     cont.innerHTML = this._eaPersonal.map((p,i) => {
       const enc = !!p.esEncargado;
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:'+(enc?'#fff8e1':'#f8f8f8')+';border-radius:8px;margin-bottom:4px;">'
@@ -9061,7 +9107,7 @@ ${paginaFotos}
       try {
         const resp = await fetch(URL_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'buscarPersonal',q:q.trim()})});
         const data = await resp.json();
-        if (!data.ok || !data.resultados.length) { sug.innerHTML='<div style="padding:8px 12px;color:#999;font-size:12px;">Sin resultados</div>'; return; }
+        if (!data.ok || !data.resultados.length) { sug.innerHTML='<div class="empty-state empty-compact" style="padding:8px 12px;color:#999;font-size:12px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-search" xlink:href="#empty-search" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin resultados</div>'; return; }
         sug.innerHTML = data.resultados.map(per =>
           '<div onclick=\'app._eaAddPersonal('+JSON.stringify(per).replace(/'/g,"&#39;")+')\' style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;"><strong>'+app._esc(per.nombre||'')+'</strong> <span style="color:#666;font-size:12px;">CC: '+app._esc(per.cedula||'-')+'</span></div>'
         ).join('');
@@ -9082,7 +9128,7 @@ ${paginaFotos}
   _eaRenderRecursos() {
     const cont = document.getElementById('_eaRecursosLista');
     if (!cont) return;
-    if (!this._eaRecursos.length) { cont.innerHTML = '<div style="color:#999;font-size:12px;text-align:center;padding:6px;">Sin vehículos</div>'; return; }
+    if (!this._eaRecursos.length) { cont.innerHTML = '<div class="empty-state empty-compact" style="color:#999;font-size:12px;text-align:center;padding:6px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-vehicle" xlink:href="#empty-vehicle" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin vehículos</div>'; return; }
     cont.innerHTML = this._eaRecursos.map((r,i) =>
       '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#f8f8f8;border-radius:8px;margin-bottom:4px;">'
       +'<div style="font-size:13px;"><strong>'+app._esc(r.tipo||'-')+'</strong>'+(r.codigo?' ('+app._esc(r.codigo)+')':'')+(r.responsable?'<div style="font-size:11px;color:#666;">'+app._esc(r.responsable)+'</div>':'')+'</div>'
@@ -9113,7 +9159,7 @@ ${paginaFotos}
 
 
   /* ═══════ v6.00: AGREGAR PERSONAS A UN DOMINGO YA GUARDADO ═══════
-     Antes, el modal de ✏️ solo mostraba a los que ya estaban guardados, así que
+     Antes, el modal de  solo mostraba a los que ya estaban guardados, así que
      para sumar a alguien había que ELIMINAR el domingo y recrearlo entero (34
      estados reescritos a mano, con el riesgo de perderlo todo si algo fallaba a
      mitad). El backend nunca fue el problema: registrarAsistencia con
