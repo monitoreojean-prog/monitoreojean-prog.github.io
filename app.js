@@ -82,13 +82,15 @@ function _exigirBackend() {
    app de una estación (iba en 6.08) y eso no significa nada para un cuerpo que
    la instala hoy por primera vez. El historial de esa estación tampoco está —
    ver APP_VERSION_NOTAS. */
-const APP_VERSION = '1.61';
+const APP_VERSION = '1.63';
 /* Novedades que ve el usuario. ARRANCA VACÍO A PROPÓSITO.
    Antes heredaba las 133 notas de la estación de origen: un cuerpo nuevo instalaba la app y
    leía el diario de otra estación —sus cuentas, su regla de sanciones, sus
    arreglos internos—. Eso no solo confunde: filtra cómo opera un tercero.
    Cada nota nueva describe un cambio DEL PRODUCTO, no de una estación. */
 const APP_VERSION_NOTAS = [
+  'v1.63: Sesión de administrador más robusta: si al entrar no queda activa, la app reintenta sola y, si aún falla, muestra el motivo en pantalla en vez de fallar al firmar sin avisar.',
+  'v1.62: Operatividad incorpora barras proporcionales y anillos de participación sin ocultar ninguna cifra.',
   'v1.61: Nuevo diseño Campo: alto contraste para leer a pleno sol. Se elige en el menú del avatar o en Configuración → Tema.',
   'v1.60: Cada tipo de incidente estrena un pictograma del oficio en el mapa, la leyenda, el Inicio y el detalle. El texto siempre permanece visible.',
   'v1.59: El aviso de error al cargar la flota vuelve a verse en rojo; la lista sin vehículos conserva su mensaje en verde en ambos temas.',
@@ -961,33 +963,39 @@ const app = {
 
       // v5.51: pedir al backend un "pase" de 8h (no depende del token de 1h de Google).
       // Si falla, no se rompe el login; el admin caería al modo token de 1h.
-      try {
-        const rPase = await fetch(URL_BACKEND, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ accion: 'iniciarSesion', idToken: response.credential })
-        });
-        const dPase = await rPase.json();
-        if (dPase && dPase.ok && dPase.pase) {
-          this._pase = dPase.pase;
-          this.usuario.pase = dPase.pase;
-          // v6.05: el backend ya dice si es admin SEGÚN LA HOJA. Guardarlo es lo
-          // que hace que "Agregar administrador" sirva de algo: sin esta línea,
-          // la persona agregada nunca veía la zona de administrador.
-          if (typeof dPase.esAdmin === 'boolean') this.usuario.esAdminSrv = dPase.esAdmin;
-          // T1: el superadmin lo decide el servidor (es el FUNDADOR de esta
-          // instalación), no una comparación de correo quemada en el front.
-          if (typeof dPase.esSuperAdmin === 'boolean') this.usuario.esSuperAdmin = dPase.esSuperAdmin;
-          // Firma con PIN: el backend dice si ESTE cuerpo la exige. Apagada por defecto
-          // (cada admin entra con su propia cuenta), así que normalmente nunca se pide.
-          this._firmaObligatoria = (dPase.firmaObligatoria === true);
-          // T1b: la identidad del cuerpo llega en el login y se cachea para el
-          // próximo arranque, cuando todavía no hay servidor que preguntar.
-          if (dPase.institucion) { try { this._pintarInstitucion(dPase.institucion); } catch (e) {} }
-          // Asistente: el backend dice si esta copia ya tiene cuerpo configurado.
-          this._instalacionConfigurada = (dPase.instalacionConfigurada !== false);
-          await DB.guardarConfig('sesion', this.usuario);
-        }
-      } catch (ePase) { console.warn('No se pudo obtener pase de 8h:', ePase); }
+      // v1.63: emisión del pase con REINTENTOS y motivo VISIBLE. Antes, si esta
+      // llamada fallaba (red o token rechazado), el error se tragaba en silencio:
+      // el dispositivo entraba SIN pase y toda acción de admin/firma decía "Sesión
+      // inválida" sin explicar por qué. Ahora reintenta y, si no puede, lo dice en
+      // pantalla con el motivo real (ver _emitirPase / _avisarSesionAdmin).
+      const _rp = await this._emitirPase({ accion: 'iniciarSesion', idToken: response.credential });
+      if (_rp.ok) {
+        const dPase = _rp.data;
+        this._pase = dPase.pase;
+        this.usuario.pase = dPase.pase;
+        // v6.05: el backend ya dice si es admin SEGÚN LA HOJA. Guardarlo es lo
+        // que hace que "Agregar administrador" sirva de algo: sin esta línea,
+        // la persona agregada nunca veía la zona de administrador.
+        if (typeof dPase.esAdmin === 'boolean') this.usuario.esAdminSrv = dPase.esAdmin;
+        // T1: el superadmin lo decide el servidor (es el FUNDADOR de esta
+        // instalación), no una comparación de correo quemada en el front.
+        if (typeof dPase.esSuperAdmin === 'boolean') this.usuario.esSuperAdmin = dPase.esSuperAdmin;
+        // Firma con PIN: el backend dice si ESTE cuerpo la exige. Apagada por defecto
+        // (cada admin entra con su propia cuenta), así que normalmente nunca se pide.
+        this._firmaObligatoria = (dPase.firmaObligatoria === true);
+        // T1b: la identidad del cuerpo llega en el login y se cachea para el
+        // próximo arranque, cuando todavía no hay servidor que preguntar.
+        if (dPase.institucion) { try { this._pintarInstitucion(dPase.institucion); } catch (e) {} }
+        // Asistente: el backend dice si esta copia ya tiene cuerpo configurado.
+        this._instalacionConfigurada = (dPase.instalacionConfigurada !== false);
+        this._ultimoErrorPase = '';
+        this._ocultarAvisoSesionAdmin();
+        await DB.guardarConfig('sesion', this.usuario);
+      } else {
+        this._ultimoErrorPase = _rp.error || '';
+        console.warn('No se pudo emitir el pase:', _rp.error);
+        if (this.esAdmin()) this._avisarSesionAdmin(_rp.error);
+      }
 
       this.toast(`Bienvenido, ${usuario.nombrePila || usuario.email}`, 'exito');
 
@@ -2063,7 +2071,63 @@ const app = {
   // token de Google de 1h → "cierra y vuelve a iniciar sesión" constante.
   // Ahora, al abrir la app: se renueva el pase usando el pase vigente (el
   // backend acepta pase válido) o el token de Google si aún sirve.
-  async _renovarPaseSesion() {
+  // v1.63: pide el pase al backend con hasta 3 intentos (una red mala no debe
+  // dejar al admin sin sesión). Devuelve { ok:true, data } o { ok:false, error }
+  // con el MOTIVO real (error del backend, HTTP o excepción) para poder mostrarlo.
+  async _emitirPase(body) {
+    let ultimo = 'desconocido';
+    for (let intento = 1; intento <= 3; intento++) {
+      try {
+        const resp = await fetch(URL_BACKEND, {
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(body)
+        });
+        if (!resp.ok) { ultimo = 'HTTP ' + resp.status; }
+        else {
+          const data = await resp.json();
+          if (data && data.ok && data.pase) return { ok: true, data: data };
+          ultimo = (data && data.error) ? data.error : 'el servidor respondió sin pase';
+        }
+      } catch (e) { ultimo = (e && e.message) ? e.message : 'sin conexión'; }
+      if (intento < 3) { await new Promise(r => setTimeout(r, 1200 * intento)); }
+    }
+    return { ok: false, error: ultimo };
+  },
+
+  // v1.63: aviso persistente y legible cuando la sesión de admin NO quedó activa.
+  // Usa textContent (I5): el motivo viene del backend, nunca a innerHTML.
+  _avisarSesionAdmin(motivo) {
+    try {
+      let b = document.getElementById('cbviAvisoSesion');
+      if (!b) {
+        b = document.createElement('div');
+        b.id = 'cbviAvisoSesion';
+        b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#b91c1c;color:#fff;padding:12px 14px;font-size:13px;line-height:1.45;box-shadow:0 2px 10px rgba(0,0,0,.35);text-align:center;';
+        document.body.appendChild(b);
+      }
+      b.textContent = '';
+      const t = document.createElement('div');
+      t.textContent = '⚠️ Tu sesión de administrador no quedó activa en este dispositivo, por eso "Firmar" falla. Motivo: ' + (motivo || 'desconocido');
+      const fila = document.createElement('div');
+      fila.style.cssText = 'margin-top:8px;display:flex;gap:8px;justify-content:center;';
+      const bR = document.createElement('button');
+      bR.textContent = 'Reintentar';
+      bR.style.cssText = 'padding:6px 16px;background:#fff;color:#b91c1c;border:none;border-radius:6px;font-weight:700;cursor:pointer;';
+      bR.onclick = () => { bR.textContent = 'Reintentando…'; bR.disabled = true; app._renovarPaseSesion(true); };
+      const bS = document.createElement('button');
+      bS.textContent = 'Cerrar sesión y reingresar';
+      bS.style.cssText = 'padding:6px 16px;background:transparent;color:#fff;border:1px solid #fff;border-radius:6px;font-weight:700;cursor:pointer;';
+      bS.onclick = () => { try { app.cerrarSesion(); } catch (e) {} };
+      fila.appendChild(bR); fila.appendChild(bS);
+      b.appendChild(t); b.appendChild(fila);
+      b.style.display = 'block';
+    } catch (e) { /* nunca romper por el aviso */ }
+  },
+  _ocultarAvisoSesionAdmin() {
+    try { const b = document.getElementById('cbviAvisoSesion'); if (b) b.style.display = 'none'; } catch (e) {}
+  },
+
+  async _renovarPaseSesion(mostrarAviso) {
     try {
       if (!navigator.onLine || !this.usuario || !this.usuario.email) return;
       const body = { accion: 'iniciarSesion' };
@@ -2071,15 +2135,19 @@ const app = {
       if (this._googleIdToken && this._googleTokenExp && Date.now() < this._googleTokenExp) {
         body.idToken = this._googleIdToken;
       }
-      if (!body.pase && !body.idToken) return; // nada con qué renovar
-      const resp = await fetch(URL_BACKEND, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(body)
-      });
-      const data = await resp.json();
-      if (data && data.ok && data.pase) {
+      if (!body.pase && !body.idToken) {
+        // v1.63: sin pase y sin token fresco no hay con qué renovar. Si esta cuenta
+        // es admin, se le avisa que reingrese (antes: silencio y "Sesión inválida").
+        if (this.esAdmin()) this._avisarSesionAdmin('tu ingreso con Google no dejó una sesión activa. Cierra sesión e inicia de nuevo con buena señal.');
+        return;
+      }
+      const _rp = await this._emitirPase(body);
+      if (_rp.ok) {
+        const data = _rp.data;
         this._pase = data.pase;
         this.usuario.pase = data.pase;
+        this._ultimoErrorPase = '';
+        this._ocultarAvisoSesionAdmin();
         // v6.05: se refresca el privilegio desde la hoja en CADA arranque con
         // señal. Si cambió (te agregaron o te quitaron), la interfaz se redibuja
         // sola; si no, el menú seguiría mostrando lo de antes indefinidamente.
@@ -2098,6 +2166,10 @@ const app = {
           }
         }
         await DB.guardarConfig('sesion', this.usuario);
+      } else {
+        // v1.63: falló la renovación. Si es admin (o se pidió explícito), avisar el motivo.
+        this._ultimoErrorPase = _rp.error || '';
+        if (mostrarAviso || this.esAdmin()) this._avisarSesionAdmin(_rp.error);
       }
     } catch (e) { /* silencioso: sin conexión no pasa nada */ }
   },
@@ -7629,6 +7701,22 @@ ${paginaFotos}
   _operMes: '',
   _operAnio: '',
 
+  _grafBarra(valor, maximo, color) {
+    const valorSeguro = Math.max(0, Number(valor) || 0);
+    const maxSeguro = Math.max(0, Number(maximo) || 0);
+    const limitado = Math.min(valorSeguro, maxSeguro);
+    const pct = maxSeguro > 0 ? Math.round(100 * limitado / maxSeguro) : 0;
+    return '<div class="cbvi-graf-pista" aria-hidden="true"><div class="cbvi-graf-barra" data-valor="'+limitado+'" data-max="'+maxSeguro+'" style="width:'+pct+'%;background:'+color+';"></div></div>';
+  },
+
+  _grafAnillo(porcentaje, color) {
+    const pct = Math.max(0, Math.min(100, Math.round(Number(porcentaje) || 0)));
+    return '<svg class="cbvi-graf-anillo" data-pct="'+pct+'" viewBox="0 0 36 36" aria-hidden="true" focusable="false">'
+      + '<circle class="cbvi-graf-fondo" cx="18" cy="18" r="15.8" fill="none" stroke-width="3.2"></circle>'
+      + '<circle class="cbvi-graf-progreso" cx="18" cy="18" r="15.8" fill="none" stroke="'+color+'" stroke-width="3.2" pathLength="100" stroke-dasharray="'+pct+' 100" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>'
+      + '</svg>';
+  },
+
   _renderOperatividad() {
     const cont = document.getElementById('operatividadContenido');
     if (!cont || !this._operData) return;
@@ -7685,6 +7773,8 @@ ${paginaFotos}
     const totalPersonas = d.length;
     const totalEmerg = d.reduce((s,p) => s + (p.emergencias||0), 0);
     const totalHoras = d.reduce((s,p) => s + (p.horasActividades||0), 0);
+    const unidadesBase = Math.max(0, Number(this._operStats && this._operStats.unidadesBase) || 0);
+    const pctParticipacion = unidadesBase > 0 ? Math.round(100 * totalPersonas / unidadesBase) : 0;
     const top = [...d].sort((a,b) => {
       const pa = a.emergencias*2 + a.horasActividades;
       const pb = b.emergencias*2 + b.horasActividades;
@@ -7695,18 +7785,20 @@ ${paginaFotos}
     const topEmerg = [...d].sort((a,b)=>b.emergencias-a.emergencias).filter(p=>p.emergencias>0);
     const topActiv = [...d].sort((a,b)=>b.horasActividades-a.horasActividades).filter(p=>p.horasActividades>0);
     const medallas = ['🥇','🥈','🥉'];
-    const rankRow = (p,i,val,lbl) => '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;">'
-      + '<div><span style="font-size:15px;">'+(medallas[i]||('<span style="font-size:11px;color:#999;">#'+(i+1)+'</span>'))+'</span>'
+    const rankRow = (p,i,val,lbl,maximo,color) => '<div class="ops-graf-fila">'
+      + '<div><div><span style="font-size:15px;">'+(medallas[i]||('<span style="font-size:11px;color:#999;">#'+(i+1)+'</span>'))+'</span>'
       + '<strong style="margin-left:6px;font-size:13px;">'+app._esc(p.nombre||'')+'</strong></div>'
-      + '<span style="font-weight:700;color:#6e2fa0;">'+val+' '+lbl+'</span></div>';
+      + '<span style="font-weight:700;color:'+color+';">'+val+' '+lbl+'</span></div>'
+      + this._grafBarra(parseFloat(val)||0,maximo,color)+'</div>';
     const rankList = (lista, getId, getVal, lbl, color) => {
       if(!lista.length) return '<div class="empty-state" style="color:#999;font-size:13px;text-align:center;padding:8px;"><svg class="empty-art" viewBox="0 0 128 96" aria-hidden="true" focusable="false"><use href="#empty-search" xlink:href="#empty-search" xmlns:xlink="http://www.w3.org/1999/xlink"></use></svg>Sin datos en este período</div>';
-      const top3 = lista.slice(0,3).map((p,i)=>rankRow(p,i,getVal(p),lbl)).join('');
+      const maximo = lista.reduce((m,p)=>Math.max(m,parseFloat(getVal(p))||0),0);
+      const top3 = lista.slice(0,3).map((p,i)=>rankRow(p,i,getVal(p),lbl,maximo,color)).join('');
       const resto = lista.slice(3);
       if(!resto.length) return top3;
       const masId = getId+'_mas';
       return top3
-        + '<div id="'+masId+'" style="display:none;">'+resto.map((p,i)=>rankRow(p,i+3,getVal(p),lbl)).join('')+'</div>'
+        + '<div id="'+masId+'" style="display:none;">'+resto.map((p,i)=>rankRow(p,i+3,getVal(p),lbl,maximo,color)).join('')+'</div>'
         + '<button data-id="'+masId+'" onclick="var e=document.getElementById(this.dataset.id);var v=e.style.display!==\'none\';e.style.display=v?\'none\':\'block\';this.textContent=v?\'▼ Ver más ('+resto.length+')\':\'▲ Ver menos\';" '
         + 'style="width:100%;padding:6px;margin-top:4px;background:#f5f5f5;border:none;border-radius:6px;cursor:pointer;font-size:12px;color:'+color+';"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"><path d="m5 9 7 7 7-7"/></svg> Ver más ('+resto.length+')</button>';
     };
@@ -7717,6 +7809,13 @@ ${paginaFotos}
         <div style="font-size:18px;font-weight:700;">${mesNombre} ${this._operAnio}</div>
         <div style="font-size:12px;opacity:.7;margin-top:2px;">${app._esc(app._inst().nombre || '')}</div>
       </div>
+
+      ${unidadesBase > 0 ? `<div class="ops-graf-resumen">
+        <div class="ops-graf-item">
+          ${this._grafAnillo(pctParticipacion,'#6e2fa0')}
+          <div class="ops-graf-copy"><div class="ops-graf-cifra">${pctParticipacion}%</div><div class="ops-graf-label">Participación</div><div class="ops-graf-meta">${totalPersonas} de ${unidadesBase} unidades activas</div></div>
+        </div>
+      </div>` : ''}
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div class="ops-metric" style="background:#fff;border-radius:10px;padding:14px;text-align:center;">
@@ -7780,6 +7879,9 @@ ${paginaFotos}
     const pts = this._r1(p.emergencias*2 + p.horasActividades);
     const nom = String(p.nombre||'');
     const uid = 'u_'+nom.replace(/[^a-zA-Z]/g,'').substring(0,12);
+    const maxEmerg = this._operData.reduce((m,x)=>Math.max(m,Number(x.emergencias)||0),0);
+    const maxHoras = this._operData.reduce((m,x)=>Math.max(m,Number(x.horasActividades)||0),0);
+    const maxActividades = this._operData.reduce((m,x)=>Math.max(m,Number(x.numActividades)||0),0);
     return '<div class="ops-unit" style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #6e2fa0;">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
       +'<div><div style="font-weight:700;font-size:15px;">'+app._esc(nom||'(sin nombre)')+'</div>'
@@ -7788,13 +7890,16 @@ ${paginaFotos}
       +'</div>'
       +'<div style="text-align:right;"><div style="font-weight:700;color:#6e2fa0;font-size:16px;">'+pts+' pts</div>'
       +'</div></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">'
       +'<div class="ops-unit-metric" style="background:#fff5f5;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="emerg" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
       +'<div style="font-size:18px;font-weight:700;color:#c0392b;">'+p.emergencias+'</div>'
-      +'<div style="font-size:10px;color:#c0392b;text-decoration:underline;">Ver emerg.</div></div>'
+      +'<div style="font-size:10px;color:#c0392b;text-decoration:underline;">Ver emerg.</div>'+this._grafBarra(Number(p.emergencias)||0,maxEmerg,'#c0392b')+'</div>'
       +'<div class="ops-unit-metric" style="background:#f0f8f4;border-radius:8px;padding:8px;text-align:center;cursor:pointer;" data-tipo="activ" data-uid="'+uid+'" data-nom="'+encodeURIComponent(nom)+'" data-ced="'+encodeURIComponent(String(p.cedula||''))+'" onclick="app._expandirDetalle(this.dataset.tipo,this.dataset.uid,decodeURIComponent(this.dataset.nom),decodeURIComponent(this.dataset.ced))">'
       +'<div style="font-size:18px;font-weight:700;color:#1e8449;">'+this._r1(p.horasActividades)+'h</div>'
-      +'<div style="font-size:10px;color:#1e8449;text-decoration:underline;">Ver activ.</div></div>'
+      +'<div style="font-size:10px;color:#1e8449;text-decoration:underline;">Ver activ.</div>'+this._grafBarra(Number(p.horasActividades)||0,maxHoras,'#1e8449')+'</div>'
+      +'<div class="ops-unit-metric" style="background:#f5f0fa;border-radius:8px;padding:8px;text-align:center;">'
+      +'<div style="font-size:18px;font-weight:700;color:#6e2fa0;">'+(Number(p.numActividades)||0)+'</div>'
+      +'<div style="font-size:10px;color:#6e2fa0;">Actividades</div>'+this._grafBarra(Number(p.numActividades)||0,maxActividades,'#6e2fa0')+'</div>'
       +'</div>'
       +'<div id="'+uid+'_det" style="display:none;margin-bottom:8px;"></div>'
       +'</div>';
